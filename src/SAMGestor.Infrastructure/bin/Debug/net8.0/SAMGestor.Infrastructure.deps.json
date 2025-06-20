@@ -1,0 +1,56 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "SAMGestor.Infrastructure/1.0.0": {
+        "dependencies": {
+          "SAMGestor.Application": "1.0.0",
+          "SAMGestor.Domain": "1.0.0"
+        },
+        "runtime": {
+          "SAMGestor.Infrastructure.dll": {}
+        }
+      },
+      "SAMGestor.Application/1.0.0": {
+        "dependencies": {
+          "SAMGestor.Domain": "1.0.0"
+        },
+        "runtime": {
+          "SAMGestor.Application.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "SAMGestor.Domain/1.0.0": {
+        "runtime": {
+          "SAMGestor.Domain.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "SAMGestor.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "SAMGestor.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "SAMGestor.Domain/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

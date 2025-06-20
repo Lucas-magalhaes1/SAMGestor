@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\SAMGestor.API.props" />
+</Project>

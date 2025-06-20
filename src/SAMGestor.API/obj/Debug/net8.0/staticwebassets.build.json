@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "64NWJ508uaA/iGztSd2rN+TXbPyTb+ufzy/Vm7fpEFI=",
+  "Source": "SAMGestor.API",
+  "BasePath": "_content/SAMGestor.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

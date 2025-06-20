@@ -1,0 +1,48 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Rider ignored files
+/projectSettingsUpdater.xml
+/.idea.SAMGestor.iml
+/modules.xml
+/contentModel.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+################################
+# Build output / pacote
+################################
+bin/
+obj/
+artifacts/
+*.dll
+*.exe
+*.pdb
+
+################################
+# IDEs
+################################
+# Rider / IntelliJ IDEA
+.idea/
+*.sln.ide
+*.DotSettings.user
+
+# VS / VSCode 
+.vscode/
+*.user
+*.suo
+
+################################
+# Config locais
+################################
+appsettings.Development.json
+*.env
+
+################################
+# Outros temporários
+################################
+*.log
+*.tmp

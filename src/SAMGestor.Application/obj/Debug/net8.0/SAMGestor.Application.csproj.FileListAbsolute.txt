@@ -1,0 +1,15 @@
+D:\Projects\SAMGestor\src\SAMGestor.Application\bin\Debug\net8.0\SAMGestor.Application.deps.json
+D:\Projects\SAMGestor\src\SAMGestor.Application\bin\Debug\net8.0\SAMGestor.Application.dll
+D:\Projects\SAMGestor\src\SAMGestor.Application\bin\Debug\net8.0\SAMGestor.Application.pdb
+D:\Projects\SAMGestor\src\SAMGestor.Application\bin\Debug\net8.0\SAMGestor.Domain.dll
+D:\Projects\SAMGestor\src\SAMGestor.Application\bin\Debug\net8.0\SAMGestor.Domain.pdb
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.csproj.AssemblyReference.cache
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.AssemblyInfoInputs.cache
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.AssemblyInfo.cs
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.csproj.CoreCompileInputs.cache
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGesto.F5574EAE.Up2Date
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.dll
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\refint\SAMGestor.Application.dll
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\SAMGestor.Application.pdb
+D:\Projects\SAMGestor\src\SAMGestor.Application\obj\Debug\net8.0\ref\SAMGestor.Application.dll
