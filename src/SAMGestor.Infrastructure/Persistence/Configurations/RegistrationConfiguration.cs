@@ -18,11 +18,13 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
         builder.OwnsOne(r => r.Cpf, c =>
         {
             c.Property(p => p.Value).HasColumnName("cpf").HasMaxLength(11).IsRequired();
+            c.HasIndex(p => p.Value).IsUnique();
         });
 
         builder.OwnsOne(r => r.Email, e =>
         {
             e.Property(p => p.Value).HasColumnName("email").HasMaxLength(160).IsRequired();
+            e.HasIndex(p => p.Value).IsUnique();
         });
 
         builder.OwnsOne(r => r.PhotoUrl, u =>
@@ -44,8 +46,5 @@ public class RegistrationConfiguration : IEntityTypeConfiguration<Registration>
         builder.Property(r => r.Region).HasColumnName("region").HasMaxLength(60).IsRequired();
         builder.Property(r => r.CompletedRetreat).HasColumnName("completed_retreat").IsRequired();
         builder.Property(r => r.RegistrationDate).HasColumnName("registration_date").IsRequired();
-
-        builder.HasIndex(r => r.Cpf).IsUnique();
-        builder.HasIndex(r => r.Email).IsUnique();
     }
 }

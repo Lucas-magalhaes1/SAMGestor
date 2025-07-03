@@ -19,6 +19,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.OwnsOne(u => u.Email, e =>
         {
             e.Property(p => p.Value).HasColumnName("email").HasMaxLength(160).IsRequired();
+            e.HasIndex(p => p.Value).IsUnique();
         });
 
         builder.OwnsOne(u => u.PasswordHash, p =>
@@ -29,7 +30,5 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Phone).HasColumnName("phone").HasMaxLength(20).IsRequired();
         builder.Property(u => u.Role).HasColumnName("role").HasConversion<string>().IsRequired();
         builder.Property(u => u.Enabled).HasColumnName("enabled").IsRequired();
-
-        builder.HasIndex(u => u.Email).IsUnique();
     }
 }
