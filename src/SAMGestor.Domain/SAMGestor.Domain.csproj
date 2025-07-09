@@ -13,9 +13,7 @@
   <ItemGroup>
     <Folder Include="Events\Base\" />
     <Folder Include="Exceptions\" />
-    <Folder Include="Interfaces\" />
     <Folder Include="Services\" />
-    <Folder Include="Specifications\" />
   </ItemGroup>
 
 </Project>

@@ -15,10 +15,16 @@ public class Tent : Entity<Guid>
 
     public Tent(TentNumber number, TentCategory category, int capacity, Guid retreatId)
     {
-        Id = Guid.NewGuid();
-        Number = number;
-        Category = category;
-        Capacity = capacity;
+        if (!Enum.IsDefined(typeof(TentCategory), category))
+            throw new ArgumentException(nameof(category));
+
+        if (capacity <= 0)
+            throw new ArgumentException(nameof(capacity));
+
+        Id        = Guid.NewGuid();
+        Number    = number;
+        Category  = category;
+        Capacity  = capacity;
         RetreatId = retreatId;
     }
 }
