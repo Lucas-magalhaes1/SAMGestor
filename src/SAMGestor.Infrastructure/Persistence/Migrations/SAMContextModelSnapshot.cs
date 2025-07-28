@@ -22,6 +22,21 @@ namespace SAMGestor.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SAMGestor.Domain.Entities.BlockedCpf", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("blocked_cpfs", (string)null);
+                });
+
             modelBuilder.Entity("SAMGestor.Domain.Entities.ChangeLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -167,6 +182,35 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.ToTable("payments", (string)null);
                 });
 
+            modelBuilder.Entity("SAMGestor.Domain.Entities.RegionConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Observation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("observation");
+
+                    b.Property<Guid>("RetreatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retreat_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetreatId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("region_configs", (string)null);
+                });
+
             modelBuilder.Entity("SAMGestor.Domain.Entities.Registration", b =>
                 {
                     b.Property<Guid>("Id")
@@ -247,6 +291,10 @@ namespace SAMGestor.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("ContemplationClosed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("contemplation_closed");
+
                     b.Property<string>("Edition")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -256,6 +304,14 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date")
                         .HasColumnName("end_date");
+
+                    b.Property<int>("FemaleSlots")
+                        .HasColumnType("integer")
+                        .HasColumnName("female_slots");
+
+                    b.Property<int>("MaleSlots")
+                        .HasColumnType("integer")
+                        .HasColumnName("male_slots");
 
                     b.Property<DateOnly>("RegistrationEnd")
                         .HasColumnType("date")
@@ -274,10 +330,6 @@ namespace SAMGestor.Infrastructure.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
                         .HasColumnName("theme");
-
-                    b.Property<int>("TotalSlots")
-                        .HasColumnType("integer")
-                        .HasColumnName("total_slots");
 
                     b.HasKey("Id");
 
@@ -390,6 +442,67 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("SAMGestor.Domain.Entities.WaitingListItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_id");
+
+                    b.Property<Guid>("RetreatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retreat_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegistrationId")
+                        .IsUnique();
+
+                    b.HasIndex("RetreatId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("waiting_list_items", (string)null);
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.BlockedCpf", b =>
+                {
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.CPF", "Cpf", b1 =>
+                        {
+                            b1.Property<Guid>("BlockedCpfId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(11)
+                                .HasColumnType("character varying(11)")
+                                .HasColumnName("cpf");
+
+                            b1.HasKey("BlockedCpfId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("blocked_cpfs");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BlockedCpfId");
+                        });
+
+                    b.Navigation("Cpf")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SAMGestor.Domain.Entities.Family", b =>
                 {
                     b.OwnsOne("SAMGestor.Domain.ValueObjects.FullName", "Name", b1 =>
@@ -444,11 +557,56 @@ namespace SAMGestor.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SAMGestor.Domain.Entities.RegionConfig", b =>
+                {
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.Percentage", "TargetPercentage", b1 =>
+                        {
+                            b1.Property<Guid>("RegionConfigId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Value")
+                                .HasColumnType("numeric(5,2)")
+                                .HasColumnName("target_percentage");
+
+                            b1.HasKey("RegionConfigId");
+
+                            b1.ToTable("region_configs");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RegionConfigId");
+                        });
+
+                    b.Navigation("TargetPercentage")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SAMGestor.Domain.Entities.Registration", b =>
                 {
                     b.HasOne("SAMGestor.Domain.Entities.Family", null)
                         .WithMany("Members")
                         .HasForeignKey("FamilyId");
+
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.CPF", "Cpf", b1 =>
+                        {
+                            b1.Property<Guid>("RegistrationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(11)
+                                .HasColumnType("character varying(11)")
+                                .HasColumnName("cpf");
+
+                            b1.HasKey("RegistrationId");
+
+                            b1.HasIndex("Value")
+                                .IsUnique();
+
+                            b1.ToTable("registrations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RegistrationId");
+                        });
 
                     b.OwnsOne("SAMGestor.Domain.ValueObjects.EmailAddress", "Email", b1 =>
                         {
@@ -491,28 +649,6 @@ namespace SAMGestor.Infrastructure.Migrations
                                 .HasForeignKey("RegistrationId");
                         });
 
-                    b.OwnsOne("SAMGestor.Domain.ValueObjects.CPF", "Cpf", b1 =>
-                        {
-                            b1.Property<Guid>("RegistrationId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasMaxLength(11)
-                                .HasColumnType("character varying(11)")
-                                .HasColumnName("cpf");
-
-                            b1.HasKey("RegistrationId");
-
-                            b1.HasIndex("Value")
-                                .IsUnique();
-
-                            b1.ToTable("registrations");
-
-                            b1.WithOwner()
-                                .HasForeignKey("RegistrationId");
-                        });
-
                     b.OwnsOne("SAMGestor.Domain.ValueObjects.UrlAddress", "PhotoUrl", b1 =>
                         {
                             b1.Property<Guid>("RegistrationId")
@@ -546,6 +682,52 @@ namespace SAMGestor.Infrastructure.Migrations
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Retreat", b =>
                 {
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.Money", "FeeFazer", b1 =>
+                        {
+                            b1.Property<Guid>("RetreatId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("fee_fazer_amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("character varying(3)")
+                                .HasColumnName("fee_fazer_currency");
+
+                            b1.HasKey("RetreatId");
+
+                            b1.ToTable("retreats");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RetreatId");
+                        });
+
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.Money", "FeeServir", b1 =>
+                        {
+                            b1.Property<Guid>("RetreatId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("numeric(18,2)")
+                                .HasColumnName("fee_servir_amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("character varying(3)")
+                                .HasColumnName("fee_servir_currency");
+
+                            b1.HasKey("RetreatId");
+
+                            b1.ToTable("retreats");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RetreatId");
+                        });
+
                     b.OwnsOne("SAMGestor.Domain.ValueObjects.FullName", "Name", b1 =>
                         {
                             b1.Property<Guid>("RetreatId")
@@ -598,6 +780,12 @@ namespace SAMGestor.Infrastructure.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("RetreatId");
                         });
+
+                    b.Navigation("FeeFazer")
+                        .IsRequired();
+
+                    b.Navigation("FeeServir")
+                        .IsRequired();
 
                     b.Navigation("Name")
                         .IsRequired();

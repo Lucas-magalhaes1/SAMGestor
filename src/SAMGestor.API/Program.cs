@@ -1,20 +1,31 @@
+using MediatR;
 using SAMGestor.Infrastructure.Extensions;
+using SAMGestor.API.Extensions;
+using SAMGestor.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
+builder.Services.AddControllers(); 
+
+builder.Services.AddSwaggerDocumentation();
+
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
+// Infraestrutura (DbContext, MediatR, UoW, etc.)
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();   
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerDocumentation();
 }
 
 app.UseHttpsRedirection();
+
+app.MapControllers(); 
 
 app.Run();

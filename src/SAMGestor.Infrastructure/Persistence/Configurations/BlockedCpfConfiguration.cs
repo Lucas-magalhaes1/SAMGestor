@@ -14,10 +14,10 @@ public class BlockedCpfConfiguration : IEntityTypeConfiguration<BlockedCpf>
         builder.OwnsOne(b => b.Cpf, c =>
         {
             c.Property(p => p.Value).HasColumnName("cpf").HasMaxLength(11).IsRequired();
+            
+            c.HasIndex(p => p.Value).IsUnique();
         });
 
         builder.Property(b => b.CreatedAt).HasColumnName("created_at").IsRequired();
-
-        builder.HasIndex("cpf").IsUnique();
     }
 }
