@@ -13,4 +13,10 @@ public interface IRetreatRepository
         FullName name,
         string   edition,
         CancellationToken ct = default);
+    
+    Task<IReadOnlyList<Retreat>> ListAsync(
+        int skip,
+        int take,
+        CancellationToken ct = default);
+    Task<int> CountAsync(CancellationToken ct = default); 
 }
