@@ -7,21 +7,18 @@ using SAMGestor.Infrastructure.Persistence;
 
 namespace SAMGestor.Infrastructure.Repositories;
 
-public sealed class RetreatRepository : IRetreatRepository
+public sealed class RetreatRepository(SAMContext ctx) : IRetreatRepository
 {
-    private readonly SAMContext _ctx;
-    public RetreatRepository(SAMContext ctx) => _ctx = ctx;
-
     public async Task AddAsync(Retreat retreat, CancellationToken ct = default)
-        => await _ctx.Retreats.AddAsync(retreat, ct);
+        => await ctx.Retreats.AddAsync(retreat, ct);
 
     public Task<Retreat?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        => _ctx.Retreats.FirstOrDefaultAsync(r => r.Id == id, ct);
+        => ctx.Retreats.FirstOrDefaultAsync(r => r.Id == id, ct);
 
     public Task<bool> ExistsByNameEditionAsync(
         FullName name, string edition, CancellationToken ct = default)
     {
-        return _ctx.Retreats.AnyAsync(r =>
+        return ctx.Retreats.AnyAsync(r =>
             r.Name.Value == name.Value && r.Edition == edition.Trim(), ct);
     }
 }
