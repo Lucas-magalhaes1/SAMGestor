@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Application.Features.Retreats.Create;
+using SAMGestor.Application.Features.Retreats.GetAll;
 using SAMGestor.Application.Features.Retreats.GetById;
 
 namespace SAMGestor.API.Controllers;
@@ -21,6 +22,14 @@ public class RetreatsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var response = await mediator.Send(new GetRetreatByIdQuery(id));
+        return Ok(response);
+    }
+    [HttpGet]
+    public async Task<IActionResult> List(
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20)
+    {
+        var response = await mediator.Send(new ListRetreatsQuery(skip, take));
         return Ok(response);
     }
 }
