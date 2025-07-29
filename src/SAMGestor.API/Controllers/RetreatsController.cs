@@ -1,25 +1,26 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Application.Features.Retreats.Create;
+using SAMGestor.Application.Features.Retreats.GetById;
 
 namespace SAMGestor.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class RetreatsController : ControllerBase
+public class RetreatsController(IMediator mediator) : ControllerBase
 {
-    private readonly IMediator _mediator;
-    public RetreatsController(IMediator mediator) => _mediator = mediator;
-
     [HttpPost]
     public async Task<IActionResult> CreateRetreat(CreateRetreatCommand command)
     {
-        var result = await _mediator.Send(command);
+        var result = await mediator.Send(command);
         return CreatedAtAction(nameof(GetById),
             new { id = result.RetreatId }, result);
     }
 
-    // Placeholder – future query handler
     [HttpGet("{id:guid}")]
-    public IActionResult GetById(Guid id) => NotFound();
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var response = await mediator.Send(new GetRetreatByIdQuery(id));
+        return Ok(response);
+    }
 }
