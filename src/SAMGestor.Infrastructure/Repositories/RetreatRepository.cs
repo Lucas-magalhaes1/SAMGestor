@@ -33,4 +33,11 @@ public sealed class RetreatRepository(SAMContext ctx) : IRetreatRepository
     }
     public Task<int> CountAsync(CancellationToken ct = default)
         => ctx.Retreats.CountAsync(ct);
+    
+    public Task RemoveAsync(Retreat retreat, CancellationToken ct = default)
+    {
+        ctx.Retreats.Remove(retreat);
+        return Task.CompletedTask;
+    }
+
 }
