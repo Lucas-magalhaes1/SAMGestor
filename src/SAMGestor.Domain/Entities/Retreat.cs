@@ -67,6 +67,43 @@ public class Retreat : Entity<Guid>
 
         ContemplationClosed = false;
     }
+    
+    public void UpdateDetails(
+        FullName   name,
+        string     edition,
+        string     theme,
+        DateOnly   startDate,
+        DateOnly   endDate,
+        int        maleSlots,
+        int        femaleSlots,
+        DateOnly   registrationStart,
+        DateOnly   registrationEnd,
+        Money      feeFazer,
+        Money      feeServir,
+        Percentage westPct,
+        Percentage othersPct)
+    {
+        if (endDate < startDate)                 throw new ArgumentException(nameof(endDate));
+        if (registrationEnd < registrationStart) throw new ArgumentException(nameof(registrationEnd));
+
+        Name     = name;
+        Edition  = edition.Trim();
+        Theme    = theme.Trim();
+        StartDate = startDate;
+        EndDate   = endDate;
+
+        MaleSlots   = maleSlots;
+        FemaleSlots = femaleSlots;
+
+        RegistrationStart = registrationStart;
+        RegistrationEnd   = registrationEnd;
+
+        FeeFazer  = feeFazer;
+        FeeServir = feeServir;
+
+        WestRegionPercentage   = westPct;
+        OtherRegionsPercentage = othersPct;
+    }
 
     public void CloseContemplation() => ContemplationClosed = true;
 
