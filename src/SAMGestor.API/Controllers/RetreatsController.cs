@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Application.Features.Retreats.Create;
+using SAMGestor.Application.Features.Retreats.Delete;
 using SAMGestor.Application.Features.Retreats.GetAll;
 using SAMGestor.Application.Features.Retreats.GetById;
 using SAMGestor.Application.Features.Retreats.Update;
@@ -42,4 +43,12 @@ public class RetreatsController(IMediator mediator) : ControllerBase
         var result  = await mediator.Send(command);
         return Ok(Response);
     }
+    
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await mediator.Send(new DeleteRetreatCommand(id));
+        return NoContent();
+    }
+    
 }
