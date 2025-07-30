@@ -1,4 +1,5 @@
 using MediatR;
+using SAMGestor.Application.Common.Retreat;
 using SAMGestor.Domain.ValueObjects;
 
 namespace SAMGestor.Application.Features.Retreats.Create;
@@ -17,4 +18,4 @@ public record CreateRetreatCommand(
     Money      FeeServir,
     Percentage WestRegionPct,
     Percentage OtherRegionPct
-) : IRequest<CreateRetreatResponse>;
+) : IRequest<CreateRetreatResponse>, IRetreatCommand;
