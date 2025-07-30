@@ -19,4 +19,6 @@ public interface IRetreatRepository
         int take,
         CancellationToken ct = default);
     Task<int> CountAsync(CancellationToken ct = default); 
+    
+    Task RemoveAsync(Retreat retreat, CancellationToken ct = default);
 }
