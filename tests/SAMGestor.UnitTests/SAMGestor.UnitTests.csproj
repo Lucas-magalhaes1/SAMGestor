@@ -28,7 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Builders\" />
     <Folder Include="Dependencies\Fakes\" />
   </ItemGroup>
 
