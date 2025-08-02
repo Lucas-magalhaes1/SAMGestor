@@ -5,18 +5,14 @@ using SAMGestor.Domain.Interfaces;
 
 namespace SAMGestor.Application.Features.Retreats.GetById;
 
-public sealed class GetRetreatByIdHandler
+public sealed class GetRetreatByIdHandler(IRetreatRepository repo)
     : IRequestHandler<GetRetreatByIdQuery, GetRetreatByIdResponse>
 {
-    private readonly IRetreatRepository _repo;
-
-    public GetRetreatByIdHandler(IRetreatRepository repo) => _repo = repo;
-
     public async Task<GetRetreatByIdResponse> Handle(
         GetRetreatByIdQuery query,
         CancellationToken   ct)
     {
-        var retreat = await _repo.GetByIdAsync(query.Id, ct);
+        var retreat = await repo.GetByIdAsync(query.Id, ct);
         if (retreat is null)
             throw new NotFoundException(nameof(Retreat), query.Id);
 

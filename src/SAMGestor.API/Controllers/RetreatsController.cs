@@ -41,7 +41,7 @@ public class RetreatsController(IMediator mediator) : ControllerBase
     {
         var command = body with { Id = id };          
         var result  = await mediator.Send(command);
-        return Ok(Response);
+        return Ok(result);
     }
     
     [HttpDelete("{id:guid}")]
