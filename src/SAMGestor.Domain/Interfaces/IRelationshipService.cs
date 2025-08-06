@@ -2,6 +2,6 @@ namespace SAMGestor.Domain.Interfaces;
 
 public interface IRelationshipService
 {
-    bool AreDirectRelatives(Guid registrationId1, Guid registrationId2);
-    bool AreSpouses(Guid registrationId1, Guid registrationId2);
+    Task<bool> AreSpousesAsync(Guid id1, Guid id2, CancellationToken ct = default);
+    Task<bool> AreDirectRelativesAsync(Guid id1, Guid id2, CancellationToken ct = default);
 }

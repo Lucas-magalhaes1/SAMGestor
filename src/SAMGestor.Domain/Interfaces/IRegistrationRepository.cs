@@ -5,11 +5,20 @@ namespace SAMGestor.Domain.Interfaces;
 
 public interface IRegistrationRepository
 {
-    Registration? GetById(Guid id); 
-    
-    IEnumerable<Registration> GetAllByRetreatId(Guid retreatId);
-    Registration? GetByCpfAndRetreat(CPF cpf, Guid retreatId);
-    bool IsCpfBlocked(CPF cpf);
-    
-    IEnumerable<Registration> GetAllByCpf(CPF cpf);
+    Task AddAsync(Registration reg, CancellationToken ct = default);
+    Task<bool> ExistsByCpfInRetreatAsync(CPF cpf, Guid retreatId, CancellationToken ct = default);
+    Task<bool> IsCpfBlockedAsync(CPF cpf, CancellationToken ct = default);
+    Task<Registration?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<Registration>> ListAsync(
+        Guid retreatId,
+        string? status = null,
+        string? region = null,
+        int skip = 0,
+        int take = 20,
+        CancellationToken ct = default);
+    Task<int> CountAsync(
+        Guid retreatId,
+        string? status = null,
+        string? region = null,
+        CancellationToken ct = default);
 }
