@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Infrastructure.Persistence;
@@ -32,6 +33,8 @@ public static class ServiceCollectionExtensions
         
         services.AddMediatR(typeof(CreateRetreatHandler).Assembly);
         services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
+        services.AddValidatorsFromAssemblyContaining<CreateRegistrationValidator>();
+        
         
         return services;
     }

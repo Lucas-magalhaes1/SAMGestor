@@ -1,42 +1,89 @@
+using Microsoft.EntityFrameworkCore;
 using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
 using SAMGestor.Infrastructure.Persistence;
 
-namespace SAMGestor.Infrastructure.Repositories
+namespace SAMGestor.Infrastructure.Repositories;
+
+public sealed class RegistrationRepository : IRegistrationRepository
 {
-    public class RegistrationRepository : IRegistrationRepository
+    private readonly SAMContext _ctx;
+    public RegistrationRepository(SAMContext ctx) => _ctx = ctx;
+    
+    public async Task AddAsync(Registration reg, CancellationToken ct = default)
+        => await _ctx.Registrations.AddAsync(reg, ct);
+    
+    public Task<Registration?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => _ctx.Registrations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public Task<bool> ExistsByCpfInRetreatAsync(CPF cpf, Guid retreatId, CancellationToken ct = default)
+        => _ctx.Registrations
+            .AnyAsync(r =>
+                    r.RetreatId == retreatId
+                    && r.Cpf.Value == cpf.Value,  
+                ct);
+
+    public Task<bool> IsCpfBlockedAsync(CPF cpf, CancellationToken ct = default)
+        => _ctx.BlockedCpfs
+            .AnyAsync(b =>
+                    b.Cpf.Value == cpf.Value,     
+                ct);  
+    
+    public async Task<IReadOnlyList<Registration>> ListAsync(
+        Guid retreatId,
+        string? status = null,
+        string? region = null,
+        int skip = 0,
+        int take = 20,
+        CancellationToken ct = default)
     {
-        private readonly SAMContext _context;
+        var query = _ctx.Registrations
+            .Where(r => r.RetreatId == retreatId);
 
-        public RegistrationRepository(SAMContext context)
+        if (!string.IsNullOrEmpty(status))
         {
-            _context = context;
+            if (Enum.TryParse<RegistrationStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
+            else
+            {
+            }
         }
 
-        public Registration? GetById(Guid id)
+        if (!string.IsNullOrEmpty(region))
+            query = query.Where(r => r.Region == region);
+
+        return await query
+            .Skip(skip)
+            .Take(take)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
+    public Task<int> CountAsync(
+        Guid retreatId,
+        string? status = null,
+        string? region = null,
+        CancellationToken ct = default)
+    {
+        var query = _ctx.Registrations.Where(r => r.RetreatId == retreatId);
+
+        if (!string.IsNullOrEmpty(status))
         {
-            throw new NotImplementedException();
+            if (Enum.TryParse<RegistrationStatus>(status, true, out var parsedStatus))
+            {
+                query = query.Where(r => r.Status == parsedStatus);
+            }
         }
 
-        public IEnumerable<Registration> GetAllByRetreatId(Guid retreatId)
-        {
-            throw new NotImplementedException();
-        }
+        if (!string.IsNullOrEmpty(region))
+            query = query.Where(r => r.Region == region);
 
-        public Registration? GetByCpfAndRetreat(CPF cpf, Guid retreatId)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool IsCpfBlocked(CPF cpf)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<Registration> GetAllByCpf(CPF cpf)
-        {
-            throw new NotImplementedException();
-        }
+        return query.CountAsync(ct);
     }
 }
