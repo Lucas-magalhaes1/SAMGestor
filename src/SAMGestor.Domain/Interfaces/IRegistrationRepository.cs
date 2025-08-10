@@ -1,4 +1,5 @@
 using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.ValueObjects;
 
 namespace SAMGestor.Domain.Interfaces;
@@ -21,4 +22,20 @@ public interface IRegistrationRepository
         string? status = null,
         string? region = null,
         CancellationToken ct = default);
+    
+    Task<int> CountByStatusesAndGenderAsync(
+        Guid retreatId,
+        RegistrationStatus[] statuses,
+        Gender gender,
+        CancellationToken ct);
+
+    Task<List<Guid>> ListAppliedIdsByGenderAsync(
+        Guid retreatId,
+        Gender gender,
+        CancellationToken ct);
+
+    Task UpdateStatusesAsync(
+        IEnumerable<Guid> registrationIds,
+        RegistrationStatus newStatus,
+        CancellationToken ct);
 }

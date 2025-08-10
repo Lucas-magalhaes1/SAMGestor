@@ -1,6 +1,12 @@
-namespace SAMGestor.Application.Interfaces;
+using System.Data;
 
-public interface IUnitOfWork
+namespace SAMGestor.Application.Interfaces
 {
-    Task SaveChangesAsync(CancellationToken ct = default);
+    public interface IUnitOfWork
+    {
+        Task SaveChangesAsync(CancellationToken ct = default);
+        Task BeginTransactionAsync(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken ct = default);
+        Task CommitTransactionAsync(CancellationToken ct = default);
+        Task RollbackTransactionAsync(CancellationToken ct = default);
+    }
 }

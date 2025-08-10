@@ -36,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<CreateRegistrationValidator>();
         
         
+        
         return services;
     }
 }
