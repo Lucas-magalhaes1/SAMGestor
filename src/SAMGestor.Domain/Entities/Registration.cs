@@ -59,4 +59,9 @@ public class Registration : Entity<Guid>
 
     public void Disable() => Enabled = false;
     public void CompleteRetreat() => CompletedRetreat = true;
+    
+    public void SetStatus(RegistrationStatus newStatus)
+    {
+        Status = newStatus;
+    }
 }
