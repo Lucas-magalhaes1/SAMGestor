@@ -31,7 +31,7 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
 
         builder.Property(r => r.StartDate)
                .HasColumnName("start_date")
-               .IsRequired();
+               .IsRequired();      
 
         builder.Property(r => r.EndDate)
                .HasColumnName("end_date")
