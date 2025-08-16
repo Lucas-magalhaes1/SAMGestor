@@ -1,29 +1,109 @@
 version: "3.9"
 
 services:
-  db:                     
-    image: postgres:16      
+  db:
+    image: postgres:16
     container_name: samgestor-db
-    environment:            
+    environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"         
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data   
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  pgadmin:                  
+  pgadmin:
     image: dpage/pgadmin4:8
     container_name: samgestor-pgadmin
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     ports:
-      - "5050:80"           
+      - "5050:80"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: samgestor-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: samgestor-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  # === Core API (opcional) ===
+  coreapi:
+    build:
+      context: ..
+      dockerfile: src/SAMGestor.API/Dockerfile
+    container_name: samgestor-coreapi
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      DB_SCHEMA: core
+      MessageBus__Host: rabbitmq
+      MessageBus__User: ${RABBITMQ_USER}
+      MessageBus__Pass: ${RABBITMQ_PASS}
+      Smtp__Host: mailhog
+      Smtp__Port: 1025
+    ports:
+      - "5000:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+
+  # === Notification Service ===
+  notificationapi:
+    build:
+      context: ..
+      dockerfile: services/notification/src/SAMGestor.Notification.API/Dockerfile
+    container_name: samgestor-notificationapi
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      DB_SCHEMA: notification
+      MessageBus__Host: rabbitmq
+      MessageBus__User: ${RABBITMQ_USER}
+      MessageBus__Pass: ${RABBITMQ_PASS}
+      Smtp__Host: mailhog
+      Smtp__Port: 1025
+    ports:
+      - "5001:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
 
 volumes:
-  postgres-data:            
+  postgres-data:
