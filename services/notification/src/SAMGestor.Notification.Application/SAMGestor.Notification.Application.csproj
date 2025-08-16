@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SAMGestor.Notification.Domain\SAMGestor.Notification.Domain.csproj" />
+    <ProjectReference Include="..\SAMGestor.Notification.Infrastructure\SAMGestor.Notification.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\shared\contracts\SAMGestor.Contracts\SAMGestor.Contracts.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
