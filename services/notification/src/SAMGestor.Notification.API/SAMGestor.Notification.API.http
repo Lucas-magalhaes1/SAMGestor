@@ -1,0 +1,6 @@
+@SAMGestor.Notification.API_HostAddress = http://localhost:5283
+
+GET {{SAMGestor.Notification.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
