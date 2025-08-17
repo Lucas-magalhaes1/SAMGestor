@@ -53,7 +53,6 @@ services:
       - "1025:1025"
       - "8025:8025"
 
-  # === Core API (opcional) ===
   coreapi:
     build:
       context: ..
@@ -78,8 +77,7 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
-
-  # === Notification Service ===
+        
   notificationapi:
     build:
       context: ..

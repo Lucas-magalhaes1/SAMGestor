@@ -17,6 +17,7 @@ namespace SAMGestor.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .HasDefaultSchema("core")
                 .HasAnnotation("ProductVersion", "8.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -34,7 +35,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("blocked_cpfs", (string)null);
+                    b.ToTable("blocked_cpfs", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.ChangeLog", b =>
@@ -69,7 +70,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("change_logs", (string)null);
+                    b.ToTable("change_logs", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Family", b =>
@@ -96,7 +97,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("families", (string)null);
+                    b.ToTable("families", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.MessageSent", b =>
@@ -124,7 +125,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("messages_sent", (string)null);
+                    b.ToTable("messages_sent", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.MessageTemplate", b =>
@@ -150,7 +151,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("message_templates", (string)null);
+                    b.ToTable("message_templates", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Payment", b =>
@@ -179,7 +180,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("payments", (string)null);
+                    b.ToTable("payments", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.RegionConfig", b =>
@@ -208,7 +209,7 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.HasIndex("RetreatId", "Name")
                         .IsUnique();
 
-                    b.ToTable("region_configs", (string)null);
+                    b.ToTable("region_configs", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Registration", b =>
@@ -307,7 +308,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasIndex("RetreatId", "Status", "Gender");
 
-                    b.ToTable("registrations", (string)null);
+                    b.ToTable("registrations", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Retreat", b =>
@@ -358,7 +359,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("retreats", (string)null);
+                    b.ToTable("retreats", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Team", b =>
@@ -387,7 +388,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("teams", (string)null);
+                    b.ToTable("teams", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.TeamMember", b =>
@@ -414,7 +415,7 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.HasIndex("TeamId", "RegistrationId")
                         .IsUnique();
 
-                    b.ToTable("team_members", (string)null);
+                    b.ToTable("team_members", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Tent", b =>
@@ -438,7 +439,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("tents", (string)null);
+                    b.ToTable("tents", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.User", b =>
@@ -464,7 +465,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("users", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.WaitingListItem", b =>
@@ -497,7 +498,7 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.HasIndex("RetreatId", "Position")
                         .IsUnique();
 
-                    b.ToTable("waiting_list_items", (string)null);
+                    b.ToTable("waiting_list_items", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.BlockedCpf", b =>
@@ -518,7 +519,7 @@ namespace SAMGestor.Infrastructure.Migrations
                             b1.HasIndex("Value")
                                 .IsUnique();
 
-                            b1.ToTable("blocked_cpfs");
+                            b1.ToTable("blocked_cpfs", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("BlockedCpfId");
@@ -543,7 +544,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("FamilyId");
 
-                            b1.ToTable("families");
+                            b1.ToTable("families", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("FamilyId");
@@ -572,7 +573,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("PaymentId");
 
-                            b1.ToTable("payments");
+                            b1.ToTable("payments", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("PaymentId");
@@ -595,7 +596,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RegionConfigId");
 
-                            b1.ToTable("region_configs");
+                            b1.ToTable("region_configs", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RegionConfigId");
@@ -630,7 +631,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RegistrationId");
 
-                            b1.ToTable("registrations");
+                            b1.ToTable("registrations", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RegistrationId");
@@ -649,7 +650,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RegistrationId");
 
-                            b1.ToTable("registrations");
+                            b1.ToTable("registrations", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RegistrationId");
@@ -680,7 +681,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RetreatId");
 
-                            b1.ToTable("retreats");
+                            b1.ToTable("retreats", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RetreatId");
@@ -703,7 +704,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RetreatId");
 
-                            b1.ToTable("retreats");
+                            b1.ToTable("retreats", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RetreatId");
@@ -722,7 +723,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RetreatId");
 
-                            b1.ToTable("retreats");
+                            b1.ToTable("retreats", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RetreatId");
@@ -739,7 +740,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RetreatId");
 
-                            b1.ToTable("retreats");
+                            b1.ToTable("retreats", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RetreatId");
@@ -756,7 +757,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("RetreatId");
 
-                            b1.ToTable("retreats");
+                            b1.ToTable("retreats", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("RetreatId");
@@ -793,7 +794,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("TeamId");
 
-                            b1.ToTable("teams");
+                            b1.ToTable("teams", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("TeamId");
@@ -825,7 +826,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("TentId");
 
-                            b1.ToTable("tents");
+                            b1.ToTable("tents", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("TentId");
@@ -850,7 +851,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("UserId");
 
-                            b1.ToTable("users");
+                            b1.ToTable("users", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("UserId");
@@ -872,7 +873,7 @@ namespace SAMGestor.Infrastructure.Migrations
                             b1.HasIndex("Value")
                                 .IsUnique();
 
-                            b1.ToTable("users");
+                            b1.ToTable("users", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("UserId");
@@ -891,7 +892,7 @@ namespace SAMGestor.Infrastructure.Migrations
 
                             b1.HasKey("UserId");
 
-                            b1.ToTable("users");
+                            b1.ToTable("users", "core");
 
                             b1.WithOwner()
                                 .HasForeignKey("UserId");

@@ -14,9 +14,15 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<SAMContext
             .AddEnvironmentVariables()
             .Build();
 
-        var optionsBuilder = new DbContextOptionsBuilder<SAMContext>();
-        optionsBuilder.UseNpgsql(configuration.GetConnectionString("Default"));
+        var cs = configuration.GetConnectionString("Default")
+                 ?? "Host=localhost;Port=5432;Database=samgestor_db;Username=sam_user;Password=SuP3rS3nh4!";
 
-        return new SAMContext(optionsBuilder.Options);
+        var schema = Environment.GetEnvironmentVariable("DB_SCHEMA") ?? "core";
+
+        var options = new DbContextOptionsBuilder<SAMContext>()
+            .UseNpgsql(cs, o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema))
+            .Options;
+
+        return new SAMContext(options);
     }
 }

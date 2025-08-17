@@ -20,10 +20,15 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        
+        var schema = SAMContext.Schema; 
     
         services.AddDbContext<SAMContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("Default")));
-
+            options.UseNpgsql(
+                configuration.GetConnectionString("Default"),
+                o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema)
+            )
+        );
         
         services.AddScoped<IRelationshipService, HeuristicRelationshipService>();
         services.AddScoped<IRetreatRepository, RetreatRepository>();

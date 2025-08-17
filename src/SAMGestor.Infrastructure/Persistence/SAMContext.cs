@@ -3,11 +3,12 @@ using SAMGestor.Domain.Entities;
 
 namespace SAMGestor.Infrastructure.Persistence;
 
-public class SAMContext : DbContext
+public class SAMContext(DbContextOptions<SAMContext> options) : DbContext(options)
 {
-    public SAMContext(DbContextOptions<SAMContext> options) : base(options) { }
+    public static readonly string Schema =
+        Environment.GetEnvironmentVariable("DB_SCHEMA") ?? "core";
 
-   
+
     public DbSet<User>               Users               => Set<User>();
     public DbSet<Family>             Families            => Set<Family>();
     public DbSet<Retreat>            Retreats            => Set<Retreat>();
@@ -25,6 +26,8 @@ public class SAMContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema(Schema);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(SAMContext).Assembly);
+        base.OnModelCreating(modelBuilder);
     }
 }
