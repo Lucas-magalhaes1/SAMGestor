@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SAMGestor.Notification.Application\SAMGestor.Notification.Application.csproj" />
+    <ProjectReference Include="..\SAMGestor.Notification.Infrastructure\SAMGestor.Notification.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\shared\contracts\SAMGestor.Contracts\SAMGestor.Contracts.csproj" />
+    <ProjectReference Include="..\SAMGestor.Notification.Domain\SAMGestor.Notification.Domain.csproj" />
+    <ProjectReference Include="..\SAMGestor.Notification.Application\SAMGestor.Notification.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -10,7 +12,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
   </ItemGroup>
 
   <PropertyGroup>
