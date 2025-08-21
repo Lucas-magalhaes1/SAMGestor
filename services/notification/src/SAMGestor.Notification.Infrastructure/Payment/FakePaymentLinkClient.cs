@@ -1,0 +1,12 @@
+using SAMGestor.Notification.Application.Abstractions;
+
+namespace SAMGestor.Notification.Infrastructure.Payment;
+
+public class FakePaymentLinkClient : IPaymentLinkClient
+{
+    public Task<string> CreatePaymentLinkAsync(Guid registrationId, Guid participantId, CancellationToken ct)
+    {
+        var link = $"https://pay.local/r/{registrationId}/p/{participantId}";
+        return Task.FromResult(link);
+    }
+}
