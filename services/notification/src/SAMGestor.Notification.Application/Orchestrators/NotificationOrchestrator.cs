@@ -5,31 +5,34 @@ using SAMGestor.Notification.Domain.Enums;
 
 namespace SAMGestor.Notification.Application.Orchestrators;
 
-/// <summary>
-/// Orquestra ações quando eventos chegam (ex.: participant selected) e dispara pelos canais.
-/// </summary>
 public class NotificationOrchestrator
 {
     private readonly INotificationRepository _repo;
-    private readonly IEnumerable<INotificationChannel> _channels; // email, whatsapp...
+    private readonly IEnumerable<INotificationChannel> _channels;
     private readonly ITemplateRenderer _renderer;
     private readonly IEventPublisher _publisher;
+    private readonly IPaymentLinkClient _payment;
 
     public NotificationOrchestrator(
         INotificationRepository repo,
         IEnumerable<INotificationChannel> channels,
         ITemplateRenderer renderer,
-        IEventPublisher publisher)
+        IEventPublisher publisher,
+        IPaymentLinkClient payment)
     {
         _repo = repo;
         _channels = channels;
         _renderer = renderer;
         _publisher = publisher;
+        _payment = payment;
     }
 
     public async Task OnParticipantSelectedAsync(SelectionParticipantSelectedV1 evt, CancellationToken ct)
     {
-        // 1) Monta mensagem de e-mail (MVP)
+        // 1) gera link (stub por enquanto)
+        var paymentLink = await _payment.CreatePaymentLinkAsync(evt.RegistrationId, evt.ParticipantId, ct);
+
+        // template simples
         var templateSubject = "You have been selected for the retreat!";
         var templateBody = """
             Hi {{Name}},
@@ -41,16 +44,14 @@ public class NotificationOrchestrator
             Thank you!
             """;
 
-        // OBS: No MVP, o link de pagamento será buscado via Payment API por outra etapa.
-        // Aqui, apenas demonstraremos com placeholder (você troca isso quando integrar Payment).
-        var variables = new Dictionary<string, string>
+        var vars = new Dictionary<string, string>
         {
             ["Name"] = evt.Name,
-            ["PaymentLink"] = "{{PAYMENT_LINK_WILL_BE_FILLED_BY_NOTIFICATION_WHEN_CALLING_PAYMENT_API}}"
+            ["PaymentLink"] = paymentLink
         };
 
-        var subject = _renderer.Render(templateSubject, variables);
-        var body = _renderer.Render(templateBody, variables);
+        var subject = _renderer.Render(templateSubject, vars);
+        var body = _renderer.Render(templateBody, vars);
 
         var message = new NotificationMessage(
             channel: NotificationChannel.Email,
@@ -67,7 +68,6 @@ public class NotificationOrchestrator
 
         await _repo.AddAsync(message, ct);
 
-        // 2) Dispara por canal de e-mail
         var emailChannel = _channels.Single(c => c.Name == "email");
 
         try
@@ -82,8 +82,7 @@ public class NotificationOrchestrator
                 type: EventTypes.NotificationEmailSentV1,
                 source: "sam.notification",
                 data: new NotificationEmailSentV1(message.Id, evt.RegistrationId, evt.Email, DateTimeOffset.UtcNow),
-                ct: ct
-            );
+                ct: ct);
         }
         catch (Exception ex)
         {
@@ -95,8 +94,7 @@ public class NotificationOrchestrator
                 type: EventTypes.NotificationEmailFailedV1,
                 source: "sam.notification",
                 data: new NotificationEmailFailedV1(message.Id, evt.RegistrationId, evt.Email, ex.Message, DateTimeOffset.UtcNow),
-                ct: ct
-            );
+                ct: ct);
         }
     }
 }
