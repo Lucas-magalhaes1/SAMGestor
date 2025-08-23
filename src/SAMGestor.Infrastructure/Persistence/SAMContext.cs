@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.Domain.Entities;
+using SAMGestor.Infrastructure.Messaging.Outbox;
 
 namespace SAMGestor.Infrastructure.Persistence;
 
@@ -23,10 +24,11 @@ public class SAMContext(DbContextOptions<SAMContext> options) : DbContext(option
     public DbSet<RegionConfig>       RegionConfigs       => Set<RegionConfig>();
     public DbSet<BlockedCpf>         BlockedCpfs         => Set<BlockedCpf>();
     public DbSet<WaitingListItem>    WaitingListItems    => Set<WaitingListItem>();
+    public DbSet<OutboxMessage>      OutboxMessages      => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema(Schema);
+        modelBuilder.HasDefaultSchema("core");
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(SAMContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }
