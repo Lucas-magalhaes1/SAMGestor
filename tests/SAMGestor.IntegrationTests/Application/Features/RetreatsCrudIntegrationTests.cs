@@ -8,7 +8,7 @@ using Xunit;
 
 namespace SAMGestor.IntegrationTests.Application.Features;
 
-public class RetreatsCrudIntegrationTests(CustomWebAppFactory factory) : IClassFixture<CustomWebAppFactory>
+public class RetreatsCrudIntegrationTests(PostgresWebAppFactory factory) : IClassFixture<PostgresWebAppFactory>
 {
     private readonly HttpClient _client = factory.CreateClient();
 
