@@ -6,8 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Interfaces;
-using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Domain.Interfaces;
+using SAMGestor.Infrastructure.Messaging.Outbox;
+using SAMGestor.Infrastructure.Messaging.RabbitMq;
+using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Infrastructure.Repositories;
 using SAMGestor.Infrastructure.Services;
 using SAMGestor.Infrastructure.UnitOfWork;
@@ -20,7 +22,17 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        
+        services
+            .AddPersistence(configuration)
+            .AddMessaging(configuration);
+
+        return services;
+    }
+
+    private static IServiceCollection AddPersistence(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
         var schema = SAMContext.Schema; 
     
         services.AddDbContext<SAMContext>(options =>
@@ -33,15 +45,36 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRelationshipService, HeuristicRelationshipService>();
         services.AddScoped<IRetreatRepository, RetreatRepository>();
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();
-
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         
         services.AddMediatR(typeof(CreateRetreatHandler).Assembly);
         services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
         services.AddValidatorsFromAssemblyContaining<CreateRegistrationValidator>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var mqOpt = new RabbitMqOptions
+        {
+            HostName = configuration["MessageBus:Host"] ?? "rabbitmq",
+            UserName = configuration["MessageBus:User"] ?? "guest",
+            Password = configuration["MessageBus:Pass"] ?? "guest",
+            Exchange = "sam.topic"
+        };
         
+        services.AddSingleton(mqOpt);
+        services.AddSingleton<RabbitMqConnection>();
+        services.AddSingleton<EventPublisher>();
         
+        services.AddScoped<IEventBus, OutboxEventBus>();
         
+        services.AddHostedService<OutboxDispatcher>();
+
+
         return services;
     }
 }

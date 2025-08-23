@@ -21,13 +21,13 @@ namespace SAMGestor.Infrastructure.Repositories
                    .FirstOrDefaultAsync(r => r.Id == id, ct);
 
         public Task<bool> ExistsByCpfInRetreatAsync(CPF cpf, Guid retreatId, CancellationToken ct = default)
-            => _ctx.Registrations
-                   .AnyAsync(r => r.RetreatId == retreatId && r.Cpf.Value == cpf.Value, ct);
+            => _ctx.Registrations.AsNoTracking()
+                .AnyAsync(r => r.RetreatId == retreatId && r.Cpf == cpf, ct);
 
         public Task<bool> IsCpfBlockedAsync(CPF cpf, CancellationToken ct = default)
-            => _ctx.BlockedCpfs
-                   .AnyAsync(b => b.Cpf.Value == cpf.Value, ct);
-
+            => _ctx.BlockedCpfs.AsNoTracking()
+                .AnyAsync(b => b.Cpf == cpf, ct);
+        
         public async Task<IReadOnlyList<Registration>> ListAsync(
             Guid retreatId, string? status = null, string? region = null,
             int skip = 0, int take = 20, CancellationToken ct = default)

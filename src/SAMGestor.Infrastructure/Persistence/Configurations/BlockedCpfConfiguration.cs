@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using SAMGestor.Domain.ValueObjects;
 using SAMGestor.Domain.Entities;
 
 namespace SAMGestor.Infrastructure.Persistence.Configurations;
@@ -11,13 +12,20 @@ public class BlockedCpfConfiguration : IEntityTypeConfiguration<BlockedCpf>
         builder.ToTable("blocked_cpfs");
         builder.HasKey(b => b.Id);
 
-        builder.OwnsOne(b => b.Cpf, c =>
-        {
-            c.Property(p => p.Value).HasColumnName("cpf").HasMaxLength(11).IsRequired();
-            
-            c.HasIndex(p => p.Value).IsUnique();
-        });
+        // >>> Remova o bloco OwnsOne e use converter:
+        builder.Property(b => b.Cpf)
+            .HasConversion(
+                toProvider   => toProvider.Value,
+                fromProvider => new CPF(fromProvider)
+            )
+            .HasColumnName("cpf")
+            .HasMaxLength(11)
+            .IsRequired();
 
-        builder.Property(b => b.CreatedAt).HasColumnName("created_at").IsRequired();
+        builder.HasIndex(b => b.Cpf).IsUnique();
+
+        builder.Property(b => b.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
     }
 }

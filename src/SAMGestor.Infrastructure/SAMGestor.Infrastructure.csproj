@@ -1,17 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\shared\contracts\SAMGestor.Contracts\SAMGestor.Contracts.csproj" />
     <ProjectReference Include="..\SAMGestor.Application\SAMGestor.Application.csproj" />
     <ProjectReference Include="..\SAMGestor.Domain\SAMGestor.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Class1.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Events\" />
-    <Folder Include="Security\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,7 +21,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.8" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.8" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
   </ItemGroup>
 
   <PropertyGroup>
