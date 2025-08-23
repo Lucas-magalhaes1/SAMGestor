@@ -68,6 +68,11 @@ services:
       MessageBus__Pass: ${RABBITMQ_PASS}
       Smtp__Host: mailhog
       Smtp__Port: 1025
+      Outbox__BatchSize: "50"
+      Outbox__PollIntervalSeconds: "10"
+      Outbox__UseListenNotify: "false" 
+      Outbox__ListenChannel: outbox_new
+      Outbox__WatchdogSeconds: "30"
     ports:
       - "5000:8080"
     depends_on:
@@ -77,6 +82,7 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+        
         
   notificationapi:
     build:
