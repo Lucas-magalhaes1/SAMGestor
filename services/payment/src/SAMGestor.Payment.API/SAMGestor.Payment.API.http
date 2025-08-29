@@ -1,0 +1,6 @@
+@SAMGestor.Payment.API_HostAddress = http://localhost:5244
+
+GET {{SAMGestor.Payment.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
