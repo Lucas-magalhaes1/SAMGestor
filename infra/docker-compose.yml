@@ -108,6 +108,28 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+        
+  paymentapi:
+    build:
+      context: ..
+      dockerfile: services/payment/src/SAMGestor.Payment.API/Dockerfile
+    container_name: samgestor-paymentapi
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      DB_SCHEMA: payment
+      MessageBus__Host: rabbitmq
+      MessageBus__User: ${RABBITMQ_USER}
+      MessageBus__Pass: ${RABBITMQ_PASS}
+      MercadoPago__AccessToken: ${MERCADO_PAGO_ACCESS_TOKEN}
+    ports:
+      - "5002:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   postgres-data:
