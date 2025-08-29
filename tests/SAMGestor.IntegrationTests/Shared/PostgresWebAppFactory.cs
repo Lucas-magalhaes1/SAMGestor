@@ -1,12 +1,12 @@
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;                              
+using Npgsql;
 using SAMGestor.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 using Xunit;
+using System.Linq;
 
 namespace SAMGestor.IntegrationTests.Shared;
 
@@ -31,10 +31,9 @@ public class PostgresWebAppFactory : WebApplicationFactory<Program>, IAsyncLifet
     {
         builder.ConfigureServices(services =>
         {
-            
             var descriptor = services.Single(d => d.ServiceType == typeof(DbContextOptions<SAMContext>));
             services.Remove(descriptor);
-            
+
             _schema = $"it_{Guid.NewGuid():N}";
             var baseCs = _pg!.GetConnectionString();
             var cs = $"{baseCs};Search Path={_schema}";
@@ -43,20 +42,22 @@ public class PostgresWebAppFactory : WebApplicationFactory<Program>, IAsyncLifet
             {
                 options.EnableDetailedErrors();
                 options.EnableSensitiveDataLogging();
-                options.UseNpgsql(connectionString: cs, npgsql => { /* ex: npgsql.EnableRetryOnFailure(); */ });
+                options.UseNpgsql(connectionString: cs, npgsql => { });
             });
-            
+
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
             var ctx = scope.ServiceProvider.GetRequiredService<SAMContext>();
 
             ctx.Database.OpenConnection();
+#pragma warning disable EF1002
             ctx.Database.ExecuteSqlRaw($"""CREATE SCHEMA IF NOT EXISTS "{_schema}";""");
+#pragma warning restore EF1002
             ctx.Database.Migrate();
         });
     }
 
-    public async Task DisposeAsync()
+    private async Task DisposeCoreAsync()
     {
         try
         {
@@ -68,9 +69,17 @@ public class PostgresWebAppFactory : WebApplicationFactory<Program>, IAsyncLifet
                 await cmd.ExecuteNonQueryAsync();
             }
         }
-        catch { /* não falhar teardown do teste */ }
+        catch { }
 
         if (_pg is not null)
             await _pg.DisposeAsync();
+    }
+
+    async Task IAsyncLifetime.DisposeAsync() => await DisposeCoreAsync();
+
+    public override async ValueTask DisposeAsync()
+    {
+        await DisposeCoreAsync();
+        await base.DisposeAsync();
     }
 }

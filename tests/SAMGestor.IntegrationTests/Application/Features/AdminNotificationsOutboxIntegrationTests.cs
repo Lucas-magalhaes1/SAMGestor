@@ -158,7 +158,7 @@ public class AdminNotificationsOutboxIntegrationTests(OutboxWebAppFactory factor
             {
                 diag.AppendLine($"- {m.CreatedAt:u} | Type={m.Type} | TraceId={m.TraceId}");
             }
-            Assert.True(false, diag.ToString());
+            Assert.Fail(diag.ToString());
         }
 
         ours.Should().HaveCount(expected);

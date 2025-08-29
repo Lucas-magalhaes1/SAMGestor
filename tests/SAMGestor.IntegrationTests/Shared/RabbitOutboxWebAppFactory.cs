@@ -61,5 +61,9 @@ public class RabbitOutboxWebAppFactory : PostgresWebAppFactory, IAsyncDisposable
         });
     }
 
-    public async ValueTask DisposeAsync() => await _rabbit.DisposeAsync();
+    public override async ValueTask DisposeAsync()
+    {
+        await _rabbit.DisposeAsync();
+        await base.DisposeAsync();
+    }
 }
