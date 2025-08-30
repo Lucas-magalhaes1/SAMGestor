@@ -20,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\SAMGestor.Payment.Application\SAMGestor.Payment.Application.csproj" />
+      <ProjectReference Include="..\SAMGestor.Payment.Infrastructure\SAMGestor.Payment.Infrastructure.csproj" />
     </ItemGroup>
 
     <ItemGroup>

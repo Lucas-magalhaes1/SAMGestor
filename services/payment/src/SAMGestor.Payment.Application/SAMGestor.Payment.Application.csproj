@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SAMGestor.Payment.Domain\SAMGestor.Payment.Domain.csproj" />
-    <ProjectReference Include="..\SAMGestor.Payment.Infrastructure\SAMGestor.Payment.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\..\shared\contracts\SAMGestor.Contracts\SAMGestor.Contracts.csproj" />
   </ItemGroup>
 
