@@ -4,9 +4,9 @@ namespace SAMGestor.Notification.Infrastructure.Payment;
 
 public class FakePaymentLinkClient : IPaymentLinkClient
 {
-    public Task<string> CreatePaymentLinkAsync(Guid registrationId, Guid participantId, CancellationToken ct)
+    public Task<string> CreatePaymentLinkAsync(Guid registrationId, CancellationToken ct)
     {
-        var link = $"https://pay.local/r/{registrationId}/p/{participantId}";
+        var link = $"https://pay.local/r/{registrationId}";
         return Task.FromResult(link);
     }
 }
