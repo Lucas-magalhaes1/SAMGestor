@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.Application.Interfaces;
@@ -14,16 +15,19 @@ public class AdminNotificationsController(SAMContext db, IEventBus bus) : Contro
     [HttpPost("retreats/{retreatId:guid}/notify-selected")]
     public async Task<IActionResult> NotifySelectedForRetreat(Guid retreatId, CancellationToken ct)
     {
-        var regs = await db.Registrations
-            .AsNoTracking()
-            .Where(r => r.RetreatId == retreatId && r.Status == RegistrationStatus.Selected)
-            .Select(r => new
+        var regs = await (
+            from r in db.Registrations.AsNoTracking()
+            join t in db.Retreats.AsNoTracking() on r.RetreatId equals t.Id
+            where r.RetreatId == retreatId && r.Status == RegistrationStatus.Selected
+            select new
             {
                 RegistrationId = r.Id,
                 RetreatId      = r.RetreatId,
                 Name           = r.Name.Value,
                 Email          = r.Email.Value,
-                Phone          = r.Phone != null ? r.Phone.ToString() : null
+                Phone          = r.Phone != null ? r.Phone.ToString() : null,
+                Amount         = t.FeeServir.Amount,
+                Currency       = t.FeeServir.Currency
             })
             .ToListAsync(ct);
 
@@ -31,11 +35,12 @@ public class AdminNotificationsController(SAMContext db, IEventBus bus) : Contro
         {
             var evt = new SelectionParticipantSelectedV1(
                 RegistrationId: r.RegistrationId,
-                ParticipantId:  r.RegistrationId,  
+                RetreatId:      r.RetreatId,
+                Amount:         r.Amount,
+                Currency:       r.Currency,
                 Name:           r.Name,
                 Email:          r.Email,
-                Phone:          r.Phone,
-                RetreatId:      r.RetreatId
+                Phone:          r.Phone
             );
 
             await bus.EnqueueAsync(
@@ -45,40 +50,43 @@ public class AdminNotificationsController(SAMContext db, IEventBus bus) : Contro
                 ct: ct
             );
         }
-        await db.SaveChangesAsync(ct);
 
+        await db.SaveChangesAsync(ct);
         return Ok(new { retreatId, count = regs.Count });
     }
-    
+
     [HttpPost("registrations/{registrationId:guid}/notify")]
     public async Task<IActionResult> NotifyOne(Guid registrationId, CancellationToken ct)
     {
-        var r = await db.Registrations
-            .AsNoTracking()
-            .Where(x => x.Id == registrationId)
-            .Select(x => new
+        var r = await (
+            from x in db.Registrations.AsNoTracking()
+            join t in db.Retreats.AsNoTracking() on x.RetreatId equals t.Id
+            where x.Id == registrationId
+            select new
             {
                 RegistrationId = x.Id,
                 RetreatId      = x.RetreatId,
                 Status         = x.Status,
                 Name           = x.Name.Value,
                 Email          = x.Email.Value,
-                Phone          = x.Phone != null ? x.Phone.ToString() : null
+                Phone          = x.Phone != null ? x.Phone.ToString() : null,
+                Amount         = t.FeeServir.Amount,
+                Currency       = t.FeeServir.Currency
             })
             .FirstOrDefaultAsync(ct);
 
         if (r is null) return NotFound();
-
         if (r.Status != RegistrationStatus.Selected)
             return BadRequest(new { error = "Registration is not Selected." });
 
         var evt = new SelectionParticipantSelectedV1(
             RegistrationId: r.RegistrationId,
-            ParticipantId:  r.RegistrationId, 
+            RetreatId:      r.RetreatId,
+            Amount:         r.Amount,
+            Currency:       r.Currency,
             Name:           r.Name,
             Email:          r.Email,
-            Phone:          r.Phone,
-            RetreatId:      r.RetreatId
+            Phone:          r.Phone
         );
 
         await bus.EnqueueAsync(
@@ -89,7 +97,6 @@ public class AdminNotificationsController(SAMContext db, IEventBus bus) : Contro
         );
 
         await db.SaveChangesAsync(ct);
-
         return Ok(new { status = "queued", registrationId });
     }
 }

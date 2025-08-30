@@ -16,6 +16,6 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> SimulateSelected([FromBody] SelectionParticipantSelectedV1 dto, CancellationToken ct)
     {
         await _orchestrator.OnParticipantSelectedAsync(dto, ct);
-        return Ok(new { status = "queued", dto.RegistrationId, dto.ParticipantId, dto.Email });
+        return Ok(new { status = "queued", dto.RegistrationId, dto.Email });
     }
 }
