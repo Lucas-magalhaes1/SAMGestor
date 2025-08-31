@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SAMGestor.Notification.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using SAMGestor.Notification.Infrastructure.Persistence;
 namespace SAMGestor.Notification.Infrastructure.Migrations
 {
     [DbContext(typeof(NotificationDbContext))]
-    partial class NotificationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250831142055_AddSelectedRegistration_Notification")]
+    partial class AddSelectedRegistration_Notification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,7 +123,7 @@ namespace SAMGestor.Notification.Infrastructure.Migrations
                     b.ToTable("notification_messages", "notification");
                 });
 
-            modelBuilder.Entity("SAMGestor.Notification.Domain.Entities.SelectedRegistration", b =>
+            modelBuilder.Entity("SAMGestor.Notification.Infrastructure.Persistence.Projections.SelectedRegistration", b =>
                 {
                     b.Property<Guid>("RegistrationId")
                         .ValueGeneratedOnAdd()
@@ -139,8 +142,8 @@ namespace SAMGestor.Notification.Infrastructure.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -159,7 +162,11 @@ namespace SAMGestor.Notification.Infrastructure.Migrations
 
                     b.HasKey("RegistrationId");
 
-                    b.HasIndex("RetreatId");
+                    b.HasIndex("RetreatId")
+                        .HasDatabaseName("ix_selreg_retreat");
+
+                    b.HasIndex("Email", "RetreatId")
+                        .HasDatabaseName("ix_selreg_email_retreat");
 
                     b.ToTable("selected_registrations", "notification");
                 });

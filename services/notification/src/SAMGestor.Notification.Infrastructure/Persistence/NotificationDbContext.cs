@@ -10,7 +10,9 @@ public sealed class NotificationDbContext(DbContextOptions<NotificationDbContext
 
     public DbSet<NotificationMessage> NotificationMessages => Set<NotificationMessage>();
     public DbSet<NotificationDispatchLog> NotificationDispatchLogs => Set<NotificationDispatchLog>();
+    public DbSet<SelectedRegistration> SelectedRegistrations => Set<SelectedRegistration>();
 
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
