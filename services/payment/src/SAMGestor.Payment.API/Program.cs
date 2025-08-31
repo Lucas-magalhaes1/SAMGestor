@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.Payment.Application.Abstractions;
+using SAMGestor.Payment.Infrastructure.Messaging.Consumers;
 using SAMGestor.Payment.Infrastructure.Messaging.Outbox;
 using SAMGestor.Payment.Infrastructure.Messaging.RabbitMq;
+using SAMGestor.Payment.Infrastructure.Options;
 using SAMGestor.Payment.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,11 +18,16 @@ builder.Services.AddDbContext<PaymentDbContext>(opt =>
 
 var mqOpt = new RabbitMqOptions
 {
-    HostName = builder.Configuration["MessageBus:Host"] ?? "rabbitmq",
+    HostName = builder.Configuration["MessageBus:Host"] ?? "localhost",
     UserName = builder.Configuration["MessageBus:User"] ?? "guest",
     Password = builder.Configuration["MessageBus:Pass"] ?? "guest",
     Exchange = "sam.topic"
 };
+
+var linkOpt = new PaymentLinkOptions();
+builder.Configuration.GetSection("PaymentLink").Bind(linkOpt);
+builder.Services.AddSingleton(linkOpt);
+
 builder.Services.AddSingleton(mqOpt);
 builder.Services.AddSingleton<RabbitMqConnection>();
 builder.Services.AddSingleton<EventPublisher>();
@@ -28,12 +35,16 @@ builder.Services.AddSingleton<EventPublisher>();
 
 builder.Services.AddScoped<IEventBus, OutboxEventBus>();
 builder.Services.AddHostedService<OutboxDispatcher>();
+builder.Services.AddHostedService<PaymentRequestedConsumer>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+app.MapGet("/", () => Results.Redirect("/swagger"))
+    .ExcludeFromDescription();
 
 app.MapGet("/health", async (PaymentDbContext db) =>
     (await db.Database.CanConnectAsync())

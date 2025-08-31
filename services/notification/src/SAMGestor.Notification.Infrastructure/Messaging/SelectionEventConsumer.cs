@@ -4,100 +4,113 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 using SAMGestor.Contracts;
 using SAMGestor.Notification.Application.Orchestrators;
 
 namespace SAMGestor.Notification.Infrastructure.Messaging;
 
-public sealed class SelectionEventConsumer : BackgroundService
+public sealed class SelectionEventConsumer(
+    RabbitMqOptions opt,
+    RabbitMqConnection conn,
+    ILogger<SelectionEventConsumer> logger,
+    IServiceProvider sp
+) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
-        PropertyNameCaseInsensitive = true 
+        PropertyNameCaseInsensitive = true
     };
-
-    private readonly RabbitMqOptions _opt;
-    private readonly RabbitMqConnection _conn;
-    private readonly ILogger<SelectionEventConsumer> _logger;
-    private readonly IServiceProvider _sp;
-    private IChannel? _channel;
-
-    public SelectionEventConsumer(
-        RabbitMqOptions opt,
-        RabbitMqConnection conn,
-        ILogger<SelectionEventConsumer> logger,
-        IServiceProvider sp)
-    {
-        _opt = opt;
-        _conn = conn;
-        _logger = logger;
-        _sp = sp;
-    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var connection = await _conn.GetOrCreateAsync().ConfigureAwait(false);
-        _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken).ConfigureAwait(false);
+        logger.LogInformation("SelectionEventConsumer starting…");
 
-        // garante infraestrutura
-        await _channel.ExchangeDeclareAsync(_opt.Exchange, ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
-        await _channel.QueueDeclareAsync(queue: _opt.SelectionQueue, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
-
-        // bind por config…
-        await _channel.QueueBindAsync(_opt.SelectionQueue, _opt.Exchange, _opt.SelectionRoutingKey, cancellationToken: stoppingToken);
-        // …e também a chave da versão v1 do contrato
-        await _channel.QueueBindAsync(_opt.SelectionQueue, _opt.Exchange, EventTypes.SelectionParticipantSelectedV1, cancellationToken: stoppingToken);
-
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-
-        consumer.ReceivedAsync += async (_, ea) =>
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var json = Encoding.UTF8.GetString(ea.Body.ToArray());
-                var envelope = JsonSerializer.Deserialize<EventEnvelope<SelectionParticipantSelectedV1>>(json, JsonOpts);
+                
+                var connection = await conn.GetOrCreateAsync(stoppingToken);
+                await using var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+                
+                await channel.ExchangeDeclareAsync(opt.Exchange, ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
 
-                if (envelope?.Data is null)
+                await channel.QueueDeclareAsync(
+                    queue: opt.SelectionQueue,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null,
+                    cancellationToken: stoppingToken);
+                
+                await channel.QueueBindAsync(
+                    queue: opt.SelectionQueue,
+                    exchange: opt.Exchange,
+                    routingKey: opt.SelectionRoutingKey,
+                    cancellationToken: stoppingToken);
+                
+                await channel.QueueBindAsync(
+                    queue: opt.SelectionQueue,
+                    exchange: opt.Exchange,
+                    routingKey: EventTypes.SelectionParticipantSelectedV1,
+                    cancellationToken: stoppingToken);
+
+                await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 10, global: false, cancellationToken: stoppingToken);
+
+                logger.LogInformation("SelectionEventConsumer listening on queue {queue}", opt.SelectionQueue);
+                
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    _logger.LogWarning("Invalid event envelope or null data. DeliveryTag={tag}", ea.DeliveryTag);
-                    await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
-                    return;
+                    var delivery = await channel.BasicGetAsync(opt.SelectionQueue, autoAck: false, cancellationToken: stoppingToken);
+
+                    if (delivery is null)
+                    {
+                        await Task.Delay(400, stoppingToken);
+                        continue;
+                    }
+
+                    try
+                    {
+                        var json = Encoding.UTF8.GetString(delivery.Body.ToArray());
+                        var env = JsonSerializer.Deserialize<EventEnvelope<SelectionParticipantSelectedV1>>(json, JsonOpts);
+
+                        if (env?.Data is null)
+                        {
+                            logger.LogWarning("Invalid envelope or null data. DeliveryTag={tag}", delivery.DeliveryTag);
+                            await channel.BasicAckAsync(delivery.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
+                            continue;
+                        }
+
+                        using var scope = sp.CreateScope();
+                        var orchestrator = scope.ServiceProvider.GetRequiredService<NotificationOrchestrator>();
+                        await orchestrator.OnParticipantSelectedAsync(env.Data, stoppingToken);
+
+                        await channel.BasicAckAsync(delivery.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Error processing selection event. DeliveryTag={tag}", delivery.DeliveryTag);
+                        
+                        await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                    }
                 }
-
-                // resolve serviços scoped por mensagem
-                using var scope = _sp.CreateScope();
-                var orchestrator = scope.ServiceProvider.GetRequiredService<NotificationOrchestrator>();
-
-                await orchestrator.OnParticipantSelectedAsync(envelope.Data, stoppingToken);
-
-                await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+            }
+            catch (RabbitMQ.Client.Exceptions.BrokerUnreachableException ex)
+            {
+                logger.LogWarning(ex, "RabbitMQ indisponível. Retentando em 5s…");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing selection event. DeliveryTag={tag}", ea.DeliveryTag);
-                await _channel!.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false);
-            }
-        };
-
-        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 10, global: false, cancellationToken: stoppingToken);
-        await _channel.BasicConsumeAsync(queue: _opt.SelectionQueue, autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
-
-        _logger.LogInformation("SelectionEventConsumer is listening on queue {queue}", _opt.SelectionQueue);
-    }
-
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (_channel is not null)
-            {
-                await _channel.CloseAsync(cancellationToken);
-                await _channel.DisposeAsync();
+                logger.LogError(ex, "Erro no loop do SelectionEventConsumer. Retry em 5s…");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
-        catch { /* ignore */ }
 
-        await base.StopAsync(cancellationToken);
+        logger.LogInformation("SelectionEventConsumer stopped.");
     }
 }

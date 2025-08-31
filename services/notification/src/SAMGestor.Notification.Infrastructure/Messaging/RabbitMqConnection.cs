@@ -15,18 +15,21 @@ public sealed class RabbitMqConnection : IAsyncDisposable
             HostName = opt.HostName,
             UserName = opt.UserName,
             Password = opt.Password,
+            AutomaticRecoveryEnabled = true   
         };
     }
-
-    public async Task<IConnection> GetOrCreateAsync()
+    
+    public async Task<IConnection> GetOrCreateAsync(CancellationToken ct = default)
     {
         if (_connection is { IsOpen: true }) return _connection;
 
-        await _mutex.WaitAsync().ConfigureAwait(false);
+        await _mutex.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             if (_connection is { IsOpen: true }) return _connection;
-            _connection = await _factory.CreateConnectionAsync().ConfigureAwait(false);
+            
+            _connection = await _factory.CreateConnectionAsync("sam-notification-conn", ct)
+                .ConfigureAwait(false);
             return _connection;
         }
         finally

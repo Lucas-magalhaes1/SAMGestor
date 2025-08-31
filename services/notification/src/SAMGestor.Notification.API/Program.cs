@@ -52,6 +52,10 @@ app.MapGet("/health", async (NotificationDbContext db) =>
 
 app.MapControllers();
 
+app.MapGet("/", () => Results.Redirect("/swagger"))
+    .ExcludeFromDescription();
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
