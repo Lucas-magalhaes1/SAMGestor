@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SAMGestor.Notification.Application.Abstractions;
 using SAMGestor.Notification.Infrastructure.Email;
 using SAMGestor.Notification.Infrastructure.Messaging;
+using SAMGestor.Notification.Infrastructure.Messaging.Consumers;
 using SAMGestor.Notification.Infrastructure.Persistence;
 using SAMGestor.Notification.Infrastructure.Repositories;
 using SAMGestor.Notification.Infrastructure.Templates;
@@ -37,6 +38,7 @@ builder.Services.AddSingleton<IEventPublisher, EventPublisher>();
 
 builder.Services.AddHostedService<PaymentLinkCreatedConsumer>();
 builder.Services.AddHostedService<SelectionEventConsumer>();
+builder.Services.AddHostedService<PaymentConfirmedConsumer>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
