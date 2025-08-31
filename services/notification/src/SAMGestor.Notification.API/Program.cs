@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.Notification.Application.Abstractions;
-using SAMGestor.Notification.Application.Orchestrators;
 using SAMGestor.Notification.Infrastructure.Email;
 using SAMGestor.Notification.Infrastructure.Messaging;
-using SAMGestor.Notification.Infrastructure.Payment;
 using SAMGestor.Notification.Infrastructure.Persistence;
 using SAMGestor.Notification.Infrastructure.Repositories;
 using SAMGestor.Notification.Infrastructure.Templates;
@@ -29,15 +27,15 @@ if (builder.Configuration["MessageBus:User"] is { } usr) mqOpt.UserName = usr;
 if (builder.Configuration["MessageBus:Pass"] is { } pwd) mqOpt.Password = pwd;
 
 builder.Services.AddSingleton(mqOpt);
-builder.Services.AddControllers();    
-builder.Services.AddSingleton<IPaymentLinkClient, FakePaymentLinkClient>();
+builder.Services.AddControllers();   
+
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddSingleton<ITemplateRenderer, SimpleTemplateRenderer>();
 builder.Services.AddSingleton<INotificationChannel, EmailChannel>();
 builder.Services.AddSingleton<RabbitMqConnection>();
 builder.Services.AddSingleton<IEventPublisher, EventPublisher>();
-builder.Services.AddScoped<NotificationOrchestrator>();
 
+builder.Services.AddHostedService<PaymentLinkCreatedConsumer>();
 builder.Services.AddHostedService<SelectionEventConsumer>();
 
 builder.Services.AddEndpointsApiExplorer();

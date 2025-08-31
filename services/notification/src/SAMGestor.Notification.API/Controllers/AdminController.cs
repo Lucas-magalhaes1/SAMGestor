@@ -1,21 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Contracts;
-using SAMGestor.Notification.Application.Orchestrators;
+using SAMGestor.Notification.Application.Abstractions;
 
 namespace SAMGestor.Notification.API.Controllers;
 
 [ApiController]
-[Route("admin")]
-public class AdminController : ControllerBase
+[Route("admin/dev")]
+public class AdminController(IEventPublisher publisher) : ControllerBase
 {
-    private readonly NotificationOrchestrator _orchestrator;
-
-    public AdminController(NotificationOrchestrator orchestrator) => _orchestrator = orchestrator;
+    /// <summary>
+    /// Simula o Core publicando selection.participant.selected.v1.
+    /// Útil para testar o fluxo completo por eventos.
+    /// </summary>
     
-    [HttpPost("notifications/test/participant-selected")]
-    public async Task<IActionResult> SimulateSelected([FromBody] SelectionParticipantSelectedV1 dto, CancellationToken ct)
+    [HttpPost("selection")]
+    public async Task<IActionResult> SimulateSelection([FromBody] SelectionParticipantSelectedV1 dto, CancellationToken ct)
     {
-        await _orchestrator.OnParticipantSelectedAsync(dto, ct);
-        return Ok(new { status = "queued", dto.RegistrationId, dto.Email });
+        await publisher.PublishAsync(
+            type: EventTypes.SelectionParticipantSelectedV1,
+            source: "sam.core.dev",
+            data: dto,
+            traceId: null,
+            ct: ct
+        );
+
+        return Accepted(new { status = "published", dto.RegistrationId, dto.Email });
     }
 }
