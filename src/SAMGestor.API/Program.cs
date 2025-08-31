@@ -3,8 +3,8 @@ using FluentValidation;
 using SAMGestor.Infrastructure.Extensions;
 using SAMGestor.API.Extensions;
 using SAMGestor.API.Middlewares;
-using SAMGestor.Application.Common.Retreat;
 using SAMGestor.Application.Features.Retreats.Create;
+using SAMGestor.Infrastructure.Messaging.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +19,8 @@ builder.Services
 
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHostedService<PaymentConfirmedConsumer>();
+
 
 var app = builder.Build();
 

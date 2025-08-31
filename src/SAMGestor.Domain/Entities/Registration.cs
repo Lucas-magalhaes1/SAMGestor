@@ -64,4 +64,9 @@ public class Registration : Entity<Guid>
     {
         Status = newStatus;
     }
+    public void MarkConfirmed()
+    {
+        if (Status == RegistrationStatus.Canceled) return;
+        Status = RegistrationStatus.Confirmed;
+    }
 }
