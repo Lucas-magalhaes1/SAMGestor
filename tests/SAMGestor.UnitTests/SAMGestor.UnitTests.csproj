@@ -28,10 +28,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Dependencies\Fakes\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\SAMGestor.API\SAMGestor.API.csproj" />
     <ProjectReference Include="..\..\src\SAMGestor.Domain\SAMGestor.Domain.csproj" />
   </ItemGroup>

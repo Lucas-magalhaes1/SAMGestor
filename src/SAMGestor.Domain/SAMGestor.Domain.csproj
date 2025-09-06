@@ -12,9 +12,4 @@
     <Compile Remove="Class1.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Events\Base\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>
