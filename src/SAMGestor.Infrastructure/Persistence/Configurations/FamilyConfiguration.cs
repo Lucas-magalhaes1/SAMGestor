@@ -13,14 +13,33 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
 
         builder.OwnsOne(f => f.Name, n =>
         {
-            n.Property(p => p.Value).HasColumnName("name").HasMaxLength(120).IsRequired();
+            n.Property(p => p.Value)
+                .HasColumnName("name")
+                .HasMaxLength(120)
+                .IsRequired();
         });
 
-        builder.Property(f => f.GodfatherCount).HasColumnName("godfather_count").IsRequired();
-        builder.Property(f => f.GodmotherCount).HasColumnName("godmother_count").IsRequired();
-        builder.Property(f => f.RetreatId).HasColumnName("retreat_id").IsRequired();
-        builder.Property(f => f.MemberLimit).HasColumnName("member_limit").IsRequired();
+        builder.Property(f => f.RetreatId)
+            .HasColumnName("retreat_id")
+            .IsRequired();
 
-        builder.HasMany(f => f.Members).WithOne().HasForeignKey(r => r.FamilyId);
+        builder.Property(f => f.Capacity)
+            .HasColumnName("capacity")
+            .IsRequired();
+
+        builder.HasIndex(f => f.RetreatId);
+
+        builder.Navigation(f => f.Members)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+        
+        builder.HasOne<Retreat>()
+            .WithMany()
+            .HasForeignKey(f => f.RetreatId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_families_capacity_positive", "capacity > 0");
+        });
     }
 }

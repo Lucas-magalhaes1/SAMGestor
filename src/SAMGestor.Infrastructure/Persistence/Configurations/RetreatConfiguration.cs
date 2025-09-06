@@ -10,7 +10,7 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
     {
         builder.ToTable("retreats");
         builder.HasKey(r => r.Id);
-        
+
         builder.OwnsOne(r => r.Name, n =>
         {
             n.Property(p => p.Value)
@@ -31,13 +31,14 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
 
         builder.Property(r => r.StartDate)
                .HasColumnName("start_date")
-               .IsRequired();      
+               .HasColumnType("date")
+               .IsRequired();
 
         builder.Property(r => r.EndDate)
                .HasColumnName("end_date")
+               .HasColumnType("date")
                .IsRequired();
 
-        
         builder.Property(r => r.MaleSlots)
                .HasColumnName("male_slots")
                .IsRequired();
@@ -48,13 +49,14 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
 
         builder.Property(r => r.RegistrationStart)
                .HasColumnName("registration_start")
+               .HasColumnType("date")
                .IsRequired();
 
         builder.Property(r => r.RegistrationEnd)
                .HasColumnName("registration_end")
+               .HasColumnType("date")
                .IsRequired();
 
-       
         builder.OwnsOne(r => r.FeeFazer, f =>
         {
             f.Property(v => v.Amount)
@@ -67,7 +69,7 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
              .HasMaxLength(3)
              .IsRequired();
         });
-        
+
         builder.OwnsOne(r => r.FeeServir, f =>
         {
             f.Property(v => v.Amount)
@@ -80,7 +82,7 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
              .HasMaxLength(3)
              .IsRequired();
         });
-        
+
         builder.OwnsOne(r => r.WestRegionPercentage, p =>
         {
             p.Property(v => v.Value)
@@ -96,9 +98,14 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
              .HasColumnType("numeric(5,2)")
              .IsRequired();
         });
-        
+
         builder.Property(r => r.ContemplationClosed)
                .HasColumnName("contemplation_closed")
                .IsRequired();
+
+        builder.Property(r => r.FamiliesVersion)
+               .HasColumnName("families_version")
+               .IsRequired()
+               .IsConcurrencyToken();
     }
 }
