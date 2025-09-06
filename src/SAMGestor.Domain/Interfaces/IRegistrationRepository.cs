@@ -38,4 +38,6 @@ public interface IRegistrationRepository
         IEnumerable<Guid> registrationIds,
         RegistrationStatus newStatus,
         CancellationToken ct);
+    
+    Task<Dictionary<Guid, Registration>> GetMapByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
 }

@@ -21,4 +21,6 @@ public interface IRetreatRepository
     Task<int> CountAsync(CancellationToken ct = default); 
     
     Task RemoveAsync(Retreat retreat, CancellationToken ct = default);
+    
+    Task UpdateAsync(Retreat retreat, CancellationToken ct = default);
 }
