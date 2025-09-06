@@ -55,9 +55,7 @@ namespace SAMGestor.Infrastructure.Repositories
 
             return query.CountAsync(ct);
         }
-
-        // ====== NOVOS ======
-
+        
         public Task<int> CountByStatusesAndGenderAsync(Guid retreatId, RegistrationStatus[] statuses, Gender gender, CancellationToken ct)
             => _ctx.Registrations
                    .Where(r => r.RetreatId == retreatId
@@ -86,6 +84,20 @@ namespace SAMGestor.Infrastructure.Repositories
 
             foreach (var r in regs)
                r.SetStatus(newStatus);
+        }
+        
+        public async Task<Dictionary<Guid, Registration>> GetMapByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        {
+            var idArray = ids?.Distinct().ToArray() ?? Array.Empty<Guid>();
+            if (idArray.Length == 0)
+                return new Dictionary<Guid, Registration>();
+
+            var list = await _ctx.Registrations
+                .Where(r => idArray.Contains(r.Id))
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            return list.ToDictionary(r => r.Id, r => r);
         }
     }
 }

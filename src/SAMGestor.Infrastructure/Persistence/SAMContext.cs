@@ -25,6 +25,8 @@ public class SAMContext(DbContextOptions<SAMContext> options) : DbContext(option
     public DbSet<BlockedCpf>         BlockedCpfs         => Set<BlockedCpf>();
     public DbSet<WaitingListItem>    WaitingListItems    => Set<WaitingListItem>();
     public DbSet<OutboxMessage>      OutboxMessages      => Set<OutboxMessage>();
+    public DbSet<FamilyMember>   FamilyMembers   => Set<FamilyMember>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
