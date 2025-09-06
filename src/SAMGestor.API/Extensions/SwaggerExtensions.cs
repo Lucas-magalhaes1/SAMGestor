@@ -1,37 +1,35 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
-namespace SAMGestor.API.Extensions;
-
-public static class SwaggerExtensions
+namespace SAMGestor.API.Extensions
 {
-    public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services)
+    public static class SwaggerExtensions
     {
-        services.AddEndpointsApiExplorer();
-
-        services.AddSwaggerGen(options =>
+        public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services)
         {
-            options.SwaggerDoc("v1", new OpenApiInfo
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen(c =>
             {
-                Title = "SAMGestor API",
-                Version = "v1"
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "SAMGestor API",
+                    Version = "v1"
+                }); 
+                c.CustomSchemaIds(t => t.FullName?.Replace("+", "."));
             });
 
-            // Exemplo: adicionar segurança via JWT futuramente, se necessário
-            // options.AddSecurityDefinition(...)
-        });
+            return services;
+        }
 
-        return services;
-    }
-
-    public static WebApplication UseSwaggerDocumentation(this WebApplication app)
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI(options =>
+        public static IApplicationBuilder UseSwaggerDocumentation(this IApplicationBuilder app)
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "SAMGestor API V1");
-            options.RoutePrefix = string.Empty; // Swagger na raiz
-        });
-
-        return app;
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SAMGestor API v1");
+                c.RoutePrefix = "swagger";
+            });
+            return app;
+        }
     }
 }

@@ -46,6 +46,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IRetreatRepository, RetreatRepository>();
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+        services.AddScoped<IFamilyRepository, FamilyRepository>();
+        services.AddScoped<IFamilyMemberRepository, FamilyMemberRepository>();
         
         services.AddMediatR(typeof(CreateRetreatHandler).Assembly);
         services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
