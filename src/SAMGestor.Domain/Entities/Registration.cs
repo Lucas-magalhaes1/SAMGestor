@@ -10,16 +10,14 @@ public class Registration : Entity<Guid>
     public EmailAddress Email { get; private set; }
     public string Phone { get; private set; }
     public DateOnly BirthDate { get; private set; }
-    
     public Gender Gender { get; private set; }
     public string City { get; private set; }
-    
     public UrlAddress? PhotoUrl { get; private set; }
     public RegistrationStatus Status { get; private set; }
     public ParticipationCategory ParticipationCategory { get; private set; }
     public bool Enabled { get; private set; }
     public string Region { get; private set; }
-    public Guid? FamilyId { get; private set; }
+    
     public Guid? TentId { get; private set; }
     public Guid RetreatId { get; private set; }
     public Guid? TeamId { get; private set; }

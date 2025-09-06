@@ -1,4 +1,3 @@
-
 using SAMGestor.Domain.Commom;
 using SAMGestor.Domain.ValueObjects;
 
@@ -6,31 +5,32 @@ namespace SAMGestor.Domain.Entities;
 
 public class Family : Entity<Guid>
 {
-    private readonly List<Registration> _members = new();
+    private readonly List<FamilyMember> _members = new();
 
-    public FullName Name { get; private set; }
-    public int GodfatherCount { get; private set; }
-    public int GodmotherCount { get; private set; }
-    public Guid RetreatId { get; private set; }
-    public int MemberLimit { get; private set; }
-    public IReadOnlyCollection<Registration> Members => _members;
+    public FullName Name   { get; private set; }
+    public Guid     RetreatId  { get; private set; }
+
+    /// <summary>Capacidade máxima de membros (p/ MVP: 4).</summary>
+    public int Capacity   { get; private set; }
+
+    /// <summary>Controle de concorrência das famílias do retiro (mantido em nível de Retreat; aqui deixa simples).</summary>
+    public IReadOnlyCollection<FamilyMember> Members => _members;
 
     private Family() { }
 
-    public Family(FullName name, int godfatherCount, int godmotherCount, Guid retreatId, int memberLimit)
+    public Family(FullName name, Guid retreatId, int capacity)
     {
-        Id = Guid.NewGuid();
-        Name = name;
-        GodfatherCount = godfatherCount;
-        GodmotherCount = godmotherCount;
+        Id        = Guid.NewGuid();
+        Name      = name;
         RetreatId = retreatId;
-        MemberLimit = memberLimit;
+        Capacity  = capacity;
     }
 
-    public void AddMember(Registration registration)
+    public void Rename(FullName name) => Name = name;
+
+    public void SetCapacity(int capacity)
     {
-        if (_members.Count >= MemberLimit) throw new InvalidOperationException();
-        if (_members.Any(r => r.Id == registration.Id)) throw new InvalidOperationException();
-        _members.Add(registration);
+        if (capacity <= 0) throw new ArgumentException(nameof(capacity));
+        Capacity = capacity;
     }
 }

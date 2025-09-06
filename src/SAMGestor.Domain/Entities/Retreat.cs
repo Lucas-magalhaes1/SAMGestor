@@ -11,19 +11,17 @@ public class Retreat : Entity<Guid>
     public string Theme { get; private set; }
     public DateOnly StartDate { get; private set; }
     public DateOnly EndDate { get; private set; }
-
     public int MaleSlots { get; private set; }
     public int FemaleSlots { get; private set; }
     public int TotalSlots => MaleSlots + FemaleSlots;
-
     public DateOnly RegistrationStart { get; private set; }
     public DateOnly RegistrationEnd   { get; private set; }
-
     public Money FeeFazer  { get; private set; }
     public Money FeeServir { get; private set; }
-
     public Percentage WestRegionPercentage   { get; private set; }
     public Percentage OtherRegionsPercentage { get; private set; }
+    
+    public int FamiliesVersion { get; private set; } = 0;
 
     public bool ContemplationClosed { get; private set; }
 
@@ -66,6 +64,7 @@ public class Retreat : Entity<Guid>
         OtherRegionsPercentage = othersPct;
 
         ContemplationClosed = false;
+        FamiliesVersion     = 0;
     }
     
     public void UpdateDetails(
@@ -109,4 +108,5 @@ public class Retreat : Entity<Guid>
 
     public bool RegistrationWindowOpen(DateOnly today) =>
         today >= RegistrationStart && today <= RegistrationEnd;
+    public void BumpFamiliesVersion() => FamiliesVersion++;
 }
