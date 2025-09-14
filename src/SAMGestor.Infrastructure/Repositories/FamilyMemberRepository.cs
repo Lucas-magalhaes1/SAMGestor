@@ -68,4 +68,9 @@ public sealed class FamilyMemberRepository(SAMContext ctx) : IFamilyMemberReposi
         ctx.FamilyMembers.RemoveRange(members);
         return Task.CompletedTask;
     }
+    
+    public Task<FamilyMember?> GetByRegistrationIdAsync(Guid retreatId, Guid registrationId, CancellationToken ct = default)
+        => ctx.FamilyMembers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.RetreatId == retreatId && m.RegistrationId == registrationId, ct);
 }

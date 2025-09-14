@@ -37,4 +37,10 @@ public sealed class FamilyRepository(SAMContext ctx) : IFamilyRepository
         if (families.Count > 0)
             ctx.Families.RemoveRange(families);
     }
+    
+    public Task DeleteAsync(Family family, CancellationToken ct = default)
+    {
+        ctx.Families.Remove(family);
+        return Task.CompletedTask;
+    }
 }
