@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.ValueObjects;
 
 namespace SAMGestor.Infrastructure.Persistence.Configurations;
 
@@ -11,13 +12,13 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
         builder.ToTable("families");
         builder.HasKey(f => f.Id);
 
-        builder.OwnsOne(f => f.Name, n =>
-        {
-            n.Property(p => p.Value)
-                .HasColumnName("name")
-                .HasMaxLength(120)
-                .IsRequired();
-        });
+        builder.Property(f => f.Name)
+            .HasColumnName("name")
+            .HasMaxLength(120)
+            .HasConversion(
+                toProvider => toProvider.Value,
+                fromProvider => new FamilyName(fromProvider))
+            .IsRequired();
 
         builder.Property(f => f.RetreatId)
             .HasColumnName("retreat_id")
@@ -25,6 +26,11 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
 
         builder.Property(f => f.Capacity)
             .HasColumnName("capacity")
+            .IsRequired();
+        
+        builder.Property(f => f.IsLocked)                  
+            .HasColumnName("is_locked")
+            .HasDefaultValue(false)
             .IsRequired();
 
         builder.HasIndex(f => f.RetreatId);
@@ -36,10 +42,12 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
             .WithMany()
             .HasForeignKey(f => f.RetreatId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+            
         builder.ToTable(t =>
         {
             t.HasCheckConstraint("ck_families_capacity_positive", "capacity > 0");
         });
+        
+        builder.HasIndex(f => new { f.RetreatId, f.Name }).IsUnique();
     }
 }
