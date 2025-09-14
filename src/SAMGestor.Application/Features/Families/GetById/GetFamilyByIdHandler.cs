@@ -58,6 +58,7 @@ public sealed class GetFamilyByIdHandler(
             male,
             female,
             remaining,
+            IsLocked:  family.IsLocked,
             memberViews.Select(v => new MemberDto(
                 v.RegistrationId, v.Name, v.Gender.ToString(), v.City, v.Position)).ToList(),
             alerts.Select(a => new FamilyAlertDto(a.Severity, a.Code, a.Message, a.RegistrationIds)).ToList()

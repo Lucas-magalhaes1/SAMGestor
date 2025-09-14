@@ -13,6 +13,7 @@ public sealed record FamilyDto(
     int MaleCount,
     int FemaleCount,
     int Remaining,
+    bool IsLocked,
     IReadOnlyList<MemberDto> Members,
     IReadOnlyList<FamilyAlertDto> Alerts
 );
