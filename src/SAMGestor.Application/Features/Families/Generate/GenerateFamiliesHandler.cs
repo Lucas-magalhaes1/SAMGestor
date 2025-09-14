@@ -23,14 +23,24 @@ public sealed class GenerateFamiliesHandler(
         if (retreat is null)
             throw new NotFoundException(nameof(Retreat), cmd.RetreatId);
 
+        if (retreat.FamiliesLocked)
+            throw new BusinessRuleException("Famílias estão bloqueadas para edição.");
+
         var capacity = cmd.Capacity ?? DefaultCapacity;
         if (capacity <= 0)
             throw new BusinessRuleException("Capacity inválido.");
+        
+        var existingFamilies = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
+        var anyLocked = existingFamilies.Any(f => f.IsLocked);
+
+        if (cmd.ReplaceExisting && anyLocked)
+            throw new BusinessRuleException("Existem famílias bloqueadas. Desbloqueie ou use outra estratégia (não substituir).");
 
         if (cmd.ReplaceExisting)
         {
             await familyMemberRepo.DeleteAllByRetreatAsync(cmd.RetreatId, ct);
             await familyRepo.DeleteAllByRetreatAsync(cmd.RetreatId, ct);
+            existingFamilies = new List<Family>(); // agora não há mais existentes
         }
 
         var confirmed = await registrationRepo.ListAsync(
@@ -62,44 +72,100 @@ public sealed class GenerateFamiliesHandler(
 
         if (pool.Count == 0)
             return new GenerateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<GeneratedFamilyDto>());
-
-        var males = pool.Where(p => p.Gender == Gender.Male).OrderBy(_ => Guid.NewGuid()).ToList();
+        
+        var males   = pool.Where(p => p.Gender == Gender.Male).OrderBy(_ => Guid.NewGuid()).ToList();
         var females = pool.Where(p => p.Gender == Gender.Female).OrderBy(_ => Guid.NewGuid()).ToList();
 
-        var familiesCount = Math.Min(males.Count / 2, females.Count / 2);
-        if (familiesCount <= 0)
-            return new GenerateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<GeneratedFamilyDto>());
+        var createdFamilies = new List<Family>();
+        var createdMembers  = new List<FamilyMember>();
 
-        var createdFamilies = new List<Family>(familiesCount);
-        var createdMembers = new List<FamilyMember>(familiesCount * capacity);
+        // 🔹 FillExistingFirst: completar famílias NÃO travadas antes de criar novas
+       if (!cmd.ReplaceExisting && cmd.FillExistingFirst && (males.Count > 0 || females.Count > 0) && existingFamilies.Count > 0)
+            { 
+                var linksByFamily = await familyMemberRepo.ListByFamilyIdsAsync(existingFamilies.Select(f => f.Id), ct);
+                var existingRegIds = linksByFamily.Values.SelectMany(v => v).Select(l => l.RegistrationId).Distinct().ToArray();
+                var existingRegsMap = await registrationRepo.GetMapByIdsAsync(existingRegIds, ct);
 
-        for (var i = 1; i <= familiesCount; i++)
+    foreach (var fam in existingFamilies
+                        .Where(f => !f.IsLocked) 
+                        .OrderBy(f => (linksByFamily.GetValueOrDefault(f.Id)?.Count ?? 0)))
+    {
+        var links = linksByFamily.GetValueOrDefault(fam.Id) ?? new List<FamilyMember>();
+        var curCount = links.Count;
+        if (curCount >= capacity) continue;
+
+        var curMale = links.Count(l => existingRegsMap.TryGetValue(l.RegistrationId, out var r) && r.Gender == Gender.Male);
+        var curFemale = curCount - curMale;
+
+       
+        var occupied = links
+            .Select(l => l.Position)
+            .Concat(createdMembers.Where(m => m.FamilyId == fam.Id).Select(m => m.Position))
+            .ToHashSet();
+
+        int NextFreePos() => Enumerable.Range(0, capacity).First(p => !occupied.Contains(p));
+
+        
+        while (curMale < 2 && curCount < capacity && males.Count > 0)
         {
-            var fam = new Family(
-                name: new Domain.ValueObjects.FullName($"Família {i}"),
-                retreatId: cmd.RetreatId,
-                capacity: capacity);
+            var p = males[0]; males.RemoveAt(0);
+            var pos = NextFreePos();
+            var fm  = new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos);
+            await familyMemberRepo.AddAsync(fm, ct);
+            createdMembers.Add(fm);
 
-            await familyRepo.AddAsync(fam, ct);
-            createdFamilies.Add(fam);
+            occupied.Add(pos);
+            curMale++;
+            curCount++;
+        }
 
-            for (int k = 0; k < 2 && males.Count > 0; k++)
+       
+        while (curFemale < 2 && curCount < capacity && females.Count > 0)
+        {
+            var p = females[0]; females.RemoveAt(0);
+            var pos = NextFreePos();
+            var fm  = new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos);
+            await familyMemberRepo.AddAsync(fm, ct);
+            createdMembers.Add(fm);
+
+            occupied.Add(pos);
+            curFemale++;
+            curCount++;
+        }
+    }
+}
+
+       
+        var familiesCount = Math.Min(males.Count / 2, females.Count / 2);
+        if (familiesCount > 0)
+        {
+            for (var i = 1; i <= familiesCount; i++)
             {
-                var p = males[0];
-                males.RemoveAt(0);
-                var pos = createdMembers.Count(m => m.FamilyId == fam.Id);
-                createdMembers.Add(new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos));
-            }
+                var fam = new Family(
+                    name: new Domain.ValueObjects.FamilyName($"Família {i}"),
+                    retreatId: cmd.RetreatId,
+                    capacity: capacity);
 
-            for (int k = 0; k < 2 && females.Count > 0; k++)
-            {
-                var p = females[0];
-                females.RemoveAt(0);
-                var pos = createdMembers.Count(m => m.FamilyId == fam.Id);
-                createdMembers.Add(new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos));
+                await familyRepo.AddAsync(fam, ct);
+                createdFamilies.Add(fam);
+
+                for (int k = 0; k < 2 && males.Count > 0; k++)
+                {
+                    var p = males[0]; males.RemoveAt(0);
+                    var pos = createdMembers.Count(m => m.FamilyId == fam.Id);
+                    createdMembers.Add(new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos));
+                }
+
+                for (int k = 0; k < 2 && females.Count > 0; k++)
+                {
+                    var p = females[0]; females.RemoveAt(0);
+                    var pos = createdMembers.Count(m => m.FamilyId == fam.Id);
+                    createdMembers.Add(new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos));
+                }
             }
         }
 
+        
         foreach (var m in createdMembers)
             await familyMemberRepo.AddAsync(m, ct);
 
@@ -107,6 +173,7 @@ public sealed class GenerateFamiliesHandler(
         await retreatRepo.UpdateAsync(retreat, ct);
         await uow.SaveChangesAsync(ct);
 
+        
         var registrationsDict = pool.ToDictionary(r => r.Id, r => r);
 
         var familyDtos = createdFamilies.Select(f =>
@@ -116,12 +183,15 @@ public sealed class GenerateFamiliesHandler(
                 .OrderBy(m => m.Position)
                 .Select(m =>
                 {
-                    var reg = registrationsDict[m.RegistrationId];
+                    var reg = registrationsDict.TryGetValue(m.RegistrationId, out var r)
+                        ? r
+                        : null;
+                    // se foi preenchida via FillExistingFirst, o reg pode não estar no pool original
                     return new GeneratedMemberDto(
-                        reg.Id,
-                        (string)reg.Name,
-                        reg.Gender.ToString(),
-                        reg.City,
+                        m.RegistrationId,
+                        reg is null ? string.Empty : (string)reg.Name,
+                        reg is null ? string.Empty : reg.Gender.ToString(),
+                        reg?.City ?? string.Empty,
                         m.Position
                     );
                 }).ToList();
