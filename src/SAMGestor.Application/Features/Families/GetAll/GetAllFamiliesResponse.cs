@@ -2,6 +2,7 @@ namespace SAMGestor.Application.Features.Families.GetAll;
 
 public sealed record GetAllFamiliesResponse(
     int Version,
+    bool FamiliesLocked,  
     IReadOnlyList<FamilyDto> Families
 );
 

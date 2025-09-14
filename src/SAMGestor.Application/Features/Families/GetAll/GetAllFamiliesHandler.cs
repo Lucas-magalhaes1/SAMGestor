@@ -16,11 +16,11 @@ public sealed class GetAllFamiliesHandler(
     {
         var retreat = await retreatRepo.GetByIdAsync(query.RetreatId, ct);
         if (retreat is null)
-            return new GetAllFamiliesResponse(0, Array.Empty<FamilyDto>());
+            return new GetAllFamiliesResponse(0, false, Array.Empty<FamilyDto>());
 
         var families = await familyRepo.ListByRetreatAsync(query.RetreatId, ct);
         if (families.Count == 0)
-            return new GetAllFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>());
+            return new GetAllFamiliesResponse(retreat.FamiliesVersion, retreat.FamiliesLocked, Array.Empty<FamilyDto>());
 
         var familyIds = families.Select(f => f.Id).ToArray();
         var membersByFamily = await familyMemberRepo.ListByFamilyIdsAsync(familyIds, ct);
@@ -77,6 +77,6 @@ public sealed class GetAllFamiliesHandler(
             familyDtos.Add(dto);
         }
 
-        return new GetAllFamiliesResponse(retreat.FamiliesVersion, familyDtos);
+        return new GetAllFamiliesResponse(retreat.FamiliesVersion, retreat.FamiliesLocked, familyDtos);
     }
 }
