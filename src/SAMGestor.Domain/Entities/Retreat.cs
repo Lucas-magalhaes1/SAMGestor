@@ -20,9 +20,8 @@ public class Retreat : Entity<Guid>
     public Money FeeServir { get; private set; }
     public Percentage WestRegionPercentage   { get; private set; }
     public Percentage OtherRegionsPercentage { get; private set; }
-    
     public int FamiliesVersion { get; private set; } = 0;
-
+    public bool FamiliesLocked { get; private set; }
     public bool ContemplationClosed { get; private set; }
 
     private Retreat() { }
@@ -65,6 +64,7 @@ public class Retreat : Entity<Guid>
 
         ContemplationClosed = false;
         FamiliesVersion     = 0;
+        FamiliesLocked = false;
     }
     
     public void UpdateDetails(
@@ -109,4 +109,6 @@ public class Retreat : Entity<Guid>
     public bool RegistrationWindowOpen(DateOnly today) =>
         today >= RegistrationStart && today <= RegistrationEnd;
     public void BumpFamiliesVersion() => FamiliesVersion++;
+    public void LockFamilies() { FamiliesLocked = true; BumpFamiliesVersion(); }
+    public void UnlockFamilies() { FamiliesLocked = false; BumpFamiliesVersion(); }
 }

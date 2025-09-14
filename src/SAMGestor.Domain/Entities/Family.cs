@@ -7,8 +7,10 @@ public class Family : Entity<Guid>
 {
     private readonly List<FamilyMember> _members = new();
 
-    public FullName Name   { get; private set; }
+    public FamilyName Name { get; private set; } 
     public Guid     RetreatId  { get; private set; }
+    
+    public bool IsLocked { get; private set; } 
 
     /// <summary>Capacidade máxima de membros (p/ MVP: 4).</summary>
     public int Capacity   { get; private set; }
@@ -18,7 +20,7 @@ public class Family : Entity<Guid>
 
     private Family() { }
 
-    public Family(FullName name, Guid retreatId, int capacity)
+    public Family(FamilyName name, Guid retreatId, int capacity)
     {
         Id        = Guid.NewGuid();
         Name      = name;
@@ -26,11 +28,14 @@ public class Family : Entity<Guid>
         Capacity  = capacity;
     }
 
-    public void Rename(FullName name) => Name = name;
+    public void Rename(FamilyName name) => Name = name;
 
     public void SetCapacity(int capacity)
     {
         if (capacity <= 0) throw new ArgumentException(nameof(capacity));
         Capacity = capacity;
     }
+    
+    public void Lock()   => IsLocked = true;
+    public void Unlock() => IsLocked = false;
 }
