@@ -15,4 +15,6 @@ public interface IFamilyMemberRepository
     Task RemoveByFamilyIdAsync(Guid familyId, CancellationToken ct = default);
 
     Task RemoveRangeAsync(IEnumerable<FamilyMember> members, CancellationToken ct = default);
+    
+    Task<FamilyMember?> GetByRegistrationIdAsync(Guid retreatId, Guid registrationId, CancellationToken ct = default);
 }

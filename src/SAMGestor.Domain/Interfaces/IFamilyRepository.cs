@@ -9,4 +9,5 @@ public interface IFamilyRepository
     Task<Family?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Family>> ListByRetreatAsync(Guid retreatId, CancellationToken ct = default);
     Task DeleteAllByRetreatAsync(Guid retreatId, CancellationToken ct = default);
+    Task DeleteAsync(Family family, CancellationToken ct = default);
 }
