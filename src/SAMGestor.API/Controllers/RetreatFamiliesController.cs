@@ -1,8 +1,13 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.Application.Features.Families.Create;
+using SAMGestor.Application.Features.Families.Delete;
 using SAMGestor.Application.Features.Families.Generate;
 using SAMGestor.Application.Features.Families.GetAll;
 using SAMGestor.Application.Features.Families.GetById;
+using SAMGestor.Application.Features.Families.Lock;
+using SAMGestor.Application.Features.Families.Reset;
+using SAMGestor.Application.Features.Families.Unassigned;
 using SAMGestor.Application.Features.Families.Update;
 
 namespace SAMGestor.API.Controllers;
@@ -68,8 +73,7 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         // Convenção: 422 quando não foi possível persistir (Errors) ou quando há Warnings e IgnoreWarnings=false
         var hasErrors   = result.Errors is not null && result.Errors.Count > 0;
         var hasWarnings = result.Warnings is not null && result.Warnings.Count > 0;
-
-        // Se não salvou, o handler retorna Families vazio junto com Errors/Warn.
+        
         var didPersist = result.Families is not null && result.Families.Count > 0;
 
         if (!didPersist && (hasErrors || hasWarnings))
@@ -77,4 +81,98 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
 
         return Ok(result);
     }
+    
+    [HttpPost("families/lock")]
+    public async Task<ActionResult<LockFamiliesResponse>> Lock(
+        [FromRoute] Guid retreatId,
+        [FromBody]  LockFamiliesRequest body,
+        CancellationToken ct)
+    {
+        var res = await mediator.Send(new LockFamiliesCommand(retreatId, body.Lock), ct);
+        return Ok(res);
+    }
+    
+    [HttpPost("families/{familyId:guid}/lock")]
+    public async Task<ActionResult<LockSingleFamilyResponse>> LockFamily(
+        [FromRoute] Guid retreatId,
+        [FromRoute] Guid familyId,
+        [FromBody]  LockFamilyRequest body,
+        CancellationToken ct)
+    {
+        var res = await mediator.Send(new LockSingleFamilyCommand(retreatId, familyId, body.Lock), ct);
+        return Ok(res);
+    }
+    
+    [HttpDelete("families/{familyId:guid}")]
+    public async Task<IActionResult> DeleteFamily(
+        [FromRoute] Guid retreatId,
+        [FromRoute] Guid familyId,
+        CancellationToken ct)
+    {
+        await mediator.Send(new DeleteFamilyCommand(retreatId, familyId), ct);
+        return NoContent();
+    }
+    
+    [HttpGet("families/unassigned")]
+    public async Task<ActionResult<GetUnassignedResponse>> Unassigned(
+        [FromRoute] Guid retreatId,
+        [FromQuery] string? gender = null,
+        [FromQuery] string? city = null,
+        [FromQuery] string? search = null,
+        CancellationToken ct = default)
+    {
+        var res = await mediator.Send(new GetUnassignedQuery(retreatId, gender, city, search), ct);
+        return Ok(res);
+    }
+    
+    [HttpPost("families/reset")]
+    public async Task<ActionResult<ResetFamiliesResponse>> Reset(
+        [FromRoute] Guid retreatId,
+        [FromBody]  ResetFamiliesRequest body,
+        CancellationToken ct)
+    {
+        var res = await mediator.Send(new ResetFamiliesCommand(retreatId, body.ForceLockedFamilies), ct);
+        return Ok(res);
+    }
+    
+    [HttpPost("create/families")]
+    public async Task<IActionResult> CreateFamily(
+        [FromRoute] Guid retreatId,
+        [FromBody]  CreateFamilyRequest body,
+        CancellationToken ct)
+    {
+        var cmd = new CreateFamilyCommand(
+            RetreatId: retreatId,
+            Name: body.Name,
+            MemberIds: body.MemberIds ?? Array.Empty<Guid>(),
+            IgnoreWarnings: body.IgnoreWarnings
+        );
+
+        var result = await mediator.Send(cmd, ct);
+
+        if (!result.Created)
+        {
+            // 422 com os warnings (sem persistir)
+            return UnprocessableEntity(new
+            {
+                version = result.Version,
+                warnings = result.Warnings
+            });
+        }
+
+        // 201 Created
+        return CreatedAtAction(
+            nameof(GetById),               // seu GET /families/{familyId}
+            routeValues: new { retreatId, familyId = result.FamilyId },
+            value: new
+            {
+                familyId = result.FamilyId,
+                version  = result.Version,
+                warnings = result.Warnings
+            });
+    }
+
+    public sealed record ResetFamiliesRequest(bool ForceLockedFamilies);
+    public sealed record LockFamiliesRequest(bool Lock);
+    public sealed record LockFamilyRequest(bool Lock);
 }

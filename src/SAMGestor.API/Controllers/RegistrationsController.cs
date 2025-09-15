@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Registrations.GetAll;
+using SAMGestor.Application.Features.Registrations.GetById;
 
 namespace SAMGestor.API.Controllers;
 
@@ -18,7 +19,11 @@ public class RegistrationsController(IMediator mediator) : ControllerBase
     }
     
     [HttpGet("{id:guid}", Name = nameof(GetById))]
-    public IActionResult GetById(Guid id) => NotFound();
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var dto = await mediator.Send(new GetRegistrationByIdQuery(id));
+        return dto is null ? NotFound() : Ok(dto);
+    }
     
     [HttpGet]
     public async Task<IActionResult> List(
