@@ -4,6 +4,7 @@ using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Application.Interfaces;
+using SAMGestor.Domain.Exceptions;
 
 namespace SAMGestor.Application.Features.Families.Update;
 
@@ -16,12 +17,10 @@ public sealed class UpdateFamiliesHandler(
     IUnitOfWork uow
 ) : IRequestHandler<UpdateFamiliesCommand, UpdateFamiliesResponse>
 {
-    // Para MVP: famílias fixas de 4 com 2M + 2F
     private const int FixedCapacity = 4;
 
     public async Task<UpdateFamiliesResponse> Handle(UpdateFamiliesCommand cmd, CancellationToken ct)
     {
-        // 1) Checar retiro + versão
         var retreat = await retreatRepo.GetByIdAsync(cmd.RetreatId, ct);
         if (retreat is null)
         {
@@ -30,6 +29,9 @@ public sealed class UpdateFamiliesHandler(
                 Array.Empty<FamilyAlertDto>());
         }
 
+        if (retreat.FamiliesLocked)
+            throw new BusinessRuleException("Famílias estão bloqueadas para edição.");
+
         if (cmd.Version != retreat.FamiliesVersion)
         {
             return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(),
@@ -37,8 +39,65 @@ public sealed class UpdateFamiliesHandler(
                 Array.Empty<FamilyAlertDto>());
         }
 
-        // 2) Carregar famílias atuais do retiro e validar FamilyIds
-        var families = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
+        // estado atual
+        var currentFamilies = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
+        var currentMembers  = await familyMemberRepo.ListByFamilyIdsAsync(currentFamilies.Select(f => f.Id), ct);
+        var lockedIds = currentFamilies.Where(f => f.IsLocked).Select(f => f.Id).ToHashSet();
+
+        // snapshot recebido
+        var snapByFamily = cmd.Families.ToDictionary(
+            f => f.FamilyId,
+            f => new {
+                Name = f.Name?.Trim(),
+                Regs = f.Members.Select(m => m.RegistrationId).ToHashSet(),
+                Positions = f.Members.OrderBy(m => m.Position).Select(m => (m.RegistrationId, m.Position)).ToList()
+            });
+
+        // valida tentativas de alterar famílias travadas
+        var lockedErrors = new List<FamilyErrorDto>();
+
+        foreach (var lockedId in lockedIds)
+        {
+            var existing = currentFamilies.First(x => x.Id == lockedId);
+            var existingLinks = currentMembers.GetValueOrDefault(lockedId) ?? new List<FamilyMember>();
+
+            var existingRegs = existingLinks.Select(l => l.RegistrationId).ToHashSet();
+            var existingPositions = existingLinks.OrderBy(l => l.Position).Select(l => (l.RegistrationId, l.Position)).ToList();
+
+            if (!snapByFamily.TryGetValue(lockedId, out var snap))
+            {
+                lockedErrors.Add(new FamilyErrorDto(
+                    Code: "FAMILY_LOCKED",
+                    Message: "Família bloqueada não pode ser removida ou alterada.",
+                    FamilyId: lockedId,
+                    RegistrationIds: Array.Empty<Guid>()));
+                continue;
+            }
+
+            var nameChanged = !string.Equals(snap.Name ?? (string)existing.Name, (string)existing.Name, StringComparison.Ordinal);
+            var membersChanged = !existingRegs.SetEquals(snap.Regs);
+            var positionsChanged = !existingPositions.SequenceEqual(snap.Positions);
+
+            if (nameChanged || membersChanged || positionsChanged)
+            {
+                lockedErrors.Add(new FamilyErrorDto(
+                    Code: "FAMILY_LOCKED",
+                    Message: "Família bloqueada não pode ser alterada.",
+                    FamilyId: lockedId,
+                    RegistrationIds: snap.Regs.ToList()));
+            }
+        }
+
+        if (lockedErrors.Count > 0)
+        {
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: lockedErrors,
+                Warnings: Array.Empty<FamilyAlertDto>());
+        }
+        
+        var families = currentFamilies;
         var familiesMap = families.ToDictionary(f => f.Id, f => f);
 
         var unknownFamilies = cmd.Families.Where(f => !familiesMap.ContainsKey(f.FamilyId)).ToList();
@@ -51,11 +110,9 @@ public sealed class UpdateFamiliesHandler(
             return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errs, Array.Empty<FamilyAlertDto>());
         }
 
-        // 3) Coletar todos ids de registration do snapshot e buscar dados
         var allRegIds = cmd.Families.SelectMany(f => f.Members.Select(m => m.RegistrationId)).Distinct().ToArray();
         var regsMap = await registrationRepo.GetMapByIdsAsync(allRegIds, ct);
 
-        // Checar se todos existem e pertencem ao retiro
         var missingRegs = allRegIds.Where(id => !regsMap.ContainsKey(id)).ToArray();
         if (missingRegs.Length > 0)
         {
@@ -74,13 +131,11 @@ public sealed class UpdateFamiliesHandler(
             return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errs, Array.Empty<FamilyAlertDto>());
         }
 
-        // 4) Validação por família (capacidade/2M2F/parentesco/sobrenome) + warnings (cidade)
         var errors = new List<FamilyErrorDto>();
         var warnings = new List<FamilyAlertDto>();
 
         foreach (var f in cmd.Families)
         {
-            // Capacidade: para MVP fixo (=4), validar exatamente igual
             if (f.Capacity != FixedCapacity)
             {
                 errors.Add(new FamilyErrorDto(
@@ -99,7 +154,6 @@ public sealed class UpdateFamiliesHandler(
                     RegistrationIds: f.Members.Select(m => m.RegistrationId).ToArray()));
             }
 
-            // 2M+2F
             var regs = f.Members.Select(m => regsMap[m.RegistrationId]).ToList();
             var maleCount = regs.Count(r => r.Gender == Gender.Male);
             var femaleCount = regs.Count - maleCount;
@@ -112,7 +166,6 @@ public sealed class UpdateFamiliesHandler(
                     RegistrationIds: regs.Select(r => r.Id).ToArray()));
             }
 
-            // Parentesco/cônjuge + Sobrenome (crítico)
             var regsArr = regs.ToArray();
             for (int i = 0; i < regsArr.Length; i++)
             for (int j = i + 1; j < regsArr.Length; j++)
@@ -120,7 +173,6 @@ public sealed class UpdateFamiliesHandler(
                 var ri = regsArr[i];
                 var rj = regsArr[j];
 
-                // AreSpouses / AreDirectRelatives (forte) => erro
                 if (await relationshipService.AreSpousesAsync(ri.Id, rj.Id, ct)
                  || await relationshipService.AreDirectRelativesAsync(ri.Id, rj.Id, ct))
                 {
@@ -131,11 +183,10 @@ public sealed class UpdateFamiliesHandler(
                         RegistrationIds: new[] { ri.Id, rj.Id }));
                 }
 
-                // Sobrenome (heurística crítica no MVP)
                 var lastI = ExtractLastName((string)ri.Name);
                 var lastJ = ExtractLastName((string)rj.Name);
-                if (!string.IsNullOrWhiteSpace(lastI) &&
-                    NormalizeSurname(lastI) == NormalizeSurname(lastJ))
+                if (!string.IsNullOrWhiteSpace(lastI)
+                 && NormalizeSurname(lastI) == NormalizeSurname(lastJ))
                 {
                     errors.Add(new FamilyErrorDto(
                         Code: "SAME_SURNAME",
@@ -145,7 +196,6 @@ public sealed class UpdateFamiliesHandler(
                 }
             }
 
-            // Warnings: mesma cidade
             var cityGroups = regs
                 .GroupBy(r => (r.City ?? string.Empty).Trim().ToLowerInvariant())
                 .Where(g => !string.IsNullOrWhiteSpace(g.Key) && g.Count() > 1);
@@ -161,28 +211,19 @@ public sealed class UpdateFamiliesHandler(
         }
 
         if (errors.Count > 0)
-        {
-            // Não persiste; retorna erros
             return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errors, warnings);
-        }
 
         if (warnings.Count > 0 && !cmd.IgnoreWarnings)
-        {
-            // Retorna warnings para o front decidir se manda novamente com IgnoreWarnings=true
             return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), Array.Empty<FamilyErrorDto>(), warnings);
-        }
 
-        // 5) Aplicar DELTA (atualizar nome/capacidade; substituir membros por família)
         foreach (var f in cmd.Families)
         {
-            var family = familiesMap[f.FamilyId];
+            var family = currentFamilies.First(x => x.Id == f.FamilyId);
 
-            // Atualiza nome/capacidade
-            family.Rename(new Domain.ValueObjects.FullName(f.Name));
+            family.Rename(new Domain.ValueObjects.FamilyName(f.Name));
             family.SetCapacity(f.Capacity);
             await familyRepo.UpdateAsync(family, ct);
 
-            // Substituição dos membros (mais simples e segura para snapshot)
             await familyMemberRepo.RemoveByFamilyIdAsync(f.FamilyId, ct);
 
             var ordered = f.Members.OrderBy(m => m.Position).ToList();
@@ -197,13 +238,10 @@ public sealed class UpdateFamiliesHandler(
                 await familyMemberRepo.AddRangeAsync(newLinks, ct);
         }
 
-        // 6) Incrementar versão e salvar
         retreat.BumpFamiliesVersion();
         await retreatRepo.UpdateAsync(retreat, ct);
         await uow.SaveChangesAsync(ct);
 
-        // 7) Montar resposta com estado final
-        // Reaproveita o caminho do GetAll para projetar DTOs
         var familiesFinal = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
         var membersByFamily = await familyMemberRepo.ListByFamilyIdsAsync(familiesFinal.Select(x => x.Id), ct);
         var allFinalIds = membersByFamily.Values.SelectMany(v => v).Select(m => m.RegistrationId).Distinct().ToArray();
