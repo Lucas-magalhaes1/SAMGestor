@@ -53,7 +53,8 @@ public sealed class CreateFamilyHandler(
         }
 
         // 4) Ninguém pode já estar alocado
-        var existingLinks = await fmRepo.ListByRetreatAsync(cmd.RetreatId, ct);
+        var existingLinks = await fmRepo.ListByRetreatAsync(cmd.RetreatId, ct) 
+                            ?? new List<FamilyMember>();
         var alreadyAssigned = existingLinks.Select(x => x.RegistrationId).ToHashSet();
         var conflict = cmd.MemberIds.Where(id => alreadyAssigned.Contains(id)).ToList();
         if (conflict.Count > 0)

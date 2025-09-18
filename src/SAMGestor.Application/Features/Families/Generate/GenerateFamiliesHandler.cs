@@ -78,39 +78,57 @@ public sealed class GenerateFamiliesHandler(
 
         var createdFamilies = new List<Family>();
         var createdMembers  = new List<FamilyMember>();
+        
+if (!cmd.ReplaceExisting && cmd.FillExistingFirst && (males.Count > 0 || females.Count > 0) && existingFamilies.Count > 0)
+{
+    
+    var linksByFamily = await familyMemberRepo.ListByFamilyIdsAsync(existingFamilies.Select(f => f.Id), ct)
+                        ?? new Dictionary<Guid, List<FamilyMember>>();
 
-        // 🔹 FillExistingFirst: completar famílias NÃO travadas antes de criar novas
-       if (!cmd.ReplaceExisting && cmd.FillExistingFirst && (males.Count > 0 || females.Count > 0) && existingFamilies.Count > 0)
-            { 
-                var linksByFamily = await familyMemberRepo.ListByFamilyIdsAsync(existingFamilies.Select(f => f.Id), ct);
-                var existingRegIds = linksByFamily.Values.SelectMany(v => v).Select(l => l.RegistrationId).Distinct().ToArray();
-                var existingRegsMap = await registrationRepo.GetMapByIdsAsync(existingRegIds, ct);
+    var existingRegIds = linksByFamily.Values
+        .Where(v => v is not null)
+        .SelectMany(v => v!)                 
+        .Select(l => l.RegistrationId)
+        .Distinct()
+        .ToArray();
+
+    var existingRegsMap = await registrationRepo.GetMapByIdsAsync(existingRegIds, ct)
+                        ?? new Dictionary<Guid, Registration>();
 
     foreach (var fam in existingFamilies
-                        .Where(f => !f.IsLocked) 
-                        .OrderBy(f => (linksByFamily.GetValueOrDefault(f.Id)?.Count ?? 0)))
+                        .Where(f => !f.IsLocked)
+                        .OrderBy(f => (linksByFamily.TryGetValue(f.Id, out var list) && list is not null) ? list.Count : 0))
     {
-        var links = linksByFamily.GetValueOrDefault(fam.Id) ?? new List<FamilyMember>();
+        var links = (linksByFamily.TryGetValue(fam.Id, out var list) && list is not null)
+            ? list.ToList()
+            : new List<FamilyMember>();
+
         var curCount = links.Count;
         if (curCount >= capacity) continue;
+        
+        var curMale = links.Count(l =>
+            existingRegsMap.TryGetValue(l.RegistrationId, out var r) &&
+            r is not null &&
+            r.Gender == Gender.Male);
 
-        var curMale = links.Count(l => existingRegsMap.TryGetValue(l.RegistrationId, out var r) && r.Gender == Gender.Male);
         var curFemale = curCount - curMale;
-
-       
+        
         var occupied = links
             .Select(l => l.Position)
             .Concat(createdMembers.Where(m => m.FamilyId == fam.Id).Select(m => m.Position))
             .ToHashSet();
 
-        int NextFreePos() => Enumerable.Range(0, capacity).First(p => !occupied.Contains(p));
-
+        int NextFreePos()
+            => Enumerable.Range(0, capacity).First(p => !occupied.Contains(p));
         
         while (curMale < 2 && curCount < capacity && males.Count > 0)
         {
-            var p = males[0]; males.RemoveAt(0);
+            var p   = males[0];
+            males.RemoveAt(0);
+
             var pos = NextFreePos();
             var fm  = new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos);
+            
             await familyMemberRepo.AddAsync(fm, ct);
             createdMembers.Add(fm);
 
@@ -118,13 +136,15 @@ public sealed class GenerateFamiliesHandler(
             curMale++;
             curCount++;
         }
-
-       
+        
         while (curFemale < 2 && curCount < capacity && females.Count > 0)
         {
-            var p = females[0]; females.RemoveAt(0);
+            var p   = females[0];
+            females.RemoveAt(0);
+
             var pos = NextFreePos();
             var fm  = new FamilyMember(cmd.RetreatId, fam.Id, p.Id, position: pos);
+            
             await familyMemberRepo.AddAsync(fm, ct);
             createdMembers.Add(fm);
 
@@ -134,6 +154,7 @@ public sealed class GenerateFamiliesHandler(
         }
     }
 }
+
 
        
         var familiesCount = Math.Min(males.Count / 2, females.Count / 2);

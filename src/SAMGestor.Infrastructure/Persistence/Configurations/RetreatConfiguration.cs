@@ -17,6 +17,8 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
              .HasColumnName("name")
              .HasMaxLength(120)
              .IsRequired();
+            
+            n.HasIndex(p => p.Value).IsUnique();
         });
 
         builder.Property(r => r.Edition)
@@ -107,5 +109,10 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
                .HasColumnName("families_version")
                .IsRequired()
                .IsConcurrencyToken();
+        
+        builder.Property(r => r.FamiliesLocked)
+               .HasColumnName("families_locked")
+               .HasDefaultValue(false)
+               .IsRequired();
     }
 }
