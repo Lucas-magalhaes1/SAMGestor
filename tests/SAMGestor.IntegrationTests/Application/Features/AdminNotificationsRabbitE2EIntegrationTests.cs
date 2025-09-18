@@ -9,7 +9,7 @@ using Xunit;
 
 namespace SAMGestor.IntegrationTests.Application.Features;
 
-public class AdminNotificationsRabbitE2ETests(RabbitOutboxWebAppFactory factory)
+public class AdminNotificationsRabbitE2EIntegrationTests(RabbitOutboxWebAppFactory factory)
     : IClassFixture<RabbitOutboxWebAppFactory>
 {
     private readonly HttpClient _client = factory.CreateClient();
