@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.ValueObjects;
 
 namespace SAMGestor.Infrastructure.Persistence.Configurations;
@@ -42,6 +43,35 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
             .WithMany()
             .HasForeignKey(f => f.RetreatId)
             .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.Property(f => f.GroupLink)
+            .HasColumnName("group_link")
+            .HasMaxLength(512);
+
+        builder.Property(f => f.GroupExternalId)
+            .HasColumnName("group_external_id")
+            .HasMaxLength(128);
+
+        builder.Property(f => f.GroupCreatedAt)
+            .HasColumnName("group_created_at");
+
+        builder.Property(f => f.GroupChannel)
+            .HasColumnName("group_channel")
+            .HasMaxLength(16);
+
+        builder.Property(f => f.GroupLastNotifiedAt)
+            .HasColumnName("group_last_notified_at");
+
+        builder.Property(f => f.GroupStatus)
+            .HasColumnName("group_status")
+            .HasConversion<int>()
+            .HasDefaultValue(GroupStatus.None)
+            .IsRequired();
+
+        builder.Property(f => f.GroupVersion)
+            .HasColumnName("group_version")
+            .HasDefaultValue(0)
+            .IsRequired();
             
         builder.ToTable(t =>
         {
@@ -49,5 +79,7 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
         });
         
         builder.HasIndex(f => new { f.RetreatId, f.Name }).IsUnique();
+        
+        builder.HasIndex(f => new { f.RetreatId, f.GroupStatus });
     }
 }
