@@ -11,7 +11,7 @@ using SAMGestor.Notification.Domain.Entities;
 using SAMGestor.Notification.Domain.Enums;
 using SAMGestor.Notification.Infrastructure.Persistence;
 
-namespace SAMGestor.Notification.Infrastructure.Messaging;
+namespace SAMGestor.Notification.Infrastructure.Messaging.Consumers;
 
 public sealed class PaymentLinkCreatedConsumer(
     RabbitMqOptions opt,

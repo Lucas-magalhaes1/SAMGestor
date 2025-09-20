@@ -39,6 +39,7 @@ builder.Services.AddSingleton<IEventPublisher, EventPublisher>();
 builder.Services.AddHostedService<PaymentLinkCreatedConsumer>();
 builder.Services.AddHostedService<SelectionEventConsumer>();
 builder.Services.AddHostedService<PaymentConfirmedConsumer>();
+builder.Services.AddHostedService<FamilyGroupCreateRequestedConsumer>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
