@@ -20,6 +20,8 @@ builder.Services
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<PaymentConfirmedConsumer>();
+builder.Services.AddHostedService<FamilyGroupCreatedConsumer>();
+builder.Services.AddHostedService<FamilyGroupCreateFailedConsumer>();
 
 
 var app = builder.Build();
