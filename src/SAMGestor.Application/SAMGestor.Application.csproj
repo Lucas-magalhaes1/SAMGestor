@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\..\shared\contracts\SAMGestor.Contracts\SAMGestor.Contracts.csproj" />
     <ProjectReference Include="..\SAMGestor.Domain\SAMGestor.Domain.csproj" />
   </ItemGroup>
 
