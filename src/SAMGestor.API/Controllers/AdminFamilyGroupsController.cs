@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Application.Features.Families.Groups;
+using SAMGestor.Application.Features.Families.Groups.Create;
+using SAMGestor.Application.Features.Families.Groups.Notify;
 
 namespace SAMGestor.API.Controllers;
 
