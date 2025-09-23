@@ -9,22 +9,21 @@ using SAMGestor.Notification.Application.Abstractions;
 using SAMGestor.Notification.Domain.Entities;
 using SAMGestor.Notification.Domain.Enums;
 
-
 namespace SAMGestor.Notification.Infrastructure.Messaging.Consumers;
 
-public sealed class FamilyGroupCreateRequestedConsumer(
+public sealed class FamilyGroupNotifyRequestedConsumer(
     RabbitMqOptions opt,
     RabbitMqConnection conn,
-    ILogger<FamilyGroupCreateRequestedConsumer> logger,
+    ILogger<FamilyGroupNotifyRequestedConsumer> logger,
     IServiceProvider sp
 ) : BackgroundService
 {
-    private const string QueueName = "notification.familygroups";
+    private const string QueueName = "notification.familygroups.notify";
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("FamilyGroupCreateRequestedConsumer starting…");
+        logger.LogInformation("FamilyGroupNotifyRequestedConsumer starting…");
         var exchange = string.IsNullOrWhiteSpace(opt.Exchange) ? "sam.topic" : opt.Exchange;
 
         while (!stoppingToken.IsCancellationRequested)
@@ -44,9 +43,9 @@ public sealed class FamilyGroupCreateRequestedConsumer(
                     noWait: false,
                     cancellationToken: stoppingToken
                 );
-                await ch.QueueBindAsync(QueueName, exchange, EventTypes.FamilyGroupCreateRequestedV1, cancellationToken: stoppingToken);
+                await ch.QueueBindAsync(QueueName, exchange, EventTypes.FamilyGroupNotifyRequestedV1, cancellationToken: stoppingToken);
                 await ch.BasicQosAsync(0, 10, false, stoppingToken);
-                logger.LogInformation("FamilyGroupCreateRequestedConsumer listening on {queue}", QueueName);
+                logger.LogInformation("FamilyGroupNotifyRequestedConsumer listening on {q}", QueueName);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -56,7 +55,7 @@ public sealed class FamilyGroupCreateRequestedConsumer(
                     try
                     {
                         var json = Encoding.UTF8.GetString(delivery.Body.ToArray());
-                        var env  = JsonSerializer.Deserialize<EventEnvelope<FamilyGroupCreateRequestedV1>>(json, Json);
+                        var env  = JsonSerializer.Deserialize<EventEnvelope<FamilyGroupNotifyRequestedV1>>(json, Json);
                         if (env?.Data is null)
                         {
                             logger.LogWarning("Invalid envelope. Tag={tag}", delivery.DeliveryTag);
@@ -69,7 +68,7 @@ public sealed class FamilyGroupCreateRequestedConsumer(
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "Error processing family.group.create.requested.v1");
+                        logger.LogError(ex, "Error processing family.group.notify.requested.v1");
                         await ch.BasicNackAsync(delivery.DeliveryTag, false, requeue: false, cancellationToken: stoppingToken);
                     }
                 }
@@ -82,44 +81,39 @@ public sealed class FamilyGroupCreateRequestedConsumer(
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                logger.LogError(ex, "FamilyGroupCreateRequestedConsumer loop error. Retry 5s…");
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                logger.LogError(ex, "NotifyRequestedConsumer loop error. Retry 2s…");
+                await Task.Delay(2000, stoppingToken);
             }
         }
     }
 
-    private async Task HandleAsync(FamilyGroupCreateRequestedV1 req, CancellationToken ct)
+    private async Task HandleAsync(FamilyGroupNotifyRequestedV1 req, CancellationToken ct)
     {
         using var scope = sp.CreateScope();
         var repo        = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
         var renderer    = scope.ServiceProvider.GetRequiredService<ITemplateRenderer>();
         var channels    = scope.ServiceProvider.GetServices<INotificationChannel>().ToList();
-        var publisher   = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
 
         var emailChannel    = channels.FirstOrDefault(c => c.Name == "email");
-        var whatsappChannel = channels.FirstOrDefault(c => c.Name == "whatsapp");
+        var whatsappChannel = channels.FirstOrDefault(c => c.Name == "whatsapp"); 
 
-        
-        var inviteLink = $"https://groups.example/{req.FamilyId}/{Guid.NewGuid():N}";
-        string? externalId = null;
-        
-        const string subjectTpl = "Grupo da sua família no retiro";
+        const string subjectTpl = "Reenvio: Grupo da sua família no retiro";
         const string bodyTpl = """
             Olá {{Name}},
 
             Este é o link do grupo da sua família: {{GroupLink}}
 
-            Qualquer dúvida, fale com a coordenação.
+            Se já está no grupo, ignore esta mensagem.
             """;
-        
-        var seenEmails  = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var seenPhones  = new HashSet<string>(StringComparer.Ordinal);
+
+        var seenEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seenPhones = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var m in req.Members)
         {
             if (emailChannel is not null && !string.IsNullOrWhiteSpace(m.Email) && seenEmails.Add(m.Email!))
             {
-                var data    = new Dictionary<string,string> { ["Name"] = m.Name, ["GroupLink"] = inviteLink };
+                var data    = new Dictionary<string,string> { ["Name"] = m.Name, ["GroupLink"] = req.GroupLink };
                 var subject = renderer.Render(subjectTpl, data);
                 var body    = renderer.Render(bodyTpl,   data);
 
@@ -128,7 +122,7 @@ public sealed class FamilyGroupCreateRequestedConsumer(
                     recipientName: m.Name,
                     recipientEmail: m.Email!,
                     recipientPhone: m.PhoneE164,
-                    templateKey: "family-group-link",
+                    templateKey: "family-group-link-resend",
                     subject: subject,
                     body: body,
                     registrationId: m.RegistrationId,
@@ -159,9 +153,9 @@ public sealed class FamilyGroupCreateRequestedConsumer(
                     recipientName: m.Name,
                     recipientEmail: null,
                     recipientPhone: m.PhoneE164!,
-                    templateKey: "family-group-link",
+                    templateKey: "family-group-link-resend",
                     subject: "Link do grupo da sua família",
-                    body: $"Olá {m.Name}, este é o link do grupo da sua família: {inviteLink}",
+                    body: $"Olá {m.Name}, este é o link do grupo da sua família: {req.GroupLink}",
                     registrationId: m.RegistrationId,
                     retreatId: req.RetreatId,
                     externalCorrelationId: req.FamilyId.ToString()
@@ -183,20 +177,5 @@ public sealed class FamilyGroupCreateRequestedConsumer(
                 }
             }
         }
-        
-        await publisher.PublishAsync(
-            type: EventTypes.FamilyGroupCreatedV1,
-            source: "sam.notification",
-            data: new FamilyGroupCreatedV1(
-                RetreatId: req.RetreatId,
-                FamilyId:  req.FamilyId,
-                Channel:   "whatsapp",   
-                Link:      inviteLink,
-                ExternalId: externalId,
-                CreatedAt: DateTimeOffset.UtcNow
-            ),
-            traceId: null,
-            ct: ct
-        );
     }
 }

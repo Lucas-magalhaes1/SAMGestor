@@ -40,6 +40,7 @@ builder.Services.AddHostedService<PaymentLinkCreatedConsumer>();
 builder.Services.AddHostedService<SelectionEventConsumer>();
 builder.Services.AddHostedService<PaymentConfirmedConsumer>();
 builder.Services.AddHostedService<FamilyGroupCreateRequestedConsumer>();
+builder.Services.AddHostedService<FamilyGroupNotifyRequestedConsumer>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
