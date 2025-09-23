@@ -101,8 +101,21 @@ namespace SAMGestor.UnitTests.API.Controllers
             var expected = new GetFamilyByIdResponse(
                 Version: 2,
                 Family: new GetByIdFamilyDto(
-                    FamilyId: familyId, Name: "Família X",
-                    Capacity: 4, TotalMembers: 4, MaleCount: 2, FemaleCount: 2, Remaining: 0, IsLocked: false,
+                    FamilyId: familyId,
+                    Name: "Família X",
+                    Capacity: 4,
+                    TotalMembers: 4,
+                    MaleCount: 2,
+                    FemaleCount: 2,
+                    Remaining: 0,
+                    IsLocked: false,
+                    GroupStatus: null,
+                    GroupLink: null,
+                    GroupExternalId: null,
+                    GroupChannel: null,
+                    GroupCreatedAt: null,
+                    GroupLastNotifiedAt: null,
+                    GroupVersion: 0,
                     Members: new List<GetByIdMemberDto>(),
                     Alerts: new List<GetByIdFamilyAlertDto>()
                 )

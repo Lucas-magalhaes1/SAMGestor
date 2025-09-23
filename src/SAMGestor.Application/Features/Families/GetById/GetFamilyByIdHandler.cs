@@ -1,11 +1,6 @@
 using MediatR;
 using SAMGestor.Application.Common.Families;
-using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Interfaces;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SAMGestor.Application.Features.Families.GetById;
 
@@ -49,19 +44,30 @@ public sealed class GetFamilyByIdHandler(
         var alerts = query.IncludeAlerts
             ? FamilyRead.Alerts(memberViews)
             : new System.Collections.Generic.List<FamilyRead.AlertView>();
+        
+        var groupStatusStr = family.GroupStatus.ToString(); 
 
         var dto = new FamilyDto(
-            family.Id,
-            (string)family.Name,
-            family.Capacity,
-            total,
-            male,
-            female,
-            remaining,
-            IsLocked:  family.IsLocked,
-            memberViews.Select(v => new MemberDto(
+            FamilyId: family.Id,
+            Name: (string)family.Name,
+            Capacity: family.Capacity,
+            TotalMembers: total,
+            MaleCount: male,
+            FemaleCount: female,
+            Remaining: remaining,
+            IsLocked: family.IsLocked,
+            
+            GroupStatus: groupStatusStr,
+            GroupLink: family.GroupLink,
+            GroupExternalId: family.GroupExternalId,
+            GroupChannel: family.GroupChannel,
+            GroupCreatedAt: family.GroupCreatedAt,
+            GroupLastNotifiedAt: family.GroupLastNotifiedAt,
+            GroupVersion: family.GroupVersion,
+            
+            Members: memberViews.Select(v => new MemberDto(
                 v.RegistrationId, v.Name, v.Gender.ToString(), v.City, v.Position)).ToList(),
-            alerts.Select(a => new FamilyAlertDto(a.Severity, a.Code, a.Message, a.RegistrationIds)).ToList()
+            Alerts: alerts.Select(a => new FamilyAlertDto(a.Severity, a.Code, a.Message, a.RegistrationIds)).ToList()
         );
 
         return new GetFamilyByIdResponse(retreat.FamiliesVersion, dto);
