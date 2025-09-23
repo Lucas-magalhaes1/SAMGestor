@@ -1,11 +1,10 @@
 using MediatR;
 
-namespace SAMGestor.Application.Features.Families.Groups;
+namespace SAMGestor.Application.Features.Families.Groups.Notify;
 
 public sealed record NotifyFamilyGroupCommand(
     Guid RetreatId,
     Guid FamilyId,
-    string Channel,           // "email" | "whatsapp"
     bool ForceRecreate = false
 ) : IRequest<NotifyFamilyGroupResponse>;
 

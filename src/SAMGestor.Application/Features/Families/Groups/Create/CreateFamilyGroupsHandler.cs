@@ -1,4 +1,5 @@
 using MediatR;
+using SAMGestor.Application.Features.Families.Groups.Create;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Contracts;
 using SAMGestor.Domain.Entities;
@@ -26,7 +27,7 @@ public sealed class CreateFamilyGroupsBulkHandler(
 
         var families = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
         if (families.Count == 0)
-            return new CreateFamilyGroupsResponse(0, 0, 0, cmd.Channel);
+            return new CreateFamilyGroupsResponse(0, 0, 0);
 
         // Pré-carrega vínculos de membros por família
         var linksByFamily = await familyMemberRepo.ListByFamilyIdsAsync(families.Select(f => f.Id), ct);
@@ -66,7 +67,6 @@ public sealed class CreateFamilyGroupsBulkHandler(
                 var evt = new FamilyGroupCreateRequestedV1(
                     RetreatId: cmd.RetreatId,
                     FamilyId:  fam.Id,
-                    Channel:   cmd.Channel,
                     ForceRecreate: cmd.ForceRecreate,
                     Members:   contacts
                 );
@@ -90,8 +90,7 @@ public sealed class CreateFamilyGroupsBulkHandler(
         return new CreateFamilyGroupsResponse(
             TotalFamilies: families.Count,
             Queued: queued,
-            Skipped: skipped,
-            Channel: cmd.Channel
+            Skipped: skipped
         );
     }
 }

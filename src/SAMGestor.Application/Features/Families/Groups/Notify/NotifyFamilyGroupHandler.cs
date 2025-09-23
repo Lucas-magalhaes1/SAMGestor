@@ -5,7 +5,7 @@ using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 
-namespace SAMGestor.Application.Features.Families.Groups;
+namespace SAMGestor.Application.Features.Families.Groups.Notify;
 
 public sealed class NotifyFamilyGroupHandler(
     IRetreatRepository retreatRepo,
@@ -51,7 +51,7 @@ public sealed class NotifyFamilyGroupHandler(
             })
             .ToList();
 
-        var evt = new FamilyGroupCreateRequestedV1(cmd.RetreatId, cmd.FamilyId, cmd.Channel, cmd.ForceRecreate, contacts);
+        var evt = new FamilyGroupCreateRequestedV1(cmd.RetreatId, cmd.FamilyId,cmd.ForceRecreate, contacts);
 
         await bus.EnqueueAsync(
             type: EventTypes.FamilyGroupCreateRequestedV1,
