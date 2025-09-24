@@ -13,6 +13,10 @@ public class RabbitOutboxWebAppFactory : PostgresWebAppFactory, IAsyncDisposable
 
     public string RabbitHost { get; private set; } = "localhost";
     public int RabbitPort { get; private set; }
+    
+    public string MailhogHost { get; } = Environment.GetEnvironmentVariable("MAILHOG_HOST") ?? "localhost";
+    public int    MailhogHttpPort { get; } = int.TryParse(Environment.GetEnvironmentVariable("MAILHOG_HTTP_PORT"), out var p) ? p : 8025;
+
 
     public RabbitOutboxWebAppFactory()
     {
