@@ -25,7 +25,11 @@ public class SAMContext(DbContextOptions<SAMContext> options) : DbContext(option
     public DbSet<BlockedCpf>         BlockedCpfs         => Set<BlockedCpf>();
     public DbSet<WaitingListItem>    WaitingListItems    => Set<WaitingListItem>();
     public DbSet<OutboxMessage>      OutboxMessages      => Set<OutboxMessage>();
-    public DbSet<FamilyMember>   FamilyMembers   => Set<FamilyMember>();
+    public DbSet<FamilyMember>       FamilyMembers       => Set<FamilyMember>();
+    public DbSet<ServiceSpace>       ServiceSpaces       => Set<ServiceSpace>();
+    public DbSet<ServiceRegistration>ServiceRegistrations=> Set<ServiceRegistration>();
+    public DbSet<ServiceAssignment>  ServiceAssignments  => Set<ServiceAssignment>();
+    public DbSet<ServiceRegistrationPayment>  ServiceRegistrationPayments  => Set<ServiceRegistrationPayment>();
     
 
 

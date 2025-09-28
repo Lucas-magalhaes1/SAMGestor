@@ -114,5 +114,16 @@ public class RetreatConfiguration : IEntityTypeConfiguration<Retreat>
                .HasColumnName("families_locked")
                .HasDefaultValue(false)
                .IsRequired();
+        
+        builder.Property(x => x.ServiceSpacesVersion)
+               .HasColumnName("service_spaces_version")
+               .HasDefaultValue(0)
+               .IsRequired()
+               .IsConcurrencyToken();
+
+        builder.Property(x => x.ServiceLocked)
+               .HasColumnName("service_locked")
+               .HasDefaultValue(false)
+               .IsRequired();
     }
 }

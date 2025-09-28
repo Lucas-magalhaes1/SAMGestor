@@ -460,6 +460,19 @@ namespace SAMGestor.Infrastructure.Migrations
                         .HasColumnType("date")
                         .HasColumnName("registration_start");
 
+                    b.Property<bool>("ServiceLocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("service_locked");
+
+                    b.Property<int>("ServiceSpacesVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("service_spaces_version");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date")
                         .HasColumnName("start_date");
@@ -473,6 +486,196 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("retreats", "core");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at");
+
+                    b.Property<Guid?>("AssignedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer")
+                        .HasColumnName("role");
+
+                    b.Property<Guid>("ServiceRegistrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_registration_id");
+
+                    b.Property<Guid>("ServiceSpaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_space_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceRegistrationId")
+                        .IsUnique();
+
+                    b.HasIndex("ServiceSpaceId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_service_assignments_one_vice_per_space")
+                        .HasFilter("role = 2");
+
+                    b.HasIndex("ServiceSpaceId", "Role");
+
+                    b.ToTable("service_assignments", "core");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceRegistration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("Cpf")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("cpf");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("email");
+
+                    b.Property<bool>("Enabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("enabled");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("gender");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("phone");
+
+                    b.Property<Guid?>("PreferredSpaceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preferred_space_id");
+
+                    b.Property<string>("Region")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("region");
+
+                    b.Property<DateTime>("RegistrationDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("registration_date");
+
+                    b.Property<Guid>("RetreatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retreat_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Cpf");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("PreferredSpaceId");
+
+                    b.HasIndex("RetreatId", "Cpf")
+                        .IsUnique();
+
+                    b.HasIndex("RetreatId", "Email")
+                        .IsUnique();
+
+                    b.HasIndex("RetreatId", "Status");
+
+                    b.ToTable("service_registrations", "core");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceRegistrationPayment", b =>
+                {
+                    b.Property<Guid>("ServiceRegistrationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PaymentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ServiceRegistrationId", "PaymentId");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique();
+
+                    b.ToTable("service_registration_payments", "core");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceSpace", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsLocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("MaxPeople")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinPeople")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<Guid>("RetreatId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RetreatId", "IsActive");
+
+                    b.HasIndex("RetreatId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("service_spaces", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Team", b =>
@@ -909,6 +1112,93 @@ namespace SAMGestor.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("WestRegionPercentage")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceAssignment", b =>
+                {
+                    b.HasOne("SAMGestor.Domain.Entities.ServiceRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SAMGestor.Domain.Entities.ServiceSpace", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceSpaceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceRegistration", b =>
+                {
+                    b.HasOne("SAMGestor.Domain.Entities.ServiceSpace", null)
+                        .WithMany()
+                        .HasForeignKey("PreferredSpaceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SAMGestor.Domain.Entities.Retreat", null)
+                        .WithMany()
+                        .HasForeignKey("RetreatId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.FullName", "Name", b1 =>
+                        {
+                            b1.Property<Guid>("ServiceRegistrationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(160)
+                                .HasColumnType("character varying(160)")
+                                .HasColumnName("full_name");
+
+                            b1.HasKey("ServiceRegistrationId");
+
+                            b1.ToTable("service_registrations", "core");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ServiceRegistrationId");
+                        });
+
+                    b.OwnsOne("SAMGestor.Domain.ValueObjects.UrlAddress", "PhotoUrl", b1 =>
+                        {
+                            b1.Property<Guid>("ServiceRegistrationId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(512)
+                                .HasColumnType("character varying(512)")
+                                .HasColumnName("photo_url");
+
+                            b1.HasKey("ServiceRegistrationId");
+
+                            b1.ToTable("service_registrations", "core");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ServiceRegistrationId");
+                        });
+
+                    b.Navigation("Name")
+                        .IsRequired();
+
+                    b.Navigation("PhotoUrl");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ServiceRegistrationPayment", b =>
+                {
+                    b.HasOne("SAMGestor.Domain.Entities.Payment", null)
+                        .WithMany()
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SAMGestor.Domain.Entities.ServiceRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

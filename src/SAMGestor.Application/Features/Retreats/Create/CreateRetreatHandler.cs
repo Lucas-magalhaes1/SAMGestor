@@ -1,7 +1,8 @@
 using MediatR;
 using SAMGestor.Application.Interfaces;
+using SAMGestor.Application.Services; 
 using SAMGestor.Domain.Entities;
-using SAMGestor.Domain.Exceptions;    // BusinessRuleException – create if not existing
+using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 
 namespace SAMGestor.Application.Features.Retreats.Create;
@@ -11,11 +12,13 @@ public sealed class CreateRetreatHandler
 {
     private readonly IRetreatRepository _repo;
     private readonly IUnitOfWork        _uow;
-
-    public CreateRetreatHandler(IRetreatRepository repo, IUnitOfWork uow)
+    private readonly ServiceSpacesSeeder _spacesSeeder; 
+    
+    public CreateRetreatHandler(IRetreatRepository repo, IUnitOfWork uow, ServiceSpacesSeeder spacesSeeder)
     {
         _repo = repo;
         _uow  = uow;
+        _spacesSeeder = spacesSeeder;
     }
 
     public async Task<CreateRetreatResponse> Handle(
@@ -42,6 +45,13 @@ public sealed class CreateRetreatHandler
 
         await _repo.AddAsync(retreat, ct);
         await _uow.SaveChangesAsync(ct);
+        
+        const int DefaultMaxPeople = 8; 
+        await _spacesSeeder.SeedDefaultsIfMissingAsync(retreat.Id, DefaultMaxPeople, ct);
+        
+         retreat.BumpServiceSpacesVersion();
+
+        await _uow.SaveChangesAsync(ct); 
 
         return new CreateRetreatResponse(retreat.Id);
     }

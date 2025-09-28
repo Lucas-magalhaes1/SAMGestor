@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Interfaces;
+using SAMGestor.Application.Services;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Infrastructure.Messaging.Outbox;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
@@ -49,9 +50,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFamilyRepository, FamilyRepository>();
         services.AddScoped<IFamilyMemberRepository, FamilyMemberRepository>();
         
+        services.AddScoped<ServiceSpacesSeeder>();
+        
         services.AddMediatR(typeof(CreateRetreatHandler).Assembly);
         services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
         services.AddValidatorsFromAssemblyContaining<CreateRegistrationValidator>();
+        services.AddScoped<IServiceSpaceRepository, ServiceSpaceRepository>();
+        services.AddScoped<IServiceRegistrationRepository, ServiceRegistrationRepository>();
+       
 
         return services;
     }
