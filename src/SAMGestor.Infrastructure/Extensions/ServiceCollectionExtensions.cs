@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Retreats.Create;
+using SAMGestor.Application.Features.Service.Spaces.Create;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Application.Services;
 using SAMGestor.Domain.Interfaces;
@@ -57,7 +58,8 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<CreateRegistrationValidator>();
         services.AddScoped<IServiceSpaceRepository, ServiceSpaceRepository>();
         services.AddScoped<IServiceRegistrationRepository, ServiceRegistrationRepository>();
-       
+        services.AddScoped<IServiceAssignmentRepository, ServiceAssignmentRepository>();
+        services.AddValidatorsFromAssemblyContaining<CreateServiceSpaceValidator>();
 
         return services;
     }
