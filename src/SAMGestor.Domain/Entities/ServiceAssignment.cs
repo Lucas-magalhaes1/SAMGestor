@@ -23,8 +23,19 @@ public class ServiceAssignment : Entity<Guid>
         AssignedAt            = DateTimeOffset.UtcNow;
     }
 
-    public void ChangeRole(ServiceRole newRole)
+    public void ChangeRole(ServiceRole newRole, Guid? assignedBy = null)
     {
-        Role = newRole;
+        Role       = newRole;
+        AssignedBy = assignedBy;
+        AssignedAt = DateTimeOffset.UtcNow;
     }
+
+    public void UpdateTarget(Guid newServiceSpaceId, ServiceRole newRole, Guid? assignedBy = null)
+    {
+        ServiceSpaceId = newServiceSpaceId;
+        Role           = newRole;
+        AssignedBy     = assignedBy;
+        AssignedAt     = DateTimeOffset.UtcNow;
+    }
+
 }

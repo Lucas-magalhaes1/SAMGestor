@@ -29,6 +29,15 @@ public class ServiceSpace : Entity<Guid>
         IsLocked    = false;
         IsActive    = true;
     }
+    
+    public void Rename(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException(nameof(name));
+        Name = name.Trim();
+    }
+    
+    public void UpdateDescription(string? description)
+        => Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
     public void UpdateBasics(string name, string? description)
     {

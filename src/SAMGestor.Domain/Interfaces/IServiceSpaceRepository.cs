@@ -5,11 +5,14 @@ namespace SAMGestor.Domain.Interfaces;
 public interface IServiceSpaceRepository
 {
     Task<ServiceSpace?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
     Task<IReadOnlyList<ServiceSpace>> ListActiveByRetreatAsync(Guid retreatId, CancellationToken ct = default);
     Task<IReadOnlyList<ServiceSpace>> ListByRetreatAsync(Guid retreatId, CancellationToken ct = default);
-    Task<bool> HasActiveByRetreatAsync(Guid retreatId, CancellationToken ct = default);
-    
-    Task AddAsync(ServiceSpace space, CancellationToken ct = default); 
-    
+
+    Task AddAsync(ServiceSpace space, CancellationToken ct = default);
     Task AddRangeAsync(IEnumerable<ServiceSpace> spaces, CancellationToken ct = default); 
+    Task UpdateAsync(ServiceSpace space, CancellationToken ct = default);
+    Task RemoveAsync(ServiceSpace space, CancellationToken ct = default);                 
+    Task<bool> HasActiveByRetreatAsync(Guid retreatId, CancellationToken ct = default);  
+    Task<bool> ExistsByNameInRetreatAsync(Guid retreatId, string name, CancellationToken ct = default);
 }
