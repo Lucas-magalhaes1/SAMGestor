@@ -1,21 +1,27 @@
 using MediatR;
-using SAMGestor.Application.Dtos;
+using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 
 namespace SAMGestor.Application.Features.Service.Spaces.PublicList;
 
 public sealed class PublicListServiceSpacesHandler(
-    IServiceSpaceRepository repo
-) : IRequestHandler<PublicListServiceSpacesQuery, IReadOnlyList<ServiceSpacePublicDto>>
+    IRetreatRepository retreatRepo,
+    IServiceSpaceRepository spaceRepo
+) : IRequestHandler<PublicListServiceSpacesQuery, PublicListServiceSpacesResponse>
 {
-    public async Task<IReadOnlyList<ServiceSpacePublicDto>> Handle(
-        PublicListServiceSpacesQuery request, CancellationToken ct)
+    public async Task<PublicListServiceSpacesResponse> Handle(PublicListServiceSpacesQuery q, CancellationToken ct)
     {
-        var spaces = await repo.ListActiveByRetreatAsync(request.RetreatId, ct);
+        var retreat = await retreatRepo.GetByIdAsync(q.RetreatId, ct)
+                      ?? throw new NotFoundException(nameof(Retreat), q.RetreatId);
 
-        return spaces
+        var spaces = await spaceRepo.ListActiveByRetreatAsync(q.RetreatId, ct);
+
+        var items = spaces
             .OrderBy(s => s.Name)
-            .Select(s => new ServiceSpacePublicDto(s.Id, s.Name, s.Description))
-            .ToArray();
+            .Select(s => new PublicItem(s.Id, s.Name, s.Description))
+            .ToList();
+
+        return new PublicListServiceSpacesResponse(retreat.ServiceSpacesVersion, items);
     }
 }
