@@ -8,4 +8,5 @@ public sealed class RabbitMqOptions
     public string UserName { get; set; } = "guest";
     public string Password { get; set; } = "guest";
     public string Exchange { get; set; } = "sam.topic";
+    public string ServingPaymentQueue { get; set; } = "core.payment.serving";
 }

@@ -8,4 +8,6 @@ public sealed class RabbitMqOptions
     public string Exchange { get; set; } = "sam.topic";
     public string SelectionQueue { get; set; } = "notification.selection";
     public string SelectionRoutingKey { get; set; } = "selection.participant.selected";
+    public string ServingQueue { get; set; } = "notification.serving";
+    public string ServingRoutingKey { get; set; } = "serving.participant.selected.v1";
 }
