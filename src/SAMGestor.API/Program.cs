@@ -22,6 +22,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<PaymentConfirmedConsumer>();
 builder.Services.AddHostedService<FamilyGroupCreatedConsumer>();
 builder.Services.AddHostedService<FamilyGroupCreateFailedConsumer>();
+builder.Services.AddHostedService<ServicePaymentConfirmedConsumer>();
 
 
 var app = builder.Build();

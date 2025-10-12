@@ -9,6 +9,8 @@ using SAMGestor.Application.Features.Service.Spaces.Create;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Application.Services;
 using SAMGestor.Domain.Interfaces;
+using SAMGestor.Infrastructure.Messaging.Consumers;
+using SAMGestor.Infrastructure.Messaging.Options;
 using SAMGestor.Infrastructure.Messaging.Outbox;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
@@ -73,8 +75,13 @@ public static class ServiceCollectionExtensions
             HostName = configuration["MessageBus:Host"] ?? "rabbitmq",
             UserName = configuration["MessageBus:User"] ?? "guest",
             Password = configuration["MessageBus:Pass"] ?? "guest",
-            Exchange = "sam.topic"
+            Exchange = "sam.topic",
+            ServingPaymentQueue = "core.payment.serving"
         };
+        
+        var autoOpt = new ServiceAutoAssignOptions();
+        configuration.GetSection("ServiceAutoAssign").Bind(autoOpt); 
+        services.AddSingleton(autoOpt);
         
         services.AddSingleton(mqOpt);
         services.AddSingleton<RabbitMqConnection>();
@@ -83,6 +90,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEventBus, OutboxEventBus>();
         
         services.AddHostedService<OutboxDispatcher>();
+        services.AddHostedService<ServicePaymentConfirmedConsumer>();
 
 
         return services;
