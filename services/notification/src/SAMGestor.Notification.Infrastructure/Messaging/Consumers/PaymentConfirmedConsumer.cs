@@ -87,79 +87,96 @@ public sealed class PaymentConfirmedConsumer(
     }
 
     private async Task HandleAsync(PaymentConfirmedV1 evt, CancellationToken ct)
+{
+    using var scope = sp.CreateScope();
+    var db        = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+    var repo      = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
+    var renderer  = scope.ServiceProvider.GetRequiredService<ITemplateRenderer>();
+    var channels  = scope.ServiceProvider.GetRequiredService<IEnumerable<INotificationChannel>>();
+    var publisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+
+    var sel = await db.SelectedRegistrations.AsNoTracking()
+        .SingleOrDefaultAsync(x => x.RegistrationId == evt.RegistrationId, ct);
+
+    if (sel is null) return;
+
+    string subjectTpl, bodyTpl, templateKey;
+
+    if (sel.Kind == SAMGestor.Notification.Domain.Enums.SelectionKind.Serving)
     {
-        using var scope = sp.CreateScope();
-        var db        = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
-        var repo      = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
-        var renderer  = scope.ServiceProvider.GetRequiredService<ITemplateRenderer>();
-        var channels  = scope.ServiceProvider.GetRequiredService<IEnumerable<INotificationChannel>>();
-        var publisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+        templateKey = "serving-payment-approved";
+        subjectTpl  = "Equipe de serviço confirmada ✅";
+        bodyTpl = """
+            Olá {{Name}},
 
-        // buscamos a projeção para pegar Name/Email
-        var sel = await db.SelectedRegistrations.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.RegistrationId == evt.RegistrationId, ct);
-
-        if (sel is null) return; // sem dados, nada a enviar (poderia logar/alertar)
-
-        var subjectTpl = "Pagamento aprovado ✅";
-        var bodyTpl = """
+            Pagamento recebido ({{Amount}} BRL, método: {{Method}}) em {{PaidAt}}.
+            Sua participação na equipe de serviço está confirmada. Obrigado pelo “sim”! 🙌
+            """;
+    }
+    else
+    {
+        templateKey = "payment-approved";
+        subjectTpl  = "Pagamento aprovado ✅";
+        bodyTpl = """
             Olá {{Name}},
 
             Recebemos o seu pagamento ({{Amount}} BRL, método: {{Method}}) em {{PaidAt}}.
             Sua inscrição está confirmada. Nos vemos no retiro! 🙌
             """;
-
-        var data = new Dictionary<string, string>
-        {
-            ["Name"]   = sel.Name,
-            ["Amount"] = evt.Amount.ToString("0.00"),
-            ["Method"] = evt.Method ?? "pix",
-            ["PaidAt"] = evt.PaidAt.ToLocalTime().ToString("g")
-        };
-
-        var subject = renderer.Render(subjectTpl, data);
-        var body    = renderer.Render(bodyTpl, data);
-
-        var message = new NotificationMessage(
-            channel: NotificationChannel.Email,
-            recipientName: sel.Name,
-            recipientEmail: sel.Email,
-            recipientPhone: sel.Phone,
-            templateKey: "payment-approved",
-            subject: subject,
-            body: body,
-            registrationId: evt.RegistrationId,
-            retreatId: evt.RetreatId,
-            externalCorrelationId: evt.PaymentId.ToString()
-        );
-
-        await repo.AddAsync(message, ct);
-
-        var emailChannel = channels.Single(c => c.Name == "email");
-
-        try
-        {
-            await emailChannel.SendAsync(message, ct);
-
-            message.MarkSent();
-            await repo.UpdateAsync(message, ct);
-            await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Sent, null), ct);
-
-            await publisher.PublishAsync(
-                type: EventTypes.NotificationEmailSentV1,
-                source: "sam.notification",
-                data: new NotificationEmailSentV1(message.Id, evt.RegistrationId, sel.Email, DateTimeOffset.UtcNow));
-        }
-        catch (Exception ex)
-        {
-            message.MarkFailed(ex.Message);
-            await repo.UpdateAsync(message, ct);
-            await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Failed, ex.Message), ct);
-
-            await publisher.PublishAsync(
-                type: EventTypes.NotificationEmailFailedV1,
-                source: "sam.notification",
-                data: new NotificationEmailFailedV1(message.Id, evt.RegistrationId, sel.Email, ex.Message, DateTimeOffset.UtcNow));
-        }
     }
+
+    var data = new Dictionary<string, string>
+    {
+        ["Name"]   = sel.Name,
+        ["Amount"] = evt.Amount.ToString("0.00"),
+        ["Method"] = evt.Method ?? "pix",
+        ["PaidAt"] = evt.PaidAt.ToLocalTime().ToString("g")
+    };
+
+    var subject = renderer.Render(subjectTpl, data);
+    var body    = renderer.Render(bodyTpl, data);
+
+    var message = new NotificationMessage(
+        channel: NotificationChannel.Email,
+        recipientName: sel.Name,
+        recipientEmail: sel.Email,
+        recipientPhone: sel.Phone,
+        templateKey: templateKey,
+        subject: subject,
+        body: body,
+        registrationId: evt.RegistrationId,
+        retreatId: evt.RetreatId,
+        externalCorrelationId: evt.PaymentId.ToString()
+    );
+
+    await repo.AddAsync(message, ct);
+
+    var emailChannel = channels.Single(c => c.Name == "email");
+
+    try
+    {
+        await emailChannel.SendAsync(message, ct);
+
+        message.MarkSent();
+        await repo.UpdateAsync(message, ct);
+        await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Sent, null), ct);
+
+        await publisher.PublishAsync(
+            type: EventTypes.NotificationEmailSentV1,
+            source: "sam.notification",
+            data: new NotificationEmailSentV1(message.Id, evt.RegistrationId, sel.Email, DateTimeOffset.UtcNow));
+    }
+    catch (Exception ex)
+    {
+        message.MarkFailed(ex.Message);
+        await repo.UpdateAsync(message, ct);
+        await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Failed, ex.Message), ct);
+
+        await publisher.PublishAsync(
+            type: EventTypes.NotificationEmailFailedV1,
+            source: "sam.notification",
+            data: new NotificationEmailFailedV1(message.Id, evt.RegistrationId, sel.Email, ex.Message, DateTimeOffset.UtcNow));
+    }
+}
+
 }

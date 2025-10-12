@@ -22,7 +22,7 @@ public sealed class PaymentLinkCreatedConsumer(
 {
     private const string QueueName = "notification.payment";
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
-
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("PaymentLinkCreatedConsumer starting…");
@@ -91,28 +91,44 @@ public sealed class PaymentLinkCreatedConsumer(
     }
 
     private async Task HandleAsync(PaymentLinkCreatedV1 evt, CancellationToken ct)
+{
+    using var scope = sp.CreateScope();
+    var db        = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+    var repo      = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
+    var renderer  = scope.ServiceProvider.GetRequiredService<ITemplateRenderer>();
+    var channels  = scope.ServiceProvider.GetServices<INotificationChannel>().ToList();
+    var publisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+
+    var sel = await db.SelectedRegistrations
+        .AsNoTracking()
+        .SingleOrDefaultAsync(x => x.RegistrationId == evt.RegistrationId, ct);
+
+    if (sel is null) return;
+
+    // Escolhe o texto de acordo com o Kind
+    string subjectTpl, bodyTpl, templateKey;
+
+    if (sel.Kind == SAMGestor.Notification.Domain.Enums.SelectionKind.Serving)
     {
-        using var scope = sp.CreateScope();
-        var db        = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
-        var repo      = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
-        var renderer  = scope.ServiceProvider.GetRequiredService<ITemplateRenderer>();
-        var channels  = scope.ServiceProvider.GetServices<INotificationChannel>().ToList();
-        var publisher = scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+        templateKey = "serving-payment-link";
+        subjectTpl  = "Equipe de serviço: finalize sua confirmação";
+        bodyTpl = """
+            Olá {{Name}},
 
-        // carrega a projeção
-        var sel = await db.SelectedRegistrations
-            .AsNoTracking()
-            .SingleOrDefaultAsync(x => x.RegistrationId == evt.RegistrationId, ct);
+            Para confirmar sua participação na equipe de serviço do retiro,
+            conclua o pagamento:
 
-        if (sel is null)
-        {
-            // Sem projeção: não envia (poderia logar/emitir alerta)
-            return;
-        }
+            Valor: {{Amount}} {{Currency}}
+            Link de pagamento: {{LinkUrl}}
 
-        // template simples
-        var subjectTpl = "Seu link de pagamento do retiro";
-        var bodyTpl = """
+            Qualquer dúvida, responda este e-mail.
+            """;
+    }
+    else
+    {
+        templateKey = "participant-payment-link";
+        subjectTpl  = "Seu link de pagamento do retiro";
+        bodyTpl = """
             Olá {{Name}},
 
             Valor: {{Amount}} {{Currency}}
@@ -120,58 +136,60 @@ public sealed class PaymentLinkCreatedConsumer(
 
             Se já pagou, ignore este e-mail.
             """;
-
-        var data = new Dictionary<string, string>
-        {
-            ["Name"]     = sel.Name,
-            ["Amount"]   = evt.Amount.ToString("0.00"),
-            ["Currency"] = evt.Currency,
-            ["LinkUrl"]  = evt.LinkUrl
-        };
-
-        var subject = renderer.Render(subjectTpl, data);
-        var body    = renderer.Render(bodyTpl, data);
-
-        var message = new NotificationMessage(
-            channel: NotificationChannel.Email,
-            recipientName: sel.Name,
-            recipientEmail: sel.Email,
-            recipientPhone: sel.Phone,
-            templateKey: "participant-payment-link",
-            subject: subject,
-            body: body,
-            registrationId: evt.RegistrationId,
-            retreatId: evt.RetreatId,
-            externalCorrelationId: evt.PaymentId.ToString()
-        );
-
-        await repo.AddAsync(message, ct);
-
-        var emailChannel = channels.Single(c => c.Name == "email");
-
-        try
-        {
-            await emailChannel.SendAsync(message, ct);
-
-            message.MarkSent();
-            await repo.UpdateAsync(message, ct);
-            await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Sent, null), ct);
-
-            await publisher.PublishAsync(
-                type: EventTypes.NotificationEmailSentV1,
-                source: "sam.notification",
-                data: new NotificationEmailSentV1(message.Id, evt.RegistrationId, sel.Email, DateTimeOffset.UtcNow));
-        }
-        catch (Exception ex)
-        {
-            message.MarkFailed(ex.Message);
-            await repo.UpdateAsync(message, ct);
-            await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Failed, ex.Message), ct);
-
-            await publisher.PublishAsync(
-                type: EventTypes.NotificationEmailFailedV1,
-                source: "sam.notification",
-                data: new NotificationEmailFailedV1(message.Id, evt.RegistrationId, sel.Email, ex.Message, DateTimeOffset.UtcNow));
-        }
     }
+
+    var data = new Dictionary<string, string>
+    {
+        ["Name"]     = sel.Name,
+        ["Amount"]   = evt.Amount.ToString("0.00"),
+        ["Currency"] = evt.Currency,
+        ["LinkUrl"]  = evt.LinkUrl
+    };
+
+    var subject = renderer.Render(subjectTpl, data);
+    var body    = renderer.Render(bodyTpl, data);
+
+    var message = new NotificationMessage(
+        channel: NotificationChannel.Email,
+        recipientName: sel.Name,
+        recipientEmail: sel.Email,
+        recipientPhone: sel.Phone,
+        templateKey: templateKey,
+        subject: subject,
+        body: body,
+        registrationId: evt.RegistrationId,
+        retreatId: evt.RetreatId,
+        externalCorrelationId: evt.PaymentId.ToString()
+    );
+
+    await repo.AddAsync(message, ct);
+
+    var emailChannel = channels.Single(c => c.Name == "email");
+
+    try
+    {
+        await emailChannel.SendAsync(message, ct);
+
+        message.MarkSent();
+        await repo.UpdateAsync(message, ct);
+        await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Sent, null), ct);
+
+        await publisher.PublishAsync(
+            type: EventTypes.NotificationEmailSentV1,
+            source: "sam.notification",
+            data: new NotificationEmailSentV1(message.Id, evt.RegistrationId, sel.Email, DateTimeOffset.UtcNow));
+    }
+    catch (Exception ex)
+    {
+        message.MarkFailed(ex.Message);
+        await repo.UpdateAsync(message, ct);
+        await repo.AddLogAsync(new NotificationDispatchLog(message.Id, NotificationStatus.Failed, ex.Message), ct);
+
+        await publisher.PublishAsync(
+            type: EventTypes.NotificationEmailFailedV1,
+            source: "sam.notification",
+            data: new NotificationEmailFailedV1(message.Id, evt.RegistrationId, sel.Email, ex.Message, DateTimeOffset.UtcNow));
+    }
+}
+
 }
