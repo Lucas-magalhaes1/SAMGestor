@@ -19,6 +19,8 @@ public static class EventTypes
     public const string FamilyGroupCreateFailedV1    = "family.group.create.failed.v1";
     public const string FamilyGroupNotifyRequestedV1 = "family.group.notify.requested.v1";
 
+    public const string ServingParticipantSelectedV1 = "serving.participant.selected.v1";
+
 }
 
 public sealed record EventEnvelope<T>(
