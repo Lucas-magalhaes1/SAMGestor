@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.Application.Features.Service.Registrations.Confirmed;
 using SAMGestor.Application.Features.Service.Registrations.Create;
 using SAMGestor.Application.Features.Service.Registrations.GetById;
 using SAMGestor.Application.Features.Service.Roster.Get;
@@ -43,4 +44,12 @@ public class ServiceRegistrationsController(IMediator mediator) : ControllerBase
     [HttpGet("roster/unassigned")]
     public async Task<ActionResult<GetUnassignedServiceMembersResponse>> GetUnassigned(Guid retreatId, CancellationToken ct)
         => Ok(await mediator.Send(new GetUnassignedServiceMembersQuery(retreatId), ct));
+    
+    
+        [HttpGet("confirmed")]
+        public async Task<IActionResult> GetConfirmed([FromRoute] Guid retreatId, CancellationToken ct)
+        {
+            var result = await mediator.Send(new GetConfirmedServiceRegistrationsQuery(retreatId), ct);
+            return Ok(result);
+        }
 }
