@@ -25,8 +25,24 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
         => Ok(await mediator.Send(new GetServiceSpacesSummaryQuery(retreatId), ct));
 
     [HttpGet]
-    public async Task<IActionResult> GetList(Guid retreatId, CancellationToken ct)
-        => Ok(await mediator.Send(new ListServiceSpacesQuery(retreatId), ct));
+    public async Task<IActionResult> GetList(
+        Guid retreatId,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool? isLocked,
+        [FromQuery] string? search,
+        CancellationToken ct)
+    {
+        var query = new ListServiceSpacesQuery(
+            RetreatId: retreatId,
+            IsActive: isActive,
+            IsLocked: isLocked,
+            Search: search
+        );
+
+        var res = await mediator.Send(query, ct);
+        return Ok(res);
+    }
+
     
     [HttpGet("{spaceId:guid}")]
     public async Task<IActionResult> Detail(
