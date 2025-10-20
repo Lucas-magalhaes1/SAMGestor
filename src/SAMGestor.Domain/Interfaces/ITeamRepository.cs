@@ -1,11 +1,15 @@
 using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Enums;
+using SAMGestor.Domain.ValueObjects;
 
 namespace SAMGestor.Domain.Interfaces;
 
-public interface ITeamRepository
+public  interface ITentRepository
 {
-    Team? GetById(Guid id);
-    int  GetOccupancy(Guid teamId);                       // membros atuais
-    bool HasRole(Guid teamId, TeamMemberRole role);       // existe alguém com esse papel?
+    Task<Tent?> GetByIdAsync(Guid tentId, CancellationToken ct = default);
+    Task<List<Tent>> ListByRetreatAsync(Guid retreatId, TentCategory? category = null, bool? active = null, CancellationToken ct = default);
+    Task<bool> ExistsNumberAsync(Guid retreatId, TentCategory category, TentNumber number, Guid? ignoreId = null, CancellationToken ct = default);
+    Task AddAsync(Tent tent, CancellationToken ct = default);
+    Task UpdateAsync(Tent tent, CancellationToken ct = default);
+    Task DeleteAsync(Tent tent, CancellationToken ct = default);
 }

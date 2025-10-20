@@ -67,4 +67,7 @@ public class Registration : Entity<Guid>
         if (Status == RegistrationStatus.Canceled) return;
         Status = RegistrationStatus.Confirmed;
     }
+    public bool IsEligibleForTent() =>
+        Enabled && (Status == RegistrationStatus.PaymentConfirmed || Status == RegistrationStatus.Confirmed);
+
 }

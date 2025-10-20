@@ -23,10 +23,12 @@ public class Retreat : Entity<Guid>
     public int FamiliesVersion { get; private set; } = 0;
     public bool FamiliesLocked { get; private set; }
     public bool ContemplationClosed { get; private set; }
-    
     public int  ServiceSpacesVersion { get; private set; } = 0;
-    
     public bool ServiceLocked        { get; private set; } = false;
+    
+    public int  TentsVersion { get; private set; } = 0;
+    
+    public bool TentsLocked  { get; private set; } = false;
 
     private Retreat() { }
 
@@ -118,4 +120,7 @@ public class Retreat : Entity<Guid>
     public void BumpServiceSpacesVersion() => ServiceSpacesVersion++;
     public void LockService()  => ServiceLocked = true;
     public void UnlockService()=> ServiceLocked = false;
+    public void BumpTentsVersion() => TentsVersion++;
+    public void LockTents()   { TentsLocked = true;  BumpTentsVersion(); }
+    public void UnlockTents() { TentsLocked = false; BumpTentsVersion(); }
 }

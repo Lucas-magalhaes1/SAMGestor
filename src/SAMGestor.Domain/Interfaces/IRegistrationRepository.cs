@@ -40,4 +40,13 @@ public interface IRegistrationRepository
         CancellationToken ct);
     
     Task<Dictionary<Guid, Registration>> GetMapByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
+    Task<List<Registration>> ListPaidByRetreatAndGenderAsync(Guid retreatId, Gender gender, CancellationToken ct = default);
+    Task<List<Registration>> ListPaidByRetreatAsync(Guid retreatId, CancellationToken ct = default);
+    Task<int> CountByTentAsync(Guid tentId, CancellationToken ct = default);
+    Task<Dictionary<Guid,int>> GetAssignedCountMapByTentIdsAsync(
+        Guid retreatId,
+        Guid[] tentIds,
+        CancellationToken ct = default);
+    
+    Task<List<Registration>> ListPaidUnassignedAsync(Guid retreatId, Gender? gender = null, string? search = null, CancellationToken ct = default);
 }
