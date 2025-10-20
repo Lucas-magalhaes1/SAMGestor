@@ -62,6 +62,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IServiceRegistrationRepository, ServiceRegistrationRepository>();
         services.AddScoped<IServiceAssignmentRepository, ServiceAssignmentRepository>();
         services.AddValidatorsFromAssemblyContaining<CreateServiceSpaceValidator>();
+        services.AddScoped<ITentRepository, TentRepository>();
+        services.AddScoped<ITentAssignmentRepository, TentAssignmentRepository>();
 
         return services;
     }

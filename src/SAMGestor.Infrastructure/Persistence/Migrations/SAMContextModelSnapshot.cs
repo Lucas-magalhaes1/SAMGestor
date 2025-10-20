@@ -477,6 +477,19 @@ namespace SAMGestor.Infrastructure.Migrations
                         .HasColumnType("date")
                         .HasColumnName("start_date");
 
+                    b.Property<bool>("TentsLocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("tents_locked");
+
+                    b.Property<int>("TentsVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("tents_version");
+
                     b.Property<string>("Theme")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -746,8 +759,26 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
                         .HasColumnName("category");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsLocked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_locked");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(280)
+                        .HasColumnType("character varying(280)")
+                        .HasColumnName("notes");
 
                     b.Property<Guid>("RetreatId")
                         .HasColumnType("uuid")
@@ -755,7 +786,49 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("tents", "core");
+                    b.HasIndex("RetreatId");
+
+                    b.ToTable("tents", "core", t =>
+                        {
+                            t.HasCheckConstraint("ck_tents_capacity_positive", "capacity > 0");
+                        });
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.TentAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AssignedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("assigned_at");
+
+                    b.Property<Guid?>("AssignedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigned_by");
+
+                    b.Property<int?>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_id");
+
+                    b.Property<Guid>("TentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tent_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegistrationId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_tent_assignments_registration");
+
+                    b.HasIndex("TentId");
+
+                    b.ToTable("tent_assignments", "core");
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.User", b =>
@@ -1244,6 +1317,7 @@ namespace SAMGestor.Infrastructure.Migrations
                                 .HasColumnType("uuid");
 
                             b1.Property<int>("Value")
+                                .HasMaxLength(32)
                                 .HasColumnType("integer")
                                 .HasColumnName("number");
 
@@ -1256,6 +1330,21 @@ namespace SAMGestor.Infrastructure.Migrations
                         });
 
                     b.Navigation("Number")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.TentAssignment", b =>
+                {
+                    b.HasOne("SAMGestor.Domain.Entities.Registration", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SAMGestor.Domain.Entities.Tent", null)
+                        .WithMany()
+                        .HasForeignKey("TentId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

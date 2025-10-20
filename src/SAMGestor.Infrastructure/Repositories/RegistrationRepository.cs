@@ -99,5 +99,74 @@ namespace SAMGestor.Infrastructure.Repositories
 
             return list.ToDictionary(r => r.Id, r => r);
         }
+        
+        public async Task<List<Registration>> ListPaidByRetreatAndGenderAsync(Guid retreatId, Gender gender, CancellationToken ct = default)
+            => await _ctx.Registrations.AsNoTracking()
+                .Where(r => r.RetreatId == retreatId &&
+                            r.Enabled &&
+                            (r.Status == RegistrationStatus.PaymentConfirmed || r.Status == RegistrationStatus.Confirmed) &&
+                            r.Gender == gender)
+                .OrderBy(r => r.Name.Value)
+                .ToListAsync(ct);
+
+        public async Task<List<Registration>> ListPaidByRetreatAsync(Guid retreatId, CancellationToken ct = default)
+            => await _ctx.Registrations.AsNoTracking()
+                .Where(r => r.RetreatId == retreatId &&
+                            r.Enabled &&
+                            (r.Status == RegistrationStatus.PaymentConfirmed || r.Status == RegistrationStatus.Confirmed))
+                .OrderBy(r => r.Gender).ThenBy(r => r.Name.Value)
+                .ToListAsync(ct);
+
+        public async Task<List<Registration>> ListPaidUnassignedAsync(Guid retreatId, Gender? gender = null,
+            string? search = null, CancellationToken ct = default)
+        {
+            var q = _ctx.Registrations.AsNoTracking()
+                .Where(r => r.RetreatId == retreatId &&
+                            r.Enabled &&
+                            (r.Status == RegistrationStatus.PaymentConfirmed ||
+                             r.Status == RegistrationStatus.Confirmed));
+
+            if (gender.HasValue) q = q.Where(r => r.Gender == gender.Value);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                q = q.Where(r =>
+                    r.Name.Value.ToLower().Contains(s) ||
+                    r.Email.Value.ToLower().Contains(s) ||
+                    r.Cpf.Value.ToLower().Contains(s));
+            }
+
+            // Sem barraca: não existe assignment
+            q = q.Where(r => !_ctx.TentAssignments.Any(a => a.RegistrationId == r.Id));
+
+            return await q.OrderBy(r => r.Name.Value).ToListAsync(ct);
+        }
+        
+        public async Task<int> CountByTentAsync(Guid tentId, CancellationToken ct = default)
+        {
+            return await _ctx.Registrations
+                .AsNoTracking()
+                .CountAsync(r => r.TentId == tentId, ct);
+        }
+
+        public async Task<Dictionary<Guid,int>> GetAssignedCountMapByTentIdsAsync(
+            Guid retreatId,
+            Guid[] tentIds,
+            CancellationToken ct = default)
+        {
+            if (tentIds.Length == 0) return new Dictionary<Guid,int>();
+
+            var rows = await _ctx.Registrations
+                .AsNoTracking()
+                .Where(r => r.RetreatId == retreatId &&
+                            r.TentId != null &&
+                            tentIds.Contains(r.TentId.Value))
+                .GroupBy(r => r.TentId!.Value)
+                .Select(g => new { TentId = g.Key, Count = g.Count() })
+                .ToListAsync(ct);
+
+            return rows.ToDictionary(x => x.TentId, x => x.Count);
+        }
     }
 }

@@ -35,4 +35,8 @@
     <ProjectReference Include="..\..\src\SAMGestor.Domain\SAMGestor.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Domain\" />
+  </ItemGroup>
+
 </Project>

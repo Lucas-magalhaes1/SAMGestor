@@ -29,10 +29,9 @@ public class SAMContext(DbContextOptions<SAMContext> options) : DbContext(option
     public DbSet<ServiceSpace>       ServiceSpaces       => Set<ServiceSpace>();
     public DbSet<ServiceRegistration>ServiceRegistrations=> Set<ServiceRegistration>();
     public DbSet<ServiceAssignment>  ServiceAssignments  => Set<ServiceAssignment>();
-    public DbSet<ServiceRegistrationPayment>  ServiceRegistrationPayments  => Set<ServiceRegistrationPayment>();
+    public DbSet<ServiceRegistrationPayment> ServiceRegistrationPayments => Set<ServiceRegistrationPayment>();
+    public DbSet<TentAssignment> TentAssignments => Set<TentAssignment>();
     
-
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("core");
