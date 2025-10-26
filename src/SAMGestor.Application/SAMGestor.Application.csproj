@@ -15,19 +15,6 @@
     <PackageReference Include="MediatR" Version="11.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Features\Tents\BulkCreate\" />
-    <Folder Include="Features\Tents\Delete\" />
-    <Folder Include="Features\Tents\Locking\" />
-    <Folder Include="Features\Tents\TentRoster\Assign\" />
-    <Folder Include="Features\Tents\TentRoster\AutoAssign\" />
-    <Folder Include="Features\Tents\TentRoster\Get\" />
-    <Folder Include="Features\Tents\TentRoster\Unassigned\" />
-    <Folder Include="Features\Tents\TentRoster\Unassign\" />
-    <Folder Include="Features\Tents\TentRoster\Update\" />
-    <Folder Include="Features\Tents\Update\" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
