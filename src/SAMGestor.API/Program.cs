@@ -8,15 +8,9 @@ using SAMGestor.Infrastructure.Messaging.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddControllers();
-
-builder.Services
-    .AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
-
-builder.Services
-    .AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
+builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<PaymentConfirmedConsumer>();
@@ -24,6 +18,21 @@ builder.Services.AddHostedService<FamilyGroupCreatedConsumer>();
 builder.Services.AddHostedService<FamilyGroupCreateFailedConsumer>();
 builder.Services.AddHostedService<ServicePaymentConfirmedConsumer>();
 
+// CORS apenas o front local
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost3000", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000" 
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .AllowCredentials();
+    });
+});
 
 var app = builder.Build();
 
@@ -35,7 +44,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+app.UseCors("AllowLocalhost3000");
 app.MapControllers();
+
 app.Run();
 
 public abstract partial class Program { }
