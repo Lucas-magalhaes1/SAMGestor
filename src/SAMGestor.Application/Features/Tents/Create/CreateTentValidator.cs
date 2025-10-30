@@ -17,8 +17,8 @@ public sealed class CreateTentValidator : AbstractValidator<CreateTentCommand>
             .WithMessage("Number deve ser numérico.");
 
         RuleFor(x => x.Category)
-            .IsInEnum()
-            .Must(c => c is TentCategory.Male or TentCategory.Female);
+            .Must(c => c is TentCategory.Male or TentCategory.Female)
+            .WithMessage("Categoria inválida. Use Male ou Female.");
 
         RuleFor(x => x.Capacity)
             .GreaterThan(0);
