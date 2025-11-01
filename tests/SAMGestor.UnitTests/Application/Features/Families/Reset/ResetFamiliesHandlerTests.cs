@@ -8,6 +8,7 @@ using Moq;
 using SAMGestor.Application.Features.Families.Reset;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
@@ -278,4 +279,78 @@ public sealed class ResetFamiliesHandlerTests
         familyRepo.Verify(r => r.DeleteAllByRetreatAsync(retreat.Id, It.IsAny<CancellationToken>()), Times.Once);
         uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+    
+    [Fact]
+    public async Task Se_alguma_familia_estiver_com_grupo_em_criacao_deve_falhar()
+    {
+        
+        var retreat = NewRetreat();
+
+        var famSemGrupo   = NewFamily(retreat.Id, "Família Normal");
+        var famComGrupo   = NewFamily(retreat.Id, "Família Com Grupo");
+        
+        famComGrupo.MarkGroupCreating(); 
+
+        var cmd = new ResetFamiliesCommand(retreat.Id, ForceLockedFamilies: true);
+
+        var retreatRepo = new Mock<IRetreatRepository>();
+        retreatRepo.Setup(r => r.GetByIdAsync(retreat.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(retreat);
+
+        var familyRepo = new Mock<IFamilyRepository>();
+        familyRepo.Setup(r => r.ListByRetreatAsync(retreat.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Family> { famSemGrupo, famComGrupo });
+
+        var handler = new ResetFamiliesHandler(
+            retreatRepo.Object,
+            familyRepo.Object,
+            new Mock<IFamilyMemberRepository>().Object,
+            new Mock<IUnitOfWork>().Object
+        );
+
+        // act + assert
+        await FluentActions.Invoking(() => handler.Handle(cmd, default))
+            .Should().ThrowAsync<BusinessRuleException>()
+            .WithMessage("*grupos*"); 
+    }
+    
+    [Fact]
+    public async Task Se_alguma_familia_estiver_com_grupo_ativo_deve_falhar()
+    {
+       
+        var retreat = NewRetreat();
+
+        var famNormal = NewFamily(retreat.Id, "Família Normal");
+        var famAtiva  = NewFamily(retreat.Id, "Família Com Grupo Ativo");
+        
+        var groupStatusProp = typeof(Family)
+            .GetProperty("GroupStatus");
+
+        groupStatusProp.Should().NotBeNull("a entidade Family deve ter a propriedade GroupStatus");
+
+        groupStatusProp!.SetValue(famAtiva, GroupStatus.Active);
+
+        var cmd = new ResetFamiliesCommand(retreat.Id, ForceLockedFamilies: true);
+
+        var retreatRepo = new Mock<IRetreatRepository>();
+        retreatRepo.Setup(r => r.GetByIdAsync(retreat.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(retreat);
+
+        var familyRepo = new Mock<IFamilyRepository>();
+        familyRepo.Setup(r => r.ListByRetreatAsync(retreat.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Family> { famNormal, famAtiva });
+
+        var handler = new ResetFamiliesHandler(
+            retreatRepo.Object,
+            familyRepo.Object,
+            new Mock<IFamilyMemberRepository>().Object,
+            new Mock<IUnitOfWork>().Object
+        );
+        
+        await FluentActions.Invoking(() => handler.Handle(cmd, default))
+            .Should().ThrowAsync<BusinessRuleException>()
+            .WithMessage("*grupos*");
+    }
+
+
 }
