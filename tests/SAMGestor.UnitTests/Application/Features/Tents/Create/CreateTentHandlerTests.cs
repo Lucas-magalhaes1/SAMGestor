@@ -5,6 +5,7 @@ using SAMGestor.Application.Features.Tents.Create;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Enums;
+using SAMGestor.Domain.Exceptions; 
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
 
@@ -14,10 +15,8 @@ public class CreateTentHandlerTests
 {
     private static Retreat MakeRetreat(Guid id, bool? tentsLocked = null)
     {
-        // cria instância sem passar pelo ctor (para não depender da assinatura exata)
         var r = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
-
-        // tenta setar a propriedade/field Id se existir
+        
         var idProp = typeof(Retreat).GetProperty("Id");
         if (idProp != null && idProp.CanWrite)
             idProp.SetValue(r, id);
@@ -27,8 +26,7 @@ public class CreateTentHandlerTests
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             idField?.SetValue(r, id);
         }
-
-        // seta TentsLocked se existir e foi pedido
+        
         if (tentsLocked is not null)
         {
             var lockProp = typeof(Retreat).GetProperty("TentsLocked",
@@ -108,8 +106,7 @@ public class CreateTentHandlerTests
         captured.Category.Should().Be(TentCategory.Male);
         captured.Capacity.Should().Be(6);
         captured.Notes.Should().Be("perto do muro");
-
-        // ExistsNumberAsync checado com ignoreId null
+        
         tentRepo.Verify(t => t.ExistsNumberAsync(
             retreatId,
             TentCategory.Male,
@@ -136,7 +133,7 @@ public class CreateTentHandlerTests
         var cmd = new CreateTentCommand(Guid.NewGuid(), "1", TentCategory.Female, 4, null);
 
         await FluentActions.Invoking(() => handler.Handle(cmd, CancellationToken.None))
-            .Should().ThrowAsync<SAMGestor.Domain.Exceptions.NotFoundException>();
+            .Should().ThrowAsync<NotFoundException>();
     }
 
     [Fact]
@@ -150,8 +147,8 @@ public class CreateTentHandlerTests
         var cmd = new CreateTentCommand(retreatId, "3", TentCategory.Female, 4, null);
 
         await FluentActions.Invoking(() => handler.Handle(cmd, CancellationToken.None))
-            .Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*travadas*"); // "As barracas estão travadas..." (aceita pattern)
+            .Should().ThrowAsync<BusinessRuleException>()
+            .WithMessage("*travadas*");
     }
 
     [Theory]
@@ -168,7 +165,7 @@ public class CreateTentHandlerTests
         var cmd = new CreateTentCommand(retreatId, number, TentCategory.Male, 2, null);
 
         await FluentActions.Invoking(() => handler.Handle(cmd, CancellationToken.None))
-            .Should().ThrowAsync<InvalidOperationException>()
+            .Should().ThrowAsync<BusinessRuleException>()
             .WithMessage("*Number inválido*");
     }
 
@@ -183,11 +180,9 @@ public class CreateTentHandlerTests
         var cmd = new CreateTentCommand(retreatId, "10", TentCategory.Female, 4, null);
 
         await FluentActions.Invoking(() => handler.Handle(cmd, CancellationToken.None))
-            .Should().ThrowAsync<InvalidOperationException>()
+            .Should().ThrowAsync<BusinessRuleException>()
             .WithMessage("*Já existe barraca*");
 
         tentRepo.Verify(t => t.AddAsync(It.IsAny<Tent>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
-
-
