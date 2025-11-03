@@ -70,9 +70,12 @@ services:
       Smtp__Port: 1025
       Outbox__BatchSize: "50"
       Outbox__PollIntervalSeconds: "10"
-      Outbox__UseListenNotify: "false" 
+      Outbox__UseListenNotify: "false"
       Outbox__ListenChannel: outbox_new
       Outbox__WatchdogSeconds: "30"
+      Storage__Provider: Local
+      Storage__BasePath: /app/wwwroot/uploads
+      Storage__PublicBaseUrl: http://localhost:5000/uploads
     ports:
       - "5000:8080"
     depends_on:
@@ -82,6 +85,8 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
         
         
   notificationapi:
