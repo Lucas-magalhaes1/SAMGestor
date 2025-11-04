@@ -1,16 +1,14 @@
+using System.Globalization;
 using MediatR;
 using SAMGestor.Domain.Interfaces;
-using System;
-using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SAMGestor.Application.Features.Registrations.GetById;
 
 public sealed class GetRegistrationByIdHandler(
     IRegistrationRepository regRepo,
     IFamilyMemberRepository familyMemberRepo,
-    IFamilyRepository familyRepo
+    IFamilyRepository familyRepo,
+    IStorageService storage 
 ) : IRequestHandler<GetRegistrationByIdQuery, GetRegistrationByIdResponse?>
 {
     public async Task<GetRegistrationByIdResponse?> Handle(GetRegistrationByIdQuery q, CancellationToken ct)
@@ -19,7 +17,6 @@ public sealed class GetRegistrationByIdHandler(
         if (r is null) return null;
 
         FamilyMembershipDto? familyDto = null;
-
         var link = await familyMemberRepo.GetByRegistrationIdAsync(r.RetreatId, r.Id, ct);
         if (link is not null)
         {
@@ -28,14 +25,24 @@ public sealed class GetRegistrationByIdHandler(
             {
                 familyDto = new FamilyMembershipDto(
                     fam.Id,
-                    (string)fam.Name,   // FamilyName (VO/converter)
+                    (string)fam.Name,
                     link.Position
                 );
             }
         }
 
         var birthIso = r.BirthDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var photo = r.PhotoUrl is null ? null : r.PhotoUrl.Value;
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var age = r.GetAgeOn(today);
+
+        // Fallbacks: se a URL persistida estiver nula, derive da chave via storage
+        var photoUrl = r.PhotoUrl?.Value;
+        if (string.IsNullOrWhiteSpace(photoUrl) && !string.IsNullOrWhiteSpace(r.PhotoStorageKey))
+            photoUrl = storage.GetPublicUrl(r.PhotoStorageKey);
+
+        var docUrl = r.IdDocumentUrl?.Value;
+        if (string.IsNullOrWhiteSpace(docUrl) && !string.IsNullOrWhiteSpace(r.IdDocumentStorageKey))
+            docUrl = storage.GetPublicUrl(r.IdDocumentStorageKey);
 
         return new GetRegistrationByIdResponse(
             r.Id,
@@ -46,17 +53,89 @@ public sealed class GetRegistrationByIdHandler(
             r.City,
             r.Gender.ToString(),
             r.Status.ToString(),
-            r.ParticipationCategory.ToString(),
             r.Enabled,
-            r.Region,
             r.RetreatId,
             r.TentId,
             r.TeamId,
             birthIso,
-            photo,
+            photoUrl,                 
             r.CompletedRetreat,
             r.RegistrationDate,
-            familyDto
+            familyDto,
+            age,
+            new PersonalDto(
+                r.MaritalStatus?.ToString(),
+                r.Pregnancy.ToString(),
+                r.ShirtSize?.ToString(),
+                r.WeightKg,
+                r.HeightCm,
+                r.Profession,
+                r.StreetAndNumber,
+                r.Neighborhood,
+                r.State?.ToString()
+            ),
+            new ContactsDto(
+                r.Whatsapp,
+                r.FacebookUsername,
+                r.InstagramHandle,
+                r.NeighborPhone,
+                r.RelativePhone
+            ),
+            new FamilyInfoDto(
+                r.FatherStatus?.ToString(),
+                r.FatherName,
+                r.FatherPhone,
+                r.MotherStatus?.ToString(),
+                r.MotherName,
+                r.MotherPhone,
+                r.HadFamilyLossLast6Months,
+                r.FamilyLossDetails,
+                r.HasRelativeOrFriendSubmitted,
+                r.SubmitterRelationship.ToString(),
+                r.SubmitterNames
+            ),
+            new ReligionHistoryDto(
+                r.Religion,
+                r.PreviousUncalledApplications.ToString(),
+                r.RahaminVidaCompleted.ToString()
+            ),
+            new HealthDto(
+                r.AlcoholUse.ToString(),
+                r.Smoker,
+                r.UsesDrugs,
+                r.DrugUseFrequency,
+                r.HasAllergies,
+                r.AllergiesDetails,
+                r.HasMedicalRestriction,
+                r.MedicalRestrictionDetails,
+                r.TakesMedication,
+                r.MedicationsDetails,
+                r.PhysicalLimitationDetails,
+                r.RecentSurgeryOrProcedureDetails
+            ),
+            new ConsentDto(
+                r.TermsAccepted,
+                r.TermsAcceptedAt,
+                r.TermsVersion,
+                r.MarketingOptIn,
+                r.MarketingOptInAt,
+                r.ClientIp,
+                r.UserAgent
+            ),
+            new MediaDto(
+                r.PhotoStorageKey,
+                r.PhotoContentType,
+                r.PhotoSizeBytes,
+                r.PhotoUploadedAt,
+                photoUrl,            
+                r.IdDocumentType?.ToString(),
+                r.IdDocumentNumber,
+                r.IdDocumentStorageKey,
+                r.IdDocumentContentType,
+                r.IdDocumentSizeBytes,
+                r.IdDocumentUploadedAt,
+                docUrl               
+            )
         );
     }
 }

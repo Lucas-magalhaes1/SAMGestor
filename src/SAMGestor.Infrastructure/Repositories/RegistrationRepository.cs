@@ -17,7 +17,6 @@ namespace SAMGestor.Infrastructure.Repositories
 
         public Task<Registration?> GetByIdAsync(Guid id, CancellationToken ct = default)
             => _ctx.Registrations
-                   .AsNoTracking()
                    .FirstOrDefaultAsync(r => r.Id == id, ct);
 
         public Task<bool> ExistsByCpfInRetreatAsync(CPF cpf, Guid retreatId, CancellationToken ct = default)
@@ -36,10 +35,6 @@ namespace SAMGestor.Infrastructure.Repositories
 
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<RegistrationStatus>(status, true, out var parsedStatus))
                 query = query.Where(r => r.Status == parsedStatus);
-
-            if (!string.IsNullOrEmpty(region))
-                query = query.Where(r => r.Region == region);
-
             return await query.Skip(skip).Take(take).AsNoTracking().ToListAsync(ct);
         }
 
@@ -49,10 +44,6 @@ namespace SAMGestor.Infrastructure.Repositories
 
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<RegistrationStatus>(status, true, out var parsedStatus))
                 query = query.Where(r => r.Status == parsedStatus);
-
-            if (!string.IsNullOrEmpty(region))
-                query = query.Where(r => r.Region == region);
-
             return query.CountAsync(ct);
         }
         

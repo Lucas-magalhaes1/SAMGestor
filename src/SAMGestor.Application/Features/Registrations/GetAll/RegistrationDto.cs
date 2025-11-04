@@ -5,6 +5,10 @@ public record RegistrationDto(
     string   Name,
     string   Cpf,
     string   Status,
-    string   Region,
-    string   Category,
-    DateTime RegistrationDate);
+    string   Gender,
+    int      Age,
+    string   City,
+    string?  State,
+    DateTime RegistrationDate,
+    string?  AvatarUrl   
+);
