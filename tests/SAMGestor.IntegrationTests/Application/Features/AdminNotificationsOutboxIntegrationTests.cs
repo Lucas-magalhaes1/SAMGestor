@@ -43,17 +43,68 @@ public class AdminNotificationsOutboxIntegrationTests(OutboxWebAppFactory factor
         };
     }
 
-    private static object NewRegistrationBody(Guid retreatId, string name, string cpf, string email, int gender) => new {
+    private static object NewRegistrationBody(Guid retreatId, string name, string cpf, string email, int gender) => new
+    {
         name  = new { value = name },
         cpf   = new { value = cpf },
         email = new { value = email },
+
         phone = "11999999999",
         birthDate = "2000-01-01",
         gender,
         city = "SP",
-        participationCategory = ParticipationGuest,
-        region = "Oeste",
-        retreatId
+        state = "SP",
+        retreatId,
+
+        maritalStatus = 1,
+        pregnancy = 0,
+        shirtSize = 3,
+        weightKg = 80,
+        heightCm = 180,
+        profession = "Dev",
+        streetAndNumber = "Rua A, 123",
+        neighborhood = "Centro",
+
+        whatsapp = "11988887777",
+        neighborPhone = "1133334444",
+        relativePhone = "11911112222",
+        facebookUsername = "fulano.fb",
+        instagramHandle  = "fulano.ig",
+
+        fatherStatus = 1,
+        fatherName = "Pai Teste",
+        fatherPhone = "1133332222",
+        motherStatus = 1,
+        motherName = "Mae Teste",
+        motherPhone = "11911113333",
+        hadFamilyLossLast6Months = false,
+        familyLossDetails = (string?)null,
+        hasRelativeOrFriendSubmitted = false,
+        submitterRelationship = 0,
+        submitterNames = (string?)null,
+
+        religion = "Católica",
+        previousUncalledApplications = 0,
+        rahaminVidaCompleted = 0,
+
+        alcoholUse = 0,
+        smoker = false,
+        usesDrugs = false,
+        drugUseFrequency = (int?)null,
+        hasAllergies = false,
+        allergiesDetails = (string?)null,
+        hasMedicalRestriction = false,
+        medicalRestrictionDetails = (string?)null,
+        takesMedication = false,
+        medicationsDetails = (string?)null,
+        physicalLimitationDetails = (string?)null,
+        recentSurgeryOrProcedureDetails = (string?)null,
+
+        termsAccepted = true,
+        termsVersion = "2025-10-01",
+        marketingOptIn = true,
+        clientIp = "127.0.0.1",
+        userAgent = "IntegrationTest"
     };
 
     private sealed class CreatedRetreatDto { public Guid RetreatId { get; set; } }
