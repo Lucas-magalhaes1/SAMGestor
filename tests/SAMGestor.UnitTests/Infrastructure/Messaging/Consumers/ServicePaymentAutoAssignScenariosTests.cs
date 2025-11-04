@@ -15,6 +15,7 @@ using SAMGestor.Infrastructure.Messaging.Consumers;
 using SAMGestor.Infrastructure.Messaging.Options;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
+using SAMGestor.UnitTests.Dependencies;
 using Xunit;
 
 namespace SAMGestor.UnitTests.Infrastructure.Messaging.Consumers
@@ -49,7 +50,7 @@ namespace SAMGestor.UnitTests.Infrastructure.Messaging.Consumers
         private static ServicePaymentConfirmedConsumer NewConsumer(IServiceProvider sp, ServiceAutoAssignOptions autoOpt)
         {
             var opt = new RabbitMqOptions();
-            var conn = (RabbitMqConnection)FormatterServices.GetUninitializedObject(typeof(RabbitMqConnection));
+            var conn = TestObjectFactory.Uninitialized<RabbitMqConnection>();
             var logger = new Mock<ILogger<ServicePaymentConfirmedConsumer>>().Object;
             return new ServicePaymentConfirmedConsumer(opt, conn, logger, sp, autoOpt);
         }
