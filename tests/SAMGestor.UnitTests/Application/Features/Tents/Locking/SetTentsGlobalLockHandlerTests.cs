@@ -6,6 +6,7 @@ using SAMGestor.Application.Interfaces;
 using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
+using SAMGestor.UnitTests.Dependencies;
 using Xunit;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.Locking;
@@ -22,7 +23,7 @@ public class SetTentsGlobalLockHandlerTests
 
     private static Retreat NewRetreat(Guid id, bool locked = false)
     {
-        var r = (Retreat)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Retreat));
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         SetId(r, id);
         var prop = r.GetType().GetProperty("TentsLocked", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         prop?.SetValue(r, locked);

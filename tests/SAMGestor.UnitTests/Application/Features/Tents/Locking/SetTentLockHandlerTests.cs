@@ -8,6 +8,7 @@ using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
 using SAMGestor.Domain.Enums;
+using SAMGestor.UnitTests.Dependencies;
 using Xunit;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.Locking;
@@ -28,7 +29,7 @@ public class SetTentLockHandlerTests
 
     private static Retreat NewRetreat(Guid id)
     {
-        var r = (Retreat)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(Retreat));
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         SetId(r, id);
         return r;
     }
