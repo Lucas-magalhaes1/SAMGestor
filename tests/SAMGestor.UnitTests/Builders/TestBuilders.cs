@@ -18,7 +18,7 @@ public static class TestBuilders
     public static Registration NewReg(Guid retreatId, string name, Gender g, RegistrationStatus st = RegistrationStatus.Confirmed)
         => new Registration(
             new FullName(name), new CPF("52998224725"), new EmailAddress($"{Guid.NewGuid()}@mail.com"),
-            "11999999999", new DateOnly(1990,1,1), g, "SP", st, ParticipationCategory.Guest, "Oeste", retreatId);
+            "11999999999", new DateOnly(1990,1,1), g, "SP", st, retreatId);
 
     public static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4)
         => new Family(new FamilyName(name), retreatId, capacity);

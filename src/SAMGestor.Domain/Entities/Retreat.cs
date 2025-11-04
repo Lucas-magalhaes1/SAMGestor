@@ -1,4 +1,3 @@
-
 using SAMGestor.Domain.Commom;
 using SAMGestor.Domain.ValueObjects;
 
@@ -25,10 +24,11 @@ public class Retreat : Entity<Guid>
     public bool ContemplationClosed { get; private set; }
     public int  ServiceSpacesVersion { get; private set; } = 0;
     public bool ServiceLocked        { get; private set; } = false;
-    
     public int  TentsVersion { get; private set; } = 0;
-    
     public bool TentsLocked  { get; private set; } = false;
+    public string? PrivacyPolicyTitle { get; private set; }
+    public string? PrivacyPolicyBody  { get; private set; }  
+    public string? PrivacyPolicyVersion { get; private set; } 
 
     private Retreat() { }
 
@@ -46,7 +46,7 @@ public class Retreat : Entity<Guid>
                    Percentage westPct,
                    Percentage othersPct)
     {
-        if (endDate < startDate)               throw new ArgumentException(nameof(endDate));
+        if (endDate < startDate)                 throw new ArgumentException(nameof(endDate));
         if (registrationEnd < registrationStart) throw new ArgumentException(nameof(registrationEnd));
 
         Id       = Guid.NewGuid();
@@ -109,11 +109,22 @@ public class Retreat : Entity<Guid>
         WestRegionPercentage   = westPct;
         OtherRegionsPercentage = othersPct;
     }
+    
+    public void SetPrivacyPolicy(string title, string body, string version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+            throw new ArgumentException("Versão/identificador da política é obrigatório.", nameof(version));
+
+        PrivacyPolicyTitle   = string.IsNullOrWhiteSpace(title) ? null : title.Trim();
+        PrivacyPolicyBody    = string.IsNullOrWhiteSpace(body)  ? null : body;
+        PrivacyPolicyVersion = version.Trim();
+    }
 
     public void CloseContemplation() => ContemplationClosed = true;
 
     public bool RegistrationWindowOpen(DateOnly today) =>
         today >= RegistrationStart && today <= RegistrationEnd;
+
     public void BumpFamiliesVersion() => FamiliesVersion++;
     public void LockFamilies() { FamiliesLocked = true; BumpFamiliesVersion(); }
     public void UnlockFamilies() { FamiliesLocked = false; BumpFamiliesVersion(); }
