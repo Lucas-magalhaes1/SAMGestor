@@ -43,19 +43,70 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         };
     }
 
-    private static object NewRegistrationBody(Guid retreatId, string name, string cpf, string email, int gender, string city = "SP") => new
+    private static object NewRegistrationBody(Guid retreatId, string name, string cpf, string email, int gender) => new
     {
         name  = new { value = name },
         cpf   = new { value = cpf },
         email = new { value = email },
+
         phone = "11999999999",
-        birthDate = "1990-01-01",
+        birthDate = "2000-01-01",
         gender,
-        city,
-        participationCategory = ParticipationGuest,
-        region = "Oeste",
-        retreatId
+        city = "SP",
+        state = "SP",
+        retreatId,
+
+        maritalStatus = 1,
+        pregnancy = 0,
+        shirtSize = 3,
+        weightKg = 80,
+        heightCm = 180,
+        profession = "Dev",
+        streetAndNumber = "Rua A, 123",
+        neighborhood = "Centro",
+
+        whatsapp = "11988887777",
+        neighborPhone = "1133334444",
+        relativePhone = "11911112222",
+        facebookUsername = "fulano.fb",
+        instagramHandle  = "fulano.ig",
+
+        fatherStatus = 1,
+        fatherName = "Pai Teste",
+        fatherPhone = "1133332222",
+        motherStatus = 1,
+        motherName = "Mae Teste",
+        motherPhone = "11911113333",
+        hadFamilyLossLast6Months = false,
+        familyLossDetails = (string?)null,
+        hasRelativeOrFriendSubmitted = false,
+        submitterRelationship = 0,
+        submitterNames = (string?)null,
+
+        religion = "Católica",
+        previousUncalledApplications = 0,
+        rahaminVidaCompleted = 0,
+
+        alcoholUse = 0,
+        smoker = false,
+        usesDrugs = false,
+        drugUseFrequency = (int?)null,
+        hasAllergies = false,
+        allergiesDetails = (string?)null,
+        hasMedicalRestriction = false,
+        medicalRestrictionDetails = (string?)null,
+        takesMedication = false,
+        medicationsDetails = (string?)null,
+        physicalLimitationDetails = (string?)null,
+        recentSurgeryOrProcedureDetails = (string?)null,
+
+        termsAccepted = true,
+        termsVersion = "2025-10-01",
+        marketingOptIn = true,
+        clientIp = "127.0.0.1",
+        userAgent = "IntegrationTest"
     };
+
 
     private static object LockRequest(bool locked) => new { @lock = locked };
 
@@ -223,10 +274,10 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         await AssertCreated(createRet, "retreat create");
         var retreatId = (await createRet.Content.ReadFromJsonAsync<CreatedRetreatDto>(Json))!.RetreatId;
 
-        var r1 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Joao Silva",   "52998224725", "m1@f.com", GenderMale, "Recife"));
-        var r2 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Pedro Costa",  "15350946056", "m2@f.com", GenderMale, "SP"));
-        var r3 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Ana Souza",    "93541134780", "f1@f.com", GenderFemale, "SP"));
-        var r4 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Beatriz Lima", "28625587887", "f2@f.com", GenderFemale, "RJ"));
+        var r1 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Joao Silva",   "52998224725", "m1@f.com", GenderMale));
+        var r2 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Pedro Costa",  "15350946056", "m2@f.com", GenderMale));
+        var r3 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Ana Souza",    "93541134780", "f1@f.com", GenderFemale));
+        var r4 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Beatriz Lima", "28625587887", "f2@f.com", GenderFemale));
 
         await PublishPaymentConfirmedAsync(new[] { r1, r2, r3, r4 });
         await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, capacity: 4, replaceExisting: true);

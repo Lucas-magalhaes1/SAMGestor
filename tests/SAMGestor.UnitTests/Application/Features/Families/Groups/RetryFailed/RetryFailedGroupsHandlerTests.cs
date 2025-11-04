@@ -46,8 +46,6 @@ public class RetryFailedGroupsHandlerTests
             g,
             "SP",
             RegistrationStatus.Confirmed,
-            ParticipationCategory.Guest,
-            "Oeste",
             retreatId);
 
     private static FamilyMember Link(Guid retreatId, Guid familyId, Guid regId, int pos)

@@ -42,8 +42,6 @@ public class CreateFamilyGroupsBulkHandlerTests
             g,
             "SP",
             RegistrationStatus.Confirmed,
-            ParticipationCategory.Guest,
-            "Oeste",
             retreatId);
     }
 
