@@ -9,6 +9,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.TentRoster.AutoAssing;
 
@@ -16,7 +17,7 @@ public class AutoAssignTentsHandlerTests
 {
     private static Retreat MakeRetreat(Guid id, int tentsVersion, bool tentsLocked)
     {
-        var r = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         typeof(Retreat).GetProperty("Id")!.SetValue(r, id);
         typeof(Retreat).GetProperty("TentsVersion", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!.SetValue(r, tentsVersion);
         typeof(Retreat).GetProperty("TentsLocked",  System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!.SetValue(r, tentsLocked);
@@ -32,7 +33,7 @@ public class AutoAssignTentsHandlerTests
 
     private static Registration MakeReg(Guid retreatId, string name, Gender gender, bool enabled, RegistrationStatus status, string? city = null)
     {
-        var r = (Registration)FormatterServices.GetUninitializedObject(typeof(Registration));
+        var r = (Registration)TestObjectFactory.Uninitialized(typeof(Registration));
         typeof(Registration).GetProperty("Id")!.SetValue(r, Guid.NewGuid());
         typeof(Registration).GetProperty("RetreatId")!.SetValue(r, retreatId);
         typeof(Registration).GetProperty("Name")!.SetValue(r, new FullName(name));
