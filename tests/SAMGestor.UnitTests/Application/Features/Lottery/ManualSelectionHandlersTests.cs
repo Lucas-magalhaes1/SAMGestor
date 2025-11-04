@@ -1,5 +1,4 @@
 using FluentAssertions;
-using MediatR;
 using Moq;
 using SAMGestor.Application.Features.Lottery;
 using SAMGestor.Application.Interfaces;
@@ -8,7 +7,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
-using System.Data;
+using Xunit;
 
 namespace SAMGestor.UnitTests.Application.Features.Lottery;
 
@@ -32,14 +31,31 @@ public class ManualSelectionHandlersTests
         var regId2 = Guid.NewGuid();
 
         var retreat = MakeRetreat(1, 0);
-        var reg1 = new Registration(new FullName("Teste 1"), new CPF("11111111111"), new EmailAddress("m1@x.com"),
-            "11999999999", new DateOnly(2000,1,1), Gender.Male, "SP", RegistrationStatus.NotSelected,
-            ParticipationCategory.Server, "Oeste", retreatId);
+
+        var reg1 = new Registration(
+            new FullName("Teste 1"),
+            new CPF("11111111111"),
+            new EmailAddress("m1@x.com"),
+            "11999999999",
+            new DateOnly(2000,1,1),
+            Gender.Male,
+            "SP",
+            RegistrationStatus.NotSelected,
+            retreatId
+        );
         typeof(Registration).GetProperty(nameof(Registration.Id))!.SetValue(reg1, regId1);
 
-        var reg2 = new Registration(new FullName("Teste 2"), new CPF("22222222222"), new EmailAddress("m2@x.com"),
-            "11999999999", new DateOnly(2000,1,1), Gender.Male, "SP", RegistrationStatus.NotSelected,
-            ParticipationCategory.Guest, "Oeste", retreatId);
+        var reg2 = new Registration(
+            new FullName("Teste 2"),
+            new CPF("22222222222"),
+            new EmailAddress("m2@x.com"),
+            "11999999999",
+            new DateOnly(2000,1,1),
+            Gender.Male,
+            "SP",
+            RegistrationStatus.NotSelected,
+            retreatId
+        );
         typeof(Registration).GetProperty(nameof(Registration.Id))!.SetValue(reg2, regId2);
 
         var uow = new Mock<IUnitOfWork>();
@@ -71,9 +87,17 @@ public class ManualSelectionHandlersTests
         var retreatId = Guid.NewGuid();
         var regId = Guid.NewGuid();
 
-        var reg = new Registration(new FullName("Teste 3"), new CPF("33333333333"), new EmailAddress("x@x.com"),
-            "11999999999", new DateOnly(2000,1,1), Gender.Female, "SP", RegistrationStatus.Selected,
-            ParticipationCategory.Guest, "Oeste", retreatId);
+        var reg = new Registration(
+            new FullName("Teste 3"),
+            new CPF("33333333333"),
+            new EmailAddress("x@x.com"),
+            "11999999999",
+            new DateOnly(2000,1,1),
+            Gender.Female,
+            "SP",
+            RegistrationStatus.Selected,
+            retreatId
+        );
         typeof(Registration).GetProperty(nameof(Registration.Id))!.SetValue(reg, regId);
 
         var uow = new Mock<IUnitOfWork>();
