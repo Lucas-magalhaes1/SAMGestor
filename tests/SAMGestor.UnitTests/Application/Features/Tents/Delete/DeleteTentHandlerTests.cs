@@ -8,6 +8,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 using Xunit;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.Delete;
@@ -17,8 +18,7 @@ public class DeleteTentHandlerTests
     private static (Retreat retreat, bool hasLockProp, bool hasVersionProp, bool hasBumpMethod)
         CreateRetreat(bool tentsLocked = false, int tentsVersion = 0)
     {
-        var retreat = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
-
+        var retreat = TestObjectFactory.Uninitialized<Retreat>();
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
 
         var lockProp = typeof(Retreat).GetProperty("TentsLocked", flags);

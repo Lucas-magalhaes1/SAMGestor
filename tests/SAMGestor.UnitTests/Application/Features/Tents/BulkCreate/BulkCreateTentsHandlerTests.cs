@@ -8,6 +8,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.BulkCreate;
 
@@ -18,7 +19,7 @@ public class BulkCreateTentsHandlerTests
     private static Retreat FakeRetreat()
     {
         // cria uma instância de Retreat sem chamar construtor (não precisamos de estado)
-        return (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
+        return TestObjectFactory.Uninitialized<Retreat>();
     }
 
     private static Tent NewTent(Guid retreatId, TentCategory cat, int number, int capacity = 4, string? notes = null)

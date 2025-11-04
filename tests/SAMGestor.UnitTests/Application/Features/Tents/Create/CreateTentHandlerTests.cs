@@ -8,6 +8,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions; 
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.Create;
 
@@ -15,8 +16,7 @@ public class CreateTentHandlerTests
 {
     private static Retreat MakeRetreat(Guid id, bool? tentsLocked = null)
     {
-        var r = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
-        
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         var idProp = typeof(Retreat).GetProperty("Id");
         if (idProp != null && idProp.CanWrite)
             idProp.SetValue(r, id);
