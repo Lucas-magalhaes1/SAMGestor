@@ -9,6 +9,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.TentRoster.Get;
 
@@ -16,7 +17,7 @@ public class GetTentRosterHandlerTests
 {
     private static Retreat MakeRetreat(Guid id, int tentsVersion)
     {
-        var r = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         typeof(Retreat).GetProperty("Id")!.SetValue(r, id);
         typeof(Retreat).GetProperty("TentsVersion")!.SetValue(r, tentsVersion);
         return r;
@@ -31,7 +32,7 @@ public class GetTentRosterHandlerTests
 
     private static Registration MakeReg(Guid retreatId, string name, Gender gender, string? city = null)
     {
-        var r = (Registration)FormatterServices.GetUninitializedObject(typeof(Registration));
+        var r = (Registration)TestObjectFactory.Uninitialized(typeof(Registration));
         typeof(Registration).GetProperty("Id")!.SetValue(r, Guid.NewGuid());
         typeof(Registration).GetProperty("RetreatId")!.SetValue(r, retreatId);
 

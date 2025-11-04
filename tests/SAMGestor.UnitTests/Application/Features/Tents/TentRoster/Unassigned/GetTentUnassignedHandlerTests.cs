@@ -6,6 +6,7 @@ using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.TentRoster.Unassigned;
 
@@ -13,7 +14,7 @@ public class GetTentUnassignedHandlerTests
 {
     private static Registration MakeReg(Guid retreatId, string name, Gender gender, string? city = null)
     {
-        var r = (Registration)FormatterServices.GetUninitializedObject(typeof(Registration));
+        var r = (Registration)TestObjectFactory.Uninitialized(typeof(Registration));
         typeof(Registration).GetProperty("Id")!.SetValue(r, Guid.NewGuid());
         typeof(Registration).GetProperty("RetreatId")!.SetValue(r, retreatId);
         var safe = string.IsNullOrWhiteSpace(name) || !name.Contains(' ') ? $"{name} Silva" : name;

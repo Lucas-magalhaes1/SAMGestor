@@ -42,7 +42,6 @@ public sealed class GetTentRosterHandler(
             linksByTent.TryGetValue(t.Id, out var tLinks);
             tLinks ??= new List<TentAssignment>();
 
-            // ordenar por posição (nulls no fim), depois por AssignedAt
             var ordered = tLinks
                 .OrderBy(l => l.Position ?? int.MaxValue)
                 .ThenBy(l => l.AssignedAt)
@@ -50,28 +49,29 @@ public sealed class GetTentRosterHandler(
 
             var members = ordered
                 .Select((l, idx) =>
-                {
-                    if (!regMap.TryGetValue(l.RegistrationId, out var r)) return null;
+                    regMap.TryGetValue(l.RegistrationId, out var r)
+                        ? new TentRosterMemberView(
+                            r.Id,
+                            (string)r.Name,
+                            r.Gender.ToString(),
+                            r.City,
+                            l.Position ?? idx)
+                        : null
+                )
+                .OfType<TentRosterMemberView>()   
+                .ToList();                        
 
-                    var pos = l.Position ?? idx; // coalesce para int
-                    return new TentRosterMemberView(
-                        r.Id,
-                        (string)r.Name,
-                        r.Gender.ToString(),
-                        r.City,
-                        pos
-                    );
-                })
-                .Where(x => x is not null)!
-                .ToList()!;
+
+            IReadOnlyList<TentRosterMemberView> safeMembers =
+                members.Count == 0 ? Array.Empty<TentRosterMemberView>() : members;
 
             views.Add(new TentRosterSpaceView(
                 t.Id,
-                t.Number.Value.ToString(),        // VO é int → string p/ o front
+                t.Number.Value.ToString(),
                 t.Category.ToString(),
                 t.Capacity,
                 t.IsLocked,
-                members
+                safeMembers
             ));
         }
 
