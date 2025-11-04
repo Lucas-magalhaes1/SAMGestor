@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Service.Spaces.Create;
-using SAMGestor.Application.Interfaces;
+using SAMGestor.Application.Interfaces;  
 using SAMGestor.Application.Services;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Infrastructure.Messaging.Consumers;
@@ -15,7 +15,7 @@ using SAMGestor.Infrastructure.Messaging.Outbox;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Infrastructure.Repositories;
-using SAMGestor.Infrastructure.Services;
+using SAMGestor.Infrastructure.Services; 
 using SAMGestor.Infrastructure.UnitOfWork;
 
 namespace SAMGestor.Infrastructure.Extensions;
@@ -28,7 +28,8 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddPersistence(configuration)
-            .AddMessaging(configuration);
+            .AddMessaging(configuration)
+            .AddStorage(configuration); 
 
         return services;
     }
@@ -37,24 +38,24 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var schema = SAMContext.Schema; 
-    
+        var schema = SAMContext.Schema;
+
         services.AddDbContext<SAMContext>(options =>
             options.UseNpgsql(
                 configuration.GetConnectionString("Default"),
                 o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema)
             )
         );
-        
+
         services.AddScoped<IRelationshipService, HeuristicRelationshipService>();
         services.AddScoped<IRetreatRepository, RetreatRepository>();
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<IFamilyRepository, FamilyRepository>();
         services.AddScoped<IFamilyMemberRepository, FamilyMemberRepository>();
-        
+
         services.AddScoped<ServiceSpacesSeeder>();
-        
+
         services.AddMediatR(typeof(CreateRetreatHandler).Assembly);
         services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
         services.AddValidatorsFromAssemblyContaining<CreateRegistrationValidator>();
@@ -80,20 +81,42 @@ public static class ServiceCollectionExtensions
             Exchange = "sam.topic",
             ServingPaymentQueue = "core.payment.serving"
         };
-        
+
         var autoOpt = new ServiceAutoAssignOptions();
-        configuration.GetSection("ServiceAutoAssign").Bind(autoOpt); 
+        configuration.GetSection("ServiceAutoAssign").Bind(autoOpt);
         services.AddSingleton(autoOpt);
-        
+
         services.AddSingleton(mqOpt);
         services.AddSingleton<RabbitMqConnection>();
         services.AddSingleton<EventPublisher>();
-        
+
         services.AddScoped<IEventBus, OutboxEventBus>();
-        
+
         services.AddHostedService<OutboxDispatcher>();
         services.AddHostedService<ServicePaymentConfirmedConsumer>();
 
+        return services;
+    }
+
+    //  Storage (MVP local; pronto para trocar por S3/Azure depois) 
+    private static IServiceCollection AddStorage(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var provider = configuration["Storage:Provider"] ?? "Local";
+
+        if (provider.Equals("Local", StringComparison.OrdinalIgnoreCase))
+        {
+            var basePath = configuration["Storage:BasePath"] ?? "wwwroot/uploads";
+            var publicBaseUrl = configuration["Storage:PublicBaseUrl"] ?? "http://localhost:5000/uploads";
+
+            services.AddSingleton<IStorageService>(_ =>
+                new LocalStorageService(basePath, publicBaseUrl));
+        }
+        else
+        {
+            throw new NotSupportedException($"Storage provider '{provider}' não suportado no ambiente atual.");
+        }
 
         return services;
     }

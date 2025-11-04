@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MediatR;
 using FluentValidation;
 using SAMGestor.Infrastructure.Extensions;
@@ -9,6 +10,11 @@ using SAMGestor.Infrastructure.Messaging.Consumers;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddSwaggerDocumentation();
@@ -44,7 +50,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowLocalhost3000");
 app.MapControllers();
