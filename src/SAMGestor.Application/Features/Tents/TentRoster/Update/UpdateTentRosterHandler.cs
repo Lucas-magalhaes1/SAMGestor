@@ -99,14 +99,6 @@ public sealed class UpdateTentRosterHandler(
         foreach (var rid in allRegIds)
         {
             var r = regsMap[rid];
-            
-            if (r.ParticipationCategory != ParticipationCategory.Guest)
-            {
-                catErrors.Add(new RosterError(
-                    "WRONG_CATEGORY",
-                    "Somente participantes do tipo 'Fazer' podem ser alocados em barracas.",
-                    null, new[] { r.Id }));
-            }
 
             // considera Confirmed ou PaymentConfirmed como "pagos/aprovados"
             if (r.Status is not RegistrationStatus.Confirmed and not RegistrationStatus.PaymentConfirmed)

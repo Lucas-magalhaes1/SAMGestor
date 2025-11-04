@@ -8,6 +8,7 @@ using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
 using SAMGestor.Domain.Enums;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.TentRoster.Unassign;
 
@@ -15,7 +16,7 @@ public class UnassignFromTentHandlerTests
 {
     private static Retreat MakeRetreat(Guid id, int tentsVersion, bool tentsLocked)
     {
-        var r = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         typeof(Retreat).GetProperty("Id")!.SetValue(r, id);
         typeof(Retreat).GetProperty("TentsVersion")!.SetValue(r, tentsVersion);
         typeof(Retreat).GetProperty("TentsLocked")!.SetValue(r, tentsLocked);

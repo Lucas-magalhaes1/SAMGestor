@@ -1,4 +1,3 @@
-using System.Runtime.Serialization;
 using FluentAssertions;
 using Moq;
 using SAMGestor.Application.Features.Tents.Update;
@@ -8,6 +7,7 @@ using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
+using SAMGestor.UnitTests.Dependencies;
 
 namespace SAMGestor.UnitTests.Application.Features.Tents.TentRoster.Update;
 
@@ -15,7 +15,7 @@ public class UpdateTentHandlerTests
 {
     private static Retreat MakeRetreat(Guid id, int tentsVersion, bool tentsLocked)
     {
-        var r = (Retreat)FormatterServices.GetUninitializedObject(typeof(Retreat));
+        var r = TestObjectFactory.Uninitialized<Retreat>();
         typeof(Retreat).GetProperty("Id")!.SetValue(r, id);
         typeof(Retreat).GetProperty("TentsVersion")!.SetValue(r, tentsVersion);
         typeof(Retreat).GetProperty("TentsLocked")!.SetValue(r, tentsLocked);
