@@ -36,8 +36,6 @@ public class CreateFamilyHandlerTests
             g,
             city,
             st,
-            ParticipationCategory.Guest,
-            "Oeste",
             retreatId);
 
         if (!enabled) reg.Disable();

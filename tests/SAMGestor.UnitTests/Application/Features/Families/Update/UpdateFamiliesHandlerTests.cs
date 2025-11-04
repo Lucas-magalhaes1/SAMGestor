@@ -42,8 +42,6 @@ public sealed class UpdateFamiliesHandlerTests
             g,
             city,
             RegistrationStatus.Confirmed,
-            ParticipationCategory.Guest,
-            "Oeste",
             retreatId
         );
 

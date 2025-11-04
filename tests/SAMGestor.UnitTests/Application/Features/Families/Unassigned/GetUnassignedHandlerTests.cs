@@ -34,8 +34,6 @@ public sealed class GetUnassignedHandlerTests
             g,
             city,
             status,
-            ParticipationCategory.Guest,
-            "Oeste",
             retreatId
         );
 

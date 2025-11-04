@@ -55,8 +55,6 @@ public class GetFamilyByIdQueryTests
             g,
             city,
             RegistrationStatus.Confirmed,
-            ParticipationCategory.Guest,
-            "Reg",
             retreatId);
 
     private static FamilyMember Link(Guid retreatId, Guid familyId, Guid regId, int pos)

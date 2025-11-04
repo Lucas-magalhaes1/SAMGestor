@@ -67,8 +67,6 @@ public class GenerateFamiliesHandlerTests
             g,
             "Cidade",
             status,
-            ParticipationCategory.Guest,
-            "Regiao",
             retreatId
         );
     
