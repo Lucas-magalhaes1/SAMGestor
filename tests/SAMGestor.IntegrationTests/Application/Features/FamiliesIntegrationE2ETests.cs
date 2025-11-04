@@ -37,22 +37,71 @@ public class FamiliesEndToEndTests(RabbitOutboxWebAppFactory factory) : IClassFi
 
     private const int GenderMale = 0;
     private const int GenderFemale = 1;
-    private const int ParticipationGuest = 0;
+    
 
-    private static object NewRegistrationBody(Guid retreatId, string name, string cpf, string email, int gender, string city = "SP")
-        => new
-        {
-            name  = new { value = name },
-            cpf   = new { value = cpf },
-            email = new { value = email },
-            phone = "11999999999",
-            birthDate = "1990-01-01",
-            gender,
-            city,
-            participationCategory = ParticipationGuest,
-            region = "Oeste",
-            retreatId
-        };
+    private static object NewRegistrationBody(Guid retreatId, string name, string cpf, string email, int gender) => new
+    {
+        name  = new { value = name },
+        cpf   = new { value = cpf },
+        email = new { value = email },
+
+        phone = "11999999999",
+        birthDate = "2000-01-01",
+        gender,
+        city = "SP",
+        state = "SP",
+        retreatId,
+
+        maritalStatus = 1,
+        pregnancy = 0,
+        shirtSize = 3,
+        weightKg = 80,
+        heightCm = 180,
+        profession = "Dev",
+        streetAndNumber = "Rua A, 123",
+        neighborhood = "Centro",
+
+        whatsapp = "11988887777",
+        neighborPhone = "1133334444",
+        relativePhone = "11911112222",
+        facebookUsername = "fulano.fb",
+        instagramHandle  = "fulano.ig",
+
+        fatherStatus = 1,
+        fatherName = "Pai Teste",
+        fatherPhone = "1133332222",
+        motherStatus = 1,
+        motherName = "Mae Teste",
+        motherPhone = "11911113333",
+        hadFamilyLossLast6Months = false,
+        familyLossDetails = (string?)null,
+        hasRelativeOrFriendSubmitted = false,
+        submitterRelationship = 0,
+        submitterNames = (string?)null,
+
+        religion = "Católica",
+        previousUncalledApplications = 0,
+        rahaminVidaCompleted = 0,
+
+        alcoholUse = 0,
+        smoker = false,
+        usesDrugs = false,
+        drugUseFrequency = (int?)null,
+        hasAllergies = false,
+        allergiesDetails = (string?)null,
+        hasMedicalRestriction = false,
+        medicalRestrictionDetails = (string?)null,
+        takesMedication = false,
+        medicationsDetails = (string?)null,
+        physicalLimitationDetails = (string?)null,
+        recentSurgeryOrProcedureDetails = (string?)null,
+
+        termsAccepted = true,
+        termsVersion = "2025-10-01",
+        marketingOptIn = true,
+        clientIp = "127.0.0.1",
+        userAgent = "IntegrationTest"
+    };
 
     private static object GenerateBody(int? capacity = null, bool replaceExisting = true, bool fillExistingFirst = false)
         => new { capacity, replaceExisting, fillExistingFirst };
@@ -235,10 +284,10 @@ public class FamiliesEndToEndTests(RabbitOutboxWebAppFactory factory) : IClassFi
         var created = await postRet.Content.ReadFromJsonAsync<CreatedRetreatDto>();
         var retreatId = created!.RetreatId;
         
-        var r1 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Joao Silva",   "52998224725", "m1@fam.com", GenderMale,   "Recife"));
-        var r2 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Pedro Costa",  "15350946056", "m2@fam.com", GenderMale,   "SP"));
-        var r3 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Ana Souza",    "93541134780", "f1@fam.com", GenderFemale, "SP"));
-        var r4 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Beatriz Lima", "28625587887", "f2@fam.com", GenderFemale, "RJ"));
+        var r1 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Joao Silva",   "52998224725", "m1@fam.com", GenderMale));
+        var r2 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Pedro Costa",  "15350946056", "m2@fam.com", GenderMale));
+        var r3 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Ana Souza",    "93541134780", "f1@fam.com", GenderFemale));
+        var r4 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Beatriz Lima", "28625587887", "f2@fam.com", GenderFemale));
 
         await PublishPaymentConfirmedAsync(new[] { r1, r2, r3, r4 });
 
