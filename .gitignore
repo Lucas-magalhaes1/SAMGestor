@@ -42,6 +42,14 @@ appsettings.Development.json
 *.env
 
 ################################
+# Uploads (arquivos do usuário)
+################################
+# Ignora qualquer pasta 'wwwroot/uploads' em qualquer projeto
+**/wwwroot/uploads/**
+
+!**/wwwroot/uploads/.gitkeep
+
+################################
 # Outros temporários
 ################################
 *.log
