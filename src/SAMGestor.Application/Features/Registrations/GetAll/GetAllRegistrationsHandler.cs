@@ -9,7 +9,8 @@ public sealed class GetAllRegistrationsHandler(IRegistrationRepository repo, ISt
 {
     public async Task<GetAllRegistrationsResponse> Handle(GetAllRegistrationsQuery query, CancellationToken ct)
     {
-        var list = await repo.ListAsync(query.retreatId, query.status, region: null, skip: query.skip, take: query.take, ct: ct);
+       
+        var list = await repo.ListAsync(query.retreatId, query.status, region: null, ct: ct);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var filtered = list.AsEnumerable();
@@ -72,7 +73,7 @@ public sealed class GetAllRegistrationsHandler(IRegistrationRepository repo, ISt
                     r.City,
                     r.State?.ToString(),
                     r.RegistrationDate,
-                    photoUrl 
+                    photoUrl
                 );
             })
             .ToList();

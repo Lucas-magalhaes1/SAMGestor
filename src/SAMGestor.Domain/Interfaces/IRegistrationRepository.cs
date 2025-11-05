@@ -10,6 +10,7 @@ public interface IRegistrationRepository
     Task<bool> ExistsByCpfInRetreatAsync(CPF cpf, Guid retreatId, CancellationToken ct = default);
     Task<bool> IsCpfBlockedAsync(CPF cpf, CancellationToken ct = default);
     Task<Registration?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Registration?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Registration>> ListAsync(
         Guid retreatId,
         string? status = null,

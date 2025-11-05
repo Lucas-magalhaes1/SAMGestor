@@ -27,7 +27,16 @@ public class RegistrationsController(
     {
         if (command is null) return BadRequest();
 
-        var result = await mediator.Send(command, CT);
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var userAgent = Request.Headers.UserAgent.ToString();
+
+        var enriched = command with
+        {
+            ClientIp = ip,
+            UserAgent = userAgent
+        };
+
+        var result = await mediator.Send(enriched, CT);
         return CreatedAtRoute(nameof(GetById), new { id = result.RegistrationId }, result);
     }
 
@@ -76,84 +85,85 @@ public class RegistrationsController(
         return Ok(response);
     }
 
-    // Form-Data: file=<IFormFile>
-    [HttpPost("{id:guid}/photo")]
-    public async Task<IActionResult> UploadPhoto(Guid id, IFormFile? file)
+    // ----------------- Upload de FOTO -----------------
+[HttpPost("{id:guid}/photo")]
+public async Task<IActionResult> UploadPhoto(Guid id, [FromForm] IFormFile? file)
+{
+    if (file is null || file.Length == 0)
+        return BadRequest("Arquivo de foto é obrigatório.");
+
+    var contentType = file.ContentType?.ToLowerInvariant();
+    if (contentType is not ("image/jpeg" or "image/png"))
+        return BadRequest("A foto deve ser JPG ou PNG.");
+
+    const int MaxPhotoBytes = 5 * 1024 * 1024; // 5MB
+    if (file.Length > MaxPhotoBytes)
+        return BadRequest("A foto deve ter no máximo 5MB.");
+    
+    var reg = await regRepo.GetByIdForUpdateAsync(id, CT);
+    if (reg is null) return NotFound();
+
+    var ext = Path.GetExtension(file.FileName);
+    if (string.IsNullOrWhiteSpace(ext))
+        ext = contentType == "image/png" ? ".png" : ".jpg";
+
+    var key = $"retreats/{reg.RetreatId}/regs/{reg.Id}/photo{ext}";
+    using var stream = file.OpenReadStream();
+    var (savedKey, size) = await storage.SaveAsync(stream, key, contentType!, CT);
+
+    var publicUrl = new UrlAddress(storage.GetPublicUrl(savedKey));
+    reg.SetPhoto(savedKey, contentType, size, DateTime.UtcNow, publicUrl);
+
+    await uow.SaveChangesAsync(CT);
+
+    return Created(publicUrl.Value, new { key = savedKey, url = publicUrl.Value, size });
+}
+
+// ----------------- Upload de DOCUMENTO -----------------
+[HttpPost("{id:guid}/document")]
+public async Task<IActionResult> UploadDocument(
+    Guid id,
+    [FromForm] IFormFile? file,
+    [FromForm] IdDocumentType type,
+    [FromForm] string? number)
+{
+    if (file is null || file.Length == 0)
+        return BadRequest("Arquivo de documento é obrigatório.");
+
+    var contentType = file.ContentType?.ToLowerInvariant();
+    if (contentType is not ("image/jpeg" or "image/png" or "application/pdf"))
+        return BadRequest("Documento deve ser JPG, PNG ou PDF.");
+
+    const int MaxDocBytes = 10 * 1024 * 1024; // 10MB
+    if (file.Length > MaxDocBytes)
+        return BadRequest("O documento deve ter no máximo 10MB.");
+    
+    var reg = await regRepo.GetByIdForUpdateAsync(id, CT);
+    if (reg is null) return NotFound();
+
+    var ext = Path.GetExtension(file.FileName);
+    if (string.IsNullOrWhiteSpace(ext))
     {
-        if (file is null || file.Length == 0)
-            return BadRequest("Arquivo de foto é obrigatório.");
-
-        var contentType = file.ContentType?.ToLowerInvariant();
-        if (contentType is not ("image/jpeg" or "image/png"))
-            return BadRequest("A foto deve ser JPG ou PNG.");
-
-        const int MaxPhotoBytes = 5 * 1024 * 1024; // 5MB
-        if (file.Length > MaxPhotoBytes)
-            return BadRequest("A foto deve ter no máximo 5MB.");
-
-        var reg = await regRepo.GetByIdAsync(id, CT);
-        if (reg is null) return NotFound();
-
-        var ext = Path.GetExtension(file.FileName);
-        if (string.IsNullOrWhiteSpace(ext))
-            ext = contentType == "image/png" ? ".png" : ".jpg";
-
-        var key = $"retreats/{reg.RetreatId}/regs/{reg.Id}/photo{ext}";
-        using var stream = file.OpenReadStream();
-        var (savedKey, size) = await storage.SaveAsync(stream, key, contentType!, CT);
-
-        var publicUrl = new UrlAddress(storage.GetPublicUrl(savedKey));
-        reg.SetPhoto(savedKey, contentType, size, DateTime.UtcNow, publicUrl);
-
-        await uow.SaveChangesAsync(CT);
-
-        return Created(publicUrl.Value, new { key = savedKey, url = publicUrl.Value, size });
-    }
-
-    // ----------------- Upload de DOCUMENTO -----------------
-    // Form-Data: file=<IFormFile>, type=<IdDocumentType>, number=<string?>
-    [HttpPost("{id:guid}/document")]
-    public async Task<IActionResult> UploadDocument(Guid id, IFormFile? file, [FromForm] IdDocumentType type,
-        [FromForm] string? number)
-    {
-        if (file is null || file.Length == 0)
-            return BadRequest("Arquivo de documento é obrigatório.");
-
-        var contentType = file.ContentType?.ToLowerInvariant();
-        if (contentType is not ("image/jpeg" or "image/png" or "application/pdf"))
-            return BadRequest("Documento deve ser JPG, PNG ou PDF.");
-
-        const int MaxDocBytes = 10 * 1024 * 1024; // 10MB
-        if (file.Length > MaxDocBytes)
-            return BadRequest("O documento deve ter no máximo 10MB.");
-
-        var reg = await regRepo.GetByIdAsync(id, CT);
-        if (reg is null) return NotFound();
-
-        var ext = Path.GetExtension(file.FileName);
-        if (string.IsNullOrWhiteSpace(ext))
+        ext = contentType switch
         {
-            ext = contentType switch
-            {
-                "image/png" => ".png",
-                "image/jpeg" => ".jpg",
-                "application/pdf" => ".pdf",
-                _ => ".bin"
-            };
-        }
-
-        var key = $"retreats/{reg.RetreatId}/regs/{reg.Id}/id{ext}";
-        using var stream = file.OpenReadStream();
-        var (savedKey, size) = await storage.SaveAsync(stream, key, contentType!, CT);
-
-        var publicUrl = new UrlAddress(storage.GetPublicUrl(savedKey));
-        reg.SetIdDocument(type, number, savedKey, contentType, size, DateTime.UtcNow, publicUrl);
-
-        await uow.SaveChangesAsync(CT);
-
-        return Created(publicUrl.Value, new { key = savedKey, url = publicUrl.Value, size });
+            "image/png" => ".png",
+            "image/jpeg" => ".jpg",
+            "application/pdf" => ".pdf",
+            _ => ".bin"
+        };
     }
 
+    var key = $"retreats/{reg.RetreatId}/regs/{reg.Id}/id{ext}";
+    using var stream = file.OpenReadStream();
+    var (savedKey, size) = await storage.SaveAsync(stream, key, contentType!, CT);
+
+    var publicUrl = new UrlAddress(storage.GetPublicUrl(savedKey));
+    reg.SetIdDocument(type, number, savedKey, contentType, size, DateTime.UtcNow, publicUrl);
+
+    await uow.SaveChangesAsync(CT);
+
+    return Created(publicUrl.Value, new { key = savedKey, url = publicUrl.Value, size });
+}
     [HttpGet("options")]
     public IActionResult GetOptions()
     {

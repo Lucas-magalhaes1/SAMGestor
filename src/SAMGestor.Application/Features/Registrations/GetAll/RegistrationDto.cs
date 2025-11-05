@@ -10,5 +10,5 @@ public record RegistrationDto(
     string   City,
     string?  State,
     DateTime RegistrationDate,
-    string?  AvatarUrl   
+    string?  PhotoUrl   
 );

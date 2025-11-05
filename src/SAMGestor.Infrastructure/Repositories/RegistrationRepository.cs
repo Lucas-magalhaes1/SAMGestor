@@ -17,7 +17,12 @@ namespace SAMGestor.Infrastructure.Repositories
 
         public Task<Registration?> GetByIdAsync(Guid id, CancellationToken ct = default)
             => _ctx.Registrations
-                   .FirstOrDefaultAsync(r => r.Id == id, ct);
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == id, ct);
+        
+        public Task<Registration?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
+            => _ctx.Registrations
+                .FirstOrDefaultAsync(r => r.Id == id, ct);
 
         public Task<bool> ExistsByCpfInRetreatAsync(CPF cpf, Guid retreatId, CancellationToken ct = default)
             => _ctx.Registrations.AsNoTracking()
