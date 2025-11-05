@@ -87,7 +87,7 @@ public class RegistrationsController(
 
     // ----------------- Upload de FOTO -----------------
 [HttpPost("{id:guid}/photo")]
-public async Task<IActionResult> UploadPhoto(Guid id, [FromForm] IFormFile? file)
+public async Task<IActionResult> UploadPhoto(Guid id, IFormFile? file) 
 {
     if (file is null || file.Length == 0)
         return BadRequest("Arquivo de foto é obrigatório.");
@@ -123,10 +123,10 @@ public async Task<IActionResult> UploadPhoto(Guid id, [FromForm] IFormFile? file
 [HttpPost("{id:guid}/document")]
 public async Task<IActionResult> UploadDocument(
     Guid id,
-    [FromForm] IFormFile? file,
+    IFormFile? file,                     
     [FromForm] IdDocumentType type,
     [FromForm] string? number)
-{
+    {
     if (file is null || file.Length == 0)
         return BadRequest("Arquivo de documento é obrigatório.");
 
@@ -224,7 +224,6 @@ public async Task<IActionResult> UploadDocument(
         public bool IsFlags { get; set; }
         public List<EnumOption> Items { get; set; } = new();
     }
-
     private sealed class EnumOption
     {
         public string Name { get; set; } = default!;
