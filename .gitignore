@@ -49,6 +49,22 @@ appsettings.Development.json
 
 !**/wwwroot/uploads/.gitkeep
 
+
+# Ignorar resultados de testes
+TestResults/
+**/TestResults/
+
+# Ignorar arquivos de cobertura
+coveragereport/*
+**/coveragereport/*
+
+# Mas incluir o summary.md
+!coveragereport/Summary.md
+
+# Ignorar arquivos temporários de IDEs
+*.user
+*.DotSettings.user
+
 ################################
 # Outros temporários
 ################################
