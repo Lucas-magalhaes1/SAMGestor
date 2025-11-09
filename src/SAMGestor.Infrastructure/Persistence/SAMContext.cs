@@ -31,6 +31,8 @@ public class SAMContext(DbContextOptions<SAMContext> options) : DbContext(option
     public DbSet<ServiceAssignment>  ServiceAssignments  => Set<ServiceAssignment>();
     public DbSet<ServiceRegistrationPayment> ServiceRegistrationPayments => Set<ServiceRegistrationPayment>();
     public DbSet<TentAssignment> TentAssignments => Set<TentAssignment>();
+    public DbSet<Report> Reports => Set<Report>();
+    public DbSet<ReportInstance> ReportInstances => Set<ReportInstance>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -3,10 +3,16 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SAMGestor.Application.Features.Dashboards.Families;
+using SAMGestor.Application.Features.Dashboards.Overview;
+using SAMGestor.Application.Features.Dashboards.Payments;
+using SAMGestor.Application.Features.Dashboards.Service;
 using SAMGestor.Application.Features.Registrations.Create;
+using SAMGestor.Application.Features.Reports.Templates;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Service.Spaces.Create;
-using SAMGestor.Application.Interfaces;  
+using SAMGestor.Application.Interfaces;
+using SAMGestor.Application.Interfaces.Reports;
 using SAMGestor.Application.Services;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Infrastructure.Messaging.Consumers;
@@ -15,7 +21,9 @@ using SAMGestor.Infrastructure.Messaging.Outbox;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Infrastructure.Repositories;
-using SAMGestor.Infrastructure.Services; 
+using SAMGestor.Infrastructure.Repositories.Reports;
+using SAMGestor.Infrastructure.Services;
+using SAMGestor.Infrastructure.Services.Reports;
 using SAMGestor.Infrastructure.UnitOfWork;
 
 namespace SAMGestor.Infrastructure.Extensions;
@@ -65,9 +73,41 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<CreateServiceSpaceValidator>();
         services.AddScoped<ITentRepository, TentRepository>();
         services.AddScoped<ITentAssignmentRepository, TentAssignmentRepository>();
+        services.AddScoped<IReportCatalog, ReportCatalogServiceRepository>();
+        services.AddScoped<IReportEngine, ReportEngineRepository>();
+        services.AddScoped<IReportTemplate, ShirtsBySizeTemplate>();
+        services.AddScoped<IReportingReadDb, ReportingReadDb>();
+        services.AddValidatorsFromAssemblyContaining<Application.Features.Reports.Create.CreateReportValidator>();
+        services.AddScoped<IReportTemplate, ContemplatedGeneralTemplate>();
+        services.AddScoped<IReportTemplate, ContemplatedByFamilyTemplate>();
+        services.AddScoped<IReportTemplate, TentsAllocationsTemplate>();
+        services.AddScoped<IReportTemplate, PeopleEpitaphTemplate>();
+        services.AddScoped<IReportTemplateRegistry, ReportTemplateRegistryRepository>();
+        services.AddScoped<IReportExporter, CsvReportExporter>();
+        services.AddScoped<IReportExporter, DocumentReportExporter>();
+        services.AddValidatorsFromAssemblyContaining<GetOverviewValidator>();
+        services.AddValidatorsFromAssemblyContaining<GetFamiliesValidator>();
+        services.AddValidatorsFromAssemblyContaining<GetPaymentsSeriesValidator>();
+        services.AddValidatorsFromAssemblyContaining<GetServiceOverviewValidator>();
+       
+
+        services.AddHttpClient<IImageFetcher, HttpImageFetcher>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+            })
+#if DEBUG
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                // opcional: aceita HTTPS self-signed no DEV (localhost)
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            })
+#endif
+            ;
 
         return services;
     }
+    
+    
 
     private static IServiceCollection AddMessaging(
         this IServiceCollection services,

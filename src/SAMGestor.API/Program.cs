@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using MediatR;
 using FluentValidation;
+using QuestPDF.Infrastructure;
 using SAMGestor.Infrastructure.Extensions;
 using SAMGestor.API.Extensions;
 using SAMGestor.API.Middlewares;
@@ -8,6 +9,8 @@ using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Infrastructure.Messaging.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddControllers();
 builder.Services.AddControllers()

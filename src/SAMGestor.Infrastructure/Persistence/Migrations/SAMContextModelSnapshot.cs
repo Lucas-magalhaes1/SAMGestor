@@ -705,6 +705,98 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.ToTable("registrations", "core");
                 });
 
+            modelBuilder.Entity("SAMGestor.Domain.Entities.Report", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime>("DateCreation")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("date_creation");
+
+                    b.Property<string>("DefaultParamsJson")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("default_params_json");
+
+                    b.Property<DateTime?>("LastUpdate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_update");
+
+                    b.Property<Guid?>("RetreatId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("retreat_id");
+
+                    b.Property<string>("TemplateKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("template_key");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DateCreation")
+                        .HasDatabaseName("ix_reports_date_creation");
+
+                    b.HasIndex("RetreatId", "TemplateKey")
+                        .HasDatabaseName("ix_reports_retreat_template");
+
+                    b.ToTable("reports", "core");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ReportInstance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("file_name");
+
+                    b.Property<long?>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("format");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("generated_at");
+
+                    b.Property<Guid>("ReportId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("report_id");
+
+                    b.Property<string>("StoragePath")
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)")
+                        .HasColumnName("storage_path");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReportId", "GeneratedAt")
+                        .HasDatabaseName("ix_report_instances_report_date");
+
+                    b.ToTable("report_instances", "core");
+                });
+
             modelBuilder.Entity("SAMGestor.Domain.Entities.Retreat", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1388,6 +1480,23 @@ namespace SAMGestor.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("PhotoUrl");
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.Report", b =>
+                {
+                    b.HasOne("SAMGestor.Domain.Entities.Retreat", null)
+                        .WithMany()
+                        .HasForeignKey("RetreatId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("SAMGestor.Domain.Entities.ReportInstance", b =>
+                {
+                    b.HasOne("SAMGestor.Domain.Entities.Report", null)
+                        .WithMany()
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SAMGestor.Domain.Entities.Retreat", b =>
