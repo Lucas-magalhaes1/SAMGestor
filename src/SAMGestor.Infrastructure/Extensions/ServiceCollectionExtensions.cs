@@ -3,6 +3,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using SAMGestor.Application.Common.Auth;
 using SAMGestor.Application.Features.Dashboards.Families;
 using SAMGestor.Application.Features.Dashboards.Overview;
 using SAMGestor.Application.Features.Dashboards.Payments;
@@ -12,6 +14,7 @@ using SAMGestor.Application.Features.Reports.Templates;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Service.Spaces.Create;
 using SAMGestor.Application.Interfaces;
+using SAMGestor.Application.Interfaces.Auth;
 using SAMGestor.Application.Interfaces.Reports;
 using SAMGestor.Application.Services;
 using SAMGestor.Domain.Interfaces;
@@ -22,6 +25,7 @@ using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Infrastructure.Repositories;
 using SAMGestor.Infrastructure.Repositories.Reports;
+using SAMGestor.Infrastructure.Repositories.User;
 using SAMGestor.Infrastructure.Services;
 using SAMGestor.Infrastructure.Services.Reports;
 using SAMGestor.Infrastructure.UnitOfWork;
@@ -89,6 +93,18 @@ public static class ServiceCollectionExtensions
         services.AddValidatorsFromAssemblyContaining<GetFamiliesValidator>();
         services.AddValidatorsFromAssemblyContaining<GetPaymentsSeriesValidator>();
         services.AddValidatorsFromAssemblyContaining<GetServiceOverviewValidator>();
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+        services.AddSingleton(sp => sp.GetRequiredService<IOptions<EmailOptions>>().Value);
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
+        services.AddSingleton<IOpaqueTokenGenerator, OpaqueTokenGenerator>();
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddHttpClient<IEmailSender, EmailSender>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IEmailConfirmationTokenRepository, EmailConfirmationTokenRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
        
 
         services.AddHttpClient<IImageFetcher, HttpImageFetcher>(client =>
