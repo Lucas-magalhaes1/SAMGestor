@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SAMGestor.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using SAMGestor.Infrastructure.Persistence;
 namespace SAMGestor.Infrastructure.Migrations
 {
     [DbContext(typeof(SAMContext))]
-    partial class SAMContextModelSnapshot : ModelSnapshot
+    [Migration("20251109203721_RolesUsers")]
+    partial class RolesUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
