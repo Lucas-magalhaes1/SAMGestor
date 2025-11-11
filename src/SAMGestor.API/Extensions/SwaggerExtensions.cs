@@ -1,9 +1,7 @@
 using System.Globalization;
 using System.Reflection;
-
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
-
 using Microsoft.OpenApi.Models;
 
 namespace SAMGestor.API.Extensions
@@ -14,7 +12,7 @@ namespace SAMGestor.API.Extensions
         {
             var cad = apiDesc.ActionDescriptor as ControllerActionDescriptor;
 
-            // lê o atributo customizado no método (ou no controller como fallback)
+            // Lê o atributo no método (ou no controller como fallback)
             var methodOrder = cad?.MethodInfo.GetCustomAttribute<SwaggerOrderAttribute>()?.Order;
             var controllerOrder = cad?.ControllerTypeInfo.GetCustomAttribute<SwaggerOrderAttribute>()?.Order;
 
@@ -23,7 +21,7 @@ namespace SAMGestor.API.Extensions
             string group  = apiDesc.GroupName    ?? string.Empty;
             string rel    = apiDesc.RelativePath ?? string.Empty;
             string method = apiDesc.HttpMethod   ?? string.Empty;
-            
+
             return string.Format(CultureInfo.InvariantCulture, "{0:D4}_{1}_{2}_{3}",
                                  order, group, rel, method);
         }
@@ -43,6 +41,21 @@ namespace SAMGestor.API.Extensions
 
                 c.CustomSchemaIds(t => t.FullName?.Replace("+", "."));
                 c.OrderActionsBy(SwaggerOrderSelector);
+                
+                var scheme = new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Insira: Bearer {seu_jwt}"
+                };
+                c.AddSecurityDefinition("Bearer", scheme);
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    { scheme, new List<string>() }
+                });
             });
 
             return services;

@@ -12,16 +12,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 QuestPDF.Settings.License = LicenseType.Community;
 
-builder.Services.AddControllers();
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
+
 builder.Services.AddValidatorsFromAssemblyContaining<CreateRetreatValidator>();
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAuthInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<PaymentConfirmedConsumer>();
 builder.Services.AddHostedService<FamilyGroupCreatedConsumer>();
 builder.Services.AddHostedService<FamilyGroupCreateFailedConsumer>();
@@ -32,13 +33,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhost3000", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:3000",
-                "https://localhost:3000" 
-            )
+        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
             .AllowAnyHeader()
             .AllowAnyMethod()
-            .AllowCredentials()
             .AllowCredentials();
     });
 });
@@ -56,6 +53,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowLocalhost3000");
+
+app.UseAuthInfrastructure();
+
 app.MapControllers();
 
 app.Run();
