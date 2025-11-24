@@ -1,4 +1,5 @@
 // SAMGestor.API/Controllers/DashboardsController.cs
+
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.Application.Dtos.Dashboards;
@@ -6,16 +7,19 @@ using SAMGestor.Application.Features.Dashboards.Families;
 using SAMGestor.Application.Features.Dashboards.Overview;
 using SAMGestor.Application.Features.Dashboards.Payments;
 using SAMGestor.Application.Features.Dashboards.Service;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.DashboardsController;
 
 [ApiController]
 [Route("api/dashboards")]
+[SwaggerTag("Operações relacionadas às telas de painel de controle.")]
 public class DashboardsController : ControllerBase
 {
     private readonly IMediator _mediator;
     public DashboardsController(IMediator mediator) => _mediator = mediator;
 
+    /// <summary> Resumo geral de um retiro.</summary>
     [HttpGet("overview")]
     public async Task<ActionResult<DashboardOverviewDto>> Overview(
         [FromQuery] Guid retreatId,
@@ -27,6 +31,7 @@ public class DashboardsController : ControllerBase
         return Ok(dto);
     }
 
+    /// <summary> Lista de famílias com métricas.</summary>
     [HttpGet("families")]
     public async Task<ActionResult<FamiliesListDto>> Families(
         [FromQuery] Guid retreatId,
@@ -37,6 +42,7 @@ public class DashboardsController : ControllerBase
         return Ok(dto);
     }
 
+    /// <summary> Séries de pagamentos confirmados e pendentes.</summary>
     [HttpGet("payments/timeseries")]
     public async Task<ActionResult<PaymentPointDto[]>> PaymentsSeries(
         [FromQuery] Guid retreatId,
@@ -49,6 +55,7 @@ public class DashboardsController : ControllerBase
         return Ok(dto);
     }
 
+    /// <summary> Resumo de métricas do serviço.</summary>
     // NOVO
     [HttpGet("service/overview")]
     public async Task<ActionResult<OverviewServiceDto>> ServiceOverview(

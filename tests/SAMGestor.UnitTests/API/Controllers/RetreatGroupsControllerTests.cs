@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
+using SAMGestor.API.Controllers.Retreat;
 using SAMGestor.Application.Features.Families.Groups.ListByStatus;
 using SAMGestor.Application.Features.Families.Groups.Resend;
 using SAMGestor.Application.Features.Families.Groups.RetryFailed;

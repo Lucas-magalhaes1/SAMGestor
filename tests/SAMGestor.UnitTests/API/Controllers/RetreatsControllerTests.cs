@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
+using SAMGestor.API.Controllers.Retreat;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Retreats.Delete;
 using SAMGestor.Application.Features.Retreats.GetAll;

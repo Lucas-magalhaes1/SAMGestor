@@ -1,18 +1,20 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using SAMGestor.Application.Features.Tents.List;
-using SAMGestor.Application.Features.Tents.GetById;
-using SAMGestor.Application.Features.Tents.Create;
-using SAMGestor.Application.Features.Tents.Update;
-using SAMGestor.Application.Features.Tents.Delete;
 using SAMGestor.Application.Features.Tents.BulkCreate;
+using SAMGestor.Application.Features.Tents.Create;
+using SAMGestor.Application.Features.Tents.Delete;
+using SAMGestor.Application.Features.Tents.GetById;
+using SAMGestor.Application.Features.Tents.List;
 using SAMGestor.Application.Features.Tents.Locking;
+using SAMGestor.Application.Features.Tents.Update;
 using SAMGestor.Domain.Enums;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Retreat;
 
 [ApiController]
 [Route("api/retreats/{retreatId:guid}/tents")]
+[SwaggerTag("Operações relacionadas às barracas dos retiros.")]
 public class RetreatTentsController(IMediator mediator) : ControllerBase
 {
     /// <summary>

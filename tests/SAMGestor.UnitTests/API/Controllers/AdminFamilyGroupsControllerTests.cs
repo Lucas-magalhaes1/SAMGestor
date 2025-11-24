@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
+using SAMGestor.API.Controllers.Family;
 using SAMGestor.Application.Features.Families.Groups;
 using SAMGestor.Application.Features.Families.Groups.Create;
 using SAMGestor.Application.Features.Families.Groups.Notify;

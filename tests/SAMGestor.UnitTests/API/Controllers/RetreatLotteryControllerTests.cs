@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
+using SAMGestor.API.Controllers.Retreat;
 using SAMGestor.Application.Features.Lottery;
 
 namespace SAMGestor.UnitTests.API.Controllers;

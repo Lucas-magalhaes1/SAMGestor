@@ -4,11 +4,13 @@ using SAMGestor.Application.Features.Families.Groups.ListByStatus;
 using SAMGestor.Application.Features.Families.Groups.Resend;
 using SAMGestor.Application.Features.Families.Groups.RetryFailed;
 using SAMGestor.Application.Features.Families.Groups.Status;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Retreat;
 
 [ApiController]
 [Route("admin/retreats/{retreatId:guid}/groups")]
+[SwaggerTag("Operações relacionadas às famílias e seus grupos em um retiro.")]
 public sealed class RetreatGroupsController(IMediator mediator) : ControllerBase
 {
     /// <summary>Resumo por status (None/Creating/Active/Failed) para um retiro.</summary>

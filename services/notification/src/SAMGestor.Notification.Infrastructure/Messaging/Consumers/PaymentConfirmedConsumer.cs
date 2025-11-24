@@ -103,27 +103,142 @@ public sealed class PaymentConfirmedConsumer(
     string subjectTpl, bodyTpl, templateKey;
 
     if (sel.Kind == SAMGestor.Notification.Domain.Enums.SelectionKind.Serving)
-    {
-        templateKey = "serving-payment-approved";
-        subjectTpl  = "Equipe de serviço confirmada ✅";
-        bodyTpl = """
-            Olá {{Name}},
+{
+    templateKey = "serving-payment-approved";
+    subjectTpl  = "Equipe de serviço confirmada ✅";
+    bodyTpl = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <title>Equipe de serviço confirmada</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+               style="background-color:#ffffff; border-radius:8px; padding:24px;
+                      font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#111827;">
 
-            Pagamento recebido ({{Amount}} BRL, método: {{Method}}) em {{PaidAt}}.
-            Sua participação na equipe de serviço está confirmada. Obrigado pelo “sim”! 🙌
-            """;
-    }
-    else
-    {
-        templateKey = "payment-approved";
-        subjectTpl  = "Pagamento aprovado ✅";
-        bodyTpl = """
-            Olá {{Name}},
+          <tr>
+            <td style="font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; padding-bottom:4px;">
+              Retiro · Equipe de Serviço
+            </td>
+          </tr>
 
-            Recebemos o seu pagamento ({{Amount}} BRL, método: {{Method}}) em {{PaidAt}}.
-            Sua inscrição está confirmada. Nos vemos no retiro! 🙌
-            """;
-    }
+          <tr>
+            <td style="font-size:20px; font-weight:600; padding-bottom:8px;">
+              Olá {{Name}} 👋
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Que alegria ter você com a gente! Seu pagamento foi confirmado e sua participação na
+              equipe de serviço está garantida. 🙌
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding:12px 16px; background-color:#f9fafb;
+                       border-radius:6px; border:1px solid #e5e7eb; margin-bottom:16px;">
+              <strong>Valor:</strong> {{Amount}} BRL<br />
+              <strong>Método de pagamento:</strong> {{Method}}<br />
+              <strong>Data de pagamento:</strong> {{PaidAt}}
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Em breve compartilharemos mais detalhes sobre os horários, funções e orientações para a equipe.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#9ca3af; padding-top:16px; border-top:1px solid #e5e7eb;">
+              Qualquer dúvida, é só responder este e-mail.<br />
+              <span style="color:#6b7280;">Equipe de coordenação do retiro</span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""";
+}
+else
+{
+    templateKey = "payment-approved";
+    subjectTpl  = "Pagamento aprovado ✅";
+    bodyTpl = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <title>Pagamento aprovado</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+               style="background-color:#ffffff; border-radius:8px; padding:24px;
+                      font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#111827;">
+
+          <tr>
+            <td style="font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; padding-bottom:4px;">
+              Retiro · Confirmação de Inscrição
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:20px; font-weight:600; padding-bottom:8px;">
+              Olá {{Name}} 👋
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Boa notícia: recebemos o seu pagamento e sua inscrição para o retiro está confirmada! 🙌
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding:12px 16px; background-color:#f9fafb;
+                       border-radius:6px; border:1px solid #e5e7eb; margin-bottom:16px;">
+              <strong>Valor:</strong> {{Amount}} BRL<br />
+              <strong>Método de pagamento:</strong> {{Method}}<br />
+              <strong>Data de pagamento:</strong> {{PaidAt}}
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Faltando alguns dias para o retiro, enviaremos um novo e-mail com instruções práticas,
+              horários e o que levar.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#9ca3af; padding-top:16px; border-top:1px solid #e5e7eb;">
+              Se tiver qualquer dúvida até lá, é só responder esta mensagem.<br />
+              <span style="color:#6b7280;">Equipe de coordenação do retiro</span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""";
+}
+
 
     var data = new Dictionary<string, string>
     {

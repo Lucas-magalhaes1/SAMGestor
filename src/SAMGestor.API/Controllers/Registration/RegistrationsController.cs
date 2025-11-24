@@ -1,18 +1,22 @@
 using System.Reflection;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Extensions;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Registrations.GetAll;
 using SAMGestor.Application.Features.Registrations.GetById;
 using SAMGestor.Application.Interfaces;
+using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
-using SAMGestor.Domain.Enums;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Registration;
 
 [ApiController]
 [Route("api/[controller]")]
+[SwaggerOrder(10)] // ordem deste controller no Swagger
+[SwaggerTag("Operações relacionadas às inscrições em retiros.")] // texto que aparece na tag
 public class RegistrationsController(
     IMediator mediator,
     IStorageService storage,
@@ -22,10 +26,25 @@ public class RegistrationsController(
 {
     private CancellationToken CT => HttpContext?.RequestAborted ?? CancellationToken.None;
 
+    /// <summary>
+    /// Cria uma nova inscrição para um retiro.
+    /// </summary>
+    
     [HttpPost]
+    [Consumes("application/json")]
+    [Produces("application/json")]
+    [SwaggerOperation(
+        Summary = "Cria uma nova inscrição",
+        Description = "Registra um novo participante em um retiro e retorna os dados da inscrição criada."
+    )]
+    [SwaggerResponse(StatusCodes.Status201Created, "Inscrição criada com sucesso.", typeof(CreateRegistrationResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Request inválido ou erros de validação.")]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Já existe inscrição para o CPF/E-mail informado.")]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError, "Erro inesperado ao criar a inscrição.")]
     public async Task<IActionResult> Create([FromBody] CreateRegistrationCommand command)
     {
-        if (command is null) return BadRequest();
+        if (command is null)
+            return BadRequest();
 
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
         var userAgent = Request.Headers.UserAgent.ToString();
@@ -37,15 +56,28 @@ public class RegistrationsController(
         };
 
         var result = await mediator.Send(enriched, CT);
-        return CreatedAtRoute(nameof(GetById), new { id = result.RegistrationId }, result);
-    }
 
+        return CreatedAtRoute(
+            routeName: nameof(GetById),
+            routeValues: new { id = result.RegistrationId },
+            value: result
+        );
+    }
+    
+    /// <summary>
+    /// Retorna a incrição complea de um incrito pelo id 
+    /// </summary>
+    
     [HttpGet("{id:guid}", Name = nameof(GetById))]
     public async Task<IActionResult> GetById(Guid id)
     {
         var dto = await mediator.Send(new GetRegistrationByIdQuery(id), CT);
         return dto is null ? NotFound() : Ok(dto);
     }
+    
+    /// <summary>
+    /// Lista as inscrições de um retiro.
+    /// </summary>
 
     [HttpGet]
     public async Task<IActionResult> List(
@@ -85,6 +117,11 @@ public class RegistrationsController(
         return Ok(response);
     }
 
+    /// <summary>
+    ///  Faz upload da foto do inscrito.
+    /// </summary>
+    
+    
     // ----------------- Upload de FOTO -----------------
 [HttpPost("{id:guid}/photo")]
 public async Task<IActionResult> UploadPhoto(Guid id, IFormFile? file) 
@@ -118,6 +155,10 @@ public async Task<IActionResult> UploadPhoto(Guid id, IFormFile? file)
 
     return Created(publicUrl.Value, new { key = savedKey, url = publicUrl.Value, size });
 }
+    
+        /// <summary>
+        ///  Faz upload do documento de identificação do inscrito.
+        /// </summary>
 
 // ----------------- Upload de DOCUMENTO -----------------
 [HttpPost("{id:guid}/document")]
@@ -164,6 +205,10 @@ public async Task<IActionResult> UploadDocument(
 
     return Created(publicUrl.Value, new { key = savedKey, url = publicUrl.Value, size });
 }
+     /// <summary>
+    /// Retorna as opções de enums e restrições para inscrições.
+    /// </summary>
+            
     [HttpGet("options")]
     public IActionResult GetOptions()
     {

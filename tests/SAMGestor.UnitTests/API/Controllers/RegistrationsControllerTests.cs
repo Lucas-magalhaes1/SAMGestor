@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
+using SAMGestor.API.Controllers.Registration;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Registrations.GetAll;
 using SAMGestor.Application.Interfaces;            

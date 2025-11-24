@@ -6,11 +6,13 @@ using SAMGestor.Application.Features.Users.Delete;
 using SAMGestor.Application.Features.Users.GetById;
 using SAMGestor.Application.Features.Users.GetCredentials;
 using SAMGestor.Application.Features.Users.Update;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace SAMGestor.API.Controllers.Users;
 
 [ApiController]
 [Route("api/users")]
+[SwaggerTag("Operações relacionadas às contas de usuário.")]
 public class UsersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -22,6 +24,7 @@ public class UsersController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary> Detalhe de um usuário. </summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<UserSummary>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
@@ -36,6 +39,7 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary> Credenciais de um usuário. </summary>
     [HttpGet("{id:guid}/credentials")]
     public async Task<ActionResult<UserCredentialsResponse>> GetCredentials([FromRoute] Guid id, CancellationToken ct)
     {
@@ -49,9 +53,10 @@ public class UsersController : ControllerBase
             return NotFound(new { error = "User not found" });
         }
     }
-
+    
     public sealed record ChangeRoleRequest(string Role);
 
+    /// <summary> Cria um novo usuário. </summary>
     [HttpPost]
     public async Task<ActionResult<CreateUserResponse>> Create([FromBody] CreateUserRequest body, CancellationToken ct)
     {
@@ -61,6 +66,7 @@ public class UsersController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = res.Id }, res);
     }
 
+    /// <summary> Atualiza dados básicos de um usuário. </summary>
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateUserRequest body, CancellationToken ct)
     {
@@ -69,6 +75,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    /// <summary> Exclui um usuário. </summary>
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete([FromRoute] Guid id, CancellationToken ct)
     {
@@ -76,6 +83,7 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    /// <summary> Confirma e-mail de um usuário. </summary>
     // (Opcional) mudar role
     [HttpPost("{id:guid}/roles")]
     public async Task<IActionResult> ChangeRole([FromRoute] Guid id, [FromBody] ChangeRoleRequest body, CancellationToken ct)

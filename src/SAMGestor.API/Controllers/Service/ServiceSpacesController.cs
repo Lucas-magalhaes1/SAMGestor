@@ -1,29 +1,34 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using SAMGestor.Application.Features.Service.Spaces.PublicList;
-using SAMGestor.Application.Features.Service.Spaces.Summary;
-using SAMGestor.Application.Features.Service.Spaces.Detail;
+using SAMGestor.Application.Features.Service.Roster.Update;
+using SAMGestor.Application.Features.Service.Spaces.BulkCapacity;
 using SAMGestor.Application.Features.Service.Spaces.Create;
 using SAMGestor.Application.Features.Service.Spaces.Delete;
-using SAMGestor.Application.Features.Service.Spaces.BulkCapacity;
-using SAMGestor.Application.Features.Service.Spaces.Locking;
-using SAMGestor.Application.Features.Service.Roster.Update;
+using SAMGestor.Application.Features.Service.Spaces.Detail;
 using SAMGestor.Application.Features.Service.Spaces.List;
+using SAMGestor.Application.Features.Service.Spaces.Locking;
+using SAMGestor.Application.Features.Service.Spaces.PublicList;
+using SAMGestor.Application.Features.Service.Spaces.Summary;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Service;
 
 [ApiController]
 [Route("api/retreats/{retreatId:guid}/service/spaces")]
+[SwaggerTag("Operações relacionadas às áreas de serviço.")]
 public class ServiceSpacesController(IMediator mediator) : ControllerBase
 {
+    /// <summary> Lista de áreas de serviço públicas (sem retiro). </summary>
     [HttpGet("public")]
     public async Task<IActionResult> GetPublic(Guid retreatId, CancellationToken ct)
         => Ok(await mediator.Send(new PublicListServiceSpacesQuery(retreatId), ct));
     
+    /// <summary> Resumo das áreas de serviço. </summary>
     [HttpGet("summary")]
     public async Task<IActionResult> GetSummary(Guid retreatId, CancellationToken ct)
         => Ok(await mediator.Send(new GetServiceSpacesSummaryQuery(retreatId), ct));
 
+    /// <summary> Lista de áreas de serviço. </summary>
     [HttpGet]
     public async Task<IActionResult> GetList(
         Guid retreatId,
@@ -44,6 +49,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
     }
 
     
+    /// <summary> Detalhe de uma área de serviço. </summary>
     [HttpGet("{spaceId:guid}")]
     public async Task<IActionResult> Detail(
         Guid retreatId,
@@ -54,6 +60,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
         CancellationToken ct = default)
         => Ok(await mediator.Send(new GetServiceSpaceDetailQuery(retreatId, spaceId, page, pageSize, q), ct));
     
+    /// <summary> Cria uma nova área de serviço. </summary>
     [HttpPost]
     public async Task<IActionResult> Create(
         Guid retreatId,
@@ -72,6 +79,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
     
+    /// <summary> Exclui uma área de serviço. </summary>
     [HttpDelete("{spaceId:guid}")]
     public async Task<IActionResult> Delete(Guid retreatId, Guid spaceId, CancellationToken ct)
     {
@@ -80,6 +88,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
     }
     
     
+    /// <summary> Atualiza a capacidade de uma ou mais áreas de serviço. </summary>
     [HttpPost("capacity")]
     public async Task<IActionResult> BulkCapacity(Guid retreatId, [FromBody] UpdateServiceSpacesCapacityRequest req, CancellationToken ct)
     {
@@ -100,6 +109,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
     }
     
     
+    /// <summary> Lock/Unlock de uma área de serviço. </summary>
 
     [HttpPost("{spaceId:guid}/lock")]
     public async Task<IActionResult> ToggleLock(Guid retreatId, Guid spaceId, [FromBody] ToggleServiceSpaceLockRequest body, CancellationToken ct)
@@ -108,6 +118,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
         return NoContent();
     }
     
+    /// <summary> Lock/Unlock global das áreas de serviço. </summary>
     [HttpPost("lock")]
     public async Task<IActionResult> ToggleLockAll(Guid retreatId, [FromBody] ToggleServiceSpaceLockRequest body, CancellationToken ct)
     {
@@ -115,6 +126,7 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
         return NoContent();
     }
     
+    /// <summary> Atualiza o quadro de serviço (roster). </summary>
     [HttpPut("~/api/retreats/{retreatId:guid}/service/roster")]
     public async Task<IActionResult> UpdateRoster(Guid retreatId, [FromBody] UpdateServiceRosterCommand body, CancellationToken ct)
         => Ok(await mediator.Send(body with { RetreatId = retreatId }, ct));

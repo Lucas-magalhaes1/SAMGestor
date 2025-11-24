@@ -5,11 +5,13 @@ using SAMGestor.Application.Features.Auth.ConfirmEmail;
 using SAMGestor.Application.Features.Auth.Login;
 using SAMGestor.Application.Features.Auth.RequestPasswordReset;
 using SAMGestor.Application.Features.Auth.ResetPassword;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace SAMGestor.API.Controllers.Users;
 
 [ApiController]
 [Route("api")]
+[SwaggerTag("Operações relacionadas  à autenticação e autorização de usuários.")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,6 +23,8 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary> Login de usuário. Retorna token de acesso e refresh. </summary>
+    
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest body, CancellationToken ct)
     {
@@ -29,6 +33,11 @@ public class AuthController : ControllerBase
         var res = await _mediator.Send(new LoginCommand(body.Email, body.Password, ua, ip), ct);
         return Ok(res);
     }
+    
+    /// <summary>
+    /// Refresh de token de acesso.
+    /// </summary>
+    /// <returns></returns>
 
     // Mock compat: devolve literal "1234" (você pode trocar por JWT real depois)
     [HttpGet("refresh")]
@@ -36,6 +45,11 @@ public class AuthController : ControllerBase
     {
         return Ok(new RefreshResponse("1234", "1234"));
     }
+    
+    /// <summary>
+    /// Logout de usuário.
+    /// </summary>
+    /// <returns></returns>
 
     [HttpGet("logout")]
     public ActionResult<LogoutResponse> Logout()
@@ -43,6 +57,8 @@ public class AuthController : ControllerBase
         // TODO: opcional revogar refresh atual se enviar header com refresh
         return Ok(new LogoutResponse("Logged out successfully"));
     }
+    
+    /// <summary> Confirmação de e-mail. </summary>
 
     [HttpPost("auth/confirm-email")]
     public async Task<ActionResult<LoginResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest body, CancellationToken ct)
@@ -50,6 +66,8 @@ public class AuthController : ControllerBase
         var res = await _mediator.Send(new ConfirmEmailCommand(body.Token, body.NewPassword), ct);
         return Ok(res);
     }
+    
+    /// <summary> Solicitação de redefinição de senha. </summary>
 
     [HttpPost("auth/request-password-reset")]
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetRequest body, CancellationToken ct)
@@ -59,6 +77,8 @@ public class AuthController : ControllerBase
         await _mediator.Send(new RequestPasswordResetCommand(body.Email, baseUrl), ct);
         return Ok(new { message = "If the e-mail exists, a reset link was sent." });
     }
+    
+    /// <summary> Redefinição de senha. </summary>
 
     [HttpPost("auth/reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest body, CancellationToken ct)
@@ -66,6 +86,8 @@ public class AuthController : ControllerBase
         await _mediator.Send(new ResetPasswordCommand(body.Token, body.NewPassword), ct);
         return Ok(new { message = "Password reset successfully" });
     }
+    
+    /// <summary> Informações do usuário atual. </summary>
 
     // GET /api/user → usuário atual (se houver token, mesmo sem Authorize)
     [HttpGet("user")]

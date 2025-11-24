@@ -1,15 +1,17 @@
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SAMGestor.Application.Interfaces; // IEventBus
+using SAMGestor.Application.Interfaces;
 using SAMGestor.Contracts;
 using SAMGestor.Domain.Enums;
 using SAMGestor.Infrastructure.Persistence;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+
+namespace SAMGestor.API.Controllers.Notification;
 
 [ApiController]
 [Route("admin/notifications/service")]
+[SwaggerTag("Operações relacionadas às notificações de inscrições para servir em retiros.")]
 public sealed class AdminServiceNotificationsController(
     SAMContext db,
     IEventBus bus
@@ -19,6 +21,12 @@ public sealed class AdminServiceNotificationsController(
     //    Padrão: usa FeeServir e marca Notified após enfileirar
     //    Filtro mínimo para evitar “spam” em confirmados/declinados/cancelados:
     //    Status IN (Submitted, Notified) e Enabled = true.
+    
+    /// <summary>
+    ///  Notifica todos os participantes selecionados para servir em um retiro específico.
+    /// </summary>
+    
+    
     [HttpPost("retreats/{retreatId:guid}/notify-selected")]
     public async Task<IActionResult> NotifySelectedForRetreat(Guid retreatId, CancellationToken ct)
     {
@@ -82,6 +90,10 @@ public sealed class AdminServiceNotificationsController(
         return Ok(new { retreatId, count = regs.Count });
     }
 
+    /// <summary>
+    ///  Notifica um participante selecionado específico para servir em retiro.
+    ///  </summary>
+    
     // 2) Individual
     [HttpPost("registrations/{serviceRegistrationId:guid}/notify")]
     public async Task<IActionResult> NotifyOne(Guid serviceRegistrationId, CancellationToken ct)

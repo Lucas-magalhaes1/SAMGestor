@@ -1,16 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.Infrastructure.Persistence;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Notification;
 
 [ApiController]
 [Route("admin/outbox")]
+[SwaggerTag("Operações relacionadas à fila de mensagens de saída (outbox) para notificações.")]
 public sealed class AdminOutboxController : ControllerBase
 {
     private readonly SAMContext _db;
     public AdminOutboxController(SAMContext db) => _db = db;
 
+    /// <summary>
+    /// Obtém um resumo do estado atual da fila de mensagens de saída (outbox).
+    /// </summary>
     
     [HttpGet("summary")]
     public async Task<IActionResult> Summary(CancellationToken ct)
@@ -33,6 +38,9 @@ public sealed class AdminOutboxController : ControllerBase
         return Ok(new { pending, withErrors, lastProcessed, oldestPending });
     }
 
+    /// <summary>
+    /// Obtém uma lista de mensagens na fila de saída (outbox) com filtros opcionais.
+    /// </summary>  
     
     [HttpGet]
     public async Task<IActionResult> List(
@@ -55,6 +63,9 @@ public sealed class AdminOutboxController : ControllerBase
         return Ok(items);
     }
 
+    /// <summary>
+    /// Obtém os detalhes de uma mensagem específica na fila de saída (outbox) pelo seu ID.
+    /// </summary>  
     
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
@@ -68,6 +79,9 @@ public sealed class AdminOutboxController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Reenfileira uma mensagem específica na fila de saída (outbox) para reprocessamento.
+    /// </summary>  
     
     [HttpPost("{id:guid}/requeue")]
     public async Task<IActionResult> Requeue(Guid id, CancellationToken ct)

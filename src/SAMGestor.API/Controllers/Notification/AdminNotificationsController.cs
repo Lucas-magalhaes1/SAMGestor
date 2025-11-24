@@ -1,17 +1,22 @@
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Contracts;
 using SAMGestor.Domain.Enums;
 using SAMGestor.Infrastructure.Persistence;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Notification;
 
 [ApiController]
 [Route("admin/notifications")]
+[SwaggerTag("Operações relacionadas às notificações.")]
 public class AdminNotificationsController(SAMContext db, IEventBus bus) : ControllerBase
 {
+    /// <summary>
+    ///  Notifica todos os participantes selecionados para um retiro específico.
+    /// </summary>
+    
     [HttpPost("retreats/{retreatId:guid}/notify-selected")]
     public async Task<IActionResult> NotifySelectedForRetreat(Guid retreatId, CancellationToken ct)
     {
@@ -54,6 +59,10 @@ public class AdminNotificationsController(SAMContext db, IEventBus bus) : Contro
         await db.SaveChangesAsync(ct);
         return Ok(new { retreatId, count = regs.Count });
     }
+    
+    /// <summary>
+    ///  Notifica um participante selecionado específico.
+    ///  </summary>
 
     [HttpPost("registrations/{registrationId:guid}/notify")]
     public async Task<IActionResult> NotifyOne(Guid registrationId, CancellationToken ct)

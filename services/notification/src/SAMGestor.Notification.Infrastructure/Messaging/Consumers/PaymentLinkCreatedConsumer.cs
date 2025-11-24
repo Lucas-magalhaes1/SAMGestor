@@ -109,34 +109,159 @@ public sealed class PaymentLinkCreatedConsumer(
     string subjectTpl, bodyTpl, templateKey;
 
     if (sel.Kind == SAMGestor.Notification.Domain.Enums.SelectionKind.Serving)
-    {
-        templateKey = "serving-payment-link";
-        subjectTpl  = "Equipe de serviço: finalize sua confirmação";
-        bodyTpl = """
-            Olá {{Name}},
+{
+    templateKey = "serving-payment-link";
+    subjectTpl  = "Equipe de serviço: finalize sua confirmação";
+    bodyTpl = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <title>Equipe de serviço: finalize sua confirmação</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+               style="background-color:#ffffff; border-radius:8px; padding:24px;
+                      font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#111827;">
+          
+          <tr>
+            <td style="font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; padding-bottom:4px;">
+              Retiro · Equipe de Serviço
+            </td>
+          </tr>
 
-            Para confirmar sua participação na equipe de serviço do retiro,
-            conclua o pagamento:
+          <tr>
+            <td style="font-size:20px; font-weight:600; padding-bottom:8px;">
+              Olá {{Name}} 👋
+            </td>
+          </tr>
 
-            Valor: {{Amount}} {{Currency}}
-            Link de pagamento: {{LinkUrl}}
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Obrigado por se disponibilizar para servir no retiro. Para confirmar sua participação na
+              equipe de serviço, basta concluir o pagamento abaixo.
+            </td>
+          </tr>
 
-            Qualquer dúvida, responda este e-mail.
-            """;
-    }
-    else
-    {
-        templateKey = "participant-payment-link";
-        subjectTpl  = "Seu link de pagamento do retiro";
-        bodyTpl = """
-            Olá {{Name}},
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding:12px 16px; background-color:#f9fafb; border-radius:6px; border:1px solid #e5e7eb; margin-bottom:16px;">
+              <strong>Valor:</strong> {{Amount}} {{Currency}}<br />
+              <strong>Forma de pagamento:</strong> online, através do link seguro abaixo.
+            </td>
+          </tr>
 
-            Valor: {{Amount}} {{Currency}}
-            Link de pagamento: {{LinkUrl}}
+          <tr>
+            <td align="center" style="padding:24px 0;">
+              <a href="{{LinkUrl}}"
+                 style="display:inline-block; padding:12px 28px; border-radius:6px;
+                        background-color:#2563eb; color:#ffffff; text-decoration:none;
+                        font-size:14px; font-weight:600;">
+                Confirmar participação
+              </a>
+            </td>
+          </tr>
 
-            Se já pagou, ignore este e-mail.
-            """;
-    }
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#6b7280; padding-bottom:16px;">
+              Se você já realizou o pagamento, pode desconsiderar este e-mail.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#9ca3af; padding-top:16px; border-top:1px solid #e5e7eb;">
+              Qualquer dúvida, basta responder este e-mail.<br />
+              <span style="color:#6b7280;">Equipe de coordenação do retiro</span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""";
+}
+   else
+{
+    templateKey = "participant-payment-link";
+    subjectTpl  = "Seu link de pagamento do retiro";
+    bodyTpl = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <title>Seu link de pagamento do retiro</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+               style="background-color:#ffffff; border-radius:8px; padding:24px;
+                      font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#111827;">
+          
+          <tr>
+            <td style="font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; padding-bottom:4px;">
+              Retiro · Inscrição
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:20px; font-weight:600; padding-bottom:8px;">
+              Olá {{Name}} 👋
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Estamos quase lá! Para concluir sua inscrição no retiro, finalize o pagamento
+              utilizando o link seguro abaixo.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding:12px 16px; background-color:#f9fafb; border-radius:6px; border:1px solid #e5e7eb; margin-bottom:16px;">
+              <strong>Valor:</strong> {{Amount}} {{Currency}}<br />
+              <strong>Pagamento online:</strong> via cartão ou outras opções disponíveis na página.
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding:24px 0;">
+              <a href="{{LinkUrl}}"
+                 style="display:inline-block; padding:12px 28px; border-radius:6px;
+                        background-color:#2563eb; color:#ffffff; text-decoration:none;
+                        font-size:14px; font-weight:600;">
+                Acessar link de pagamento
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#6b7280; padding-bottom:16px;">
+              Se você já realizou o pagamento, pode desconsiderar este e-mail.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#9ca3af; padding-top:16px; border-top:1px solid #e5e7eb;">
+              Qualquer dúvida, é só responder esta mensagem.<br />
+              <span style="color:#6b7280;">Equipe de coordenação do retiro</span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""";
+}
 
     var data = new Dictionary<string, string>
     {

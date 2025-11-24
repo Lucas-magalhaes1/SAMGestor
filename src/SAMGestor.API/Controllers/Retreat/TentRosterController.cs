@@ -5,11 +5,13 @@ using SAMGestor.Application.Features.Tents.TentRoster.AutoAssign;
 using SAMGestor.Application.Features.Tents.TentRoster.Get;
 using SAMGestor.Application.Features.Tents.TentRoster.Unassign;
 using SAMGestor.Application.Features.Tents.TentRoster.Unassigned;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Retreat;
 
 [ApiController]
 [Route("api/retreats/{retreatId:guid}/tents/roster")]
+[SwaggerTag("Operações relacionadas às alocações das barracas de um retiro.")]
 public sealed class TentRosterController(IMediator mediator) : ControllerBase
 {
     /// <summary>Snapshot do quadro de barracas (com membros e posições).</summary>

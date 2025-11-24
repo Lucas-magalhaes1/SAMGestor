@@ -30,7 +30,7 @@ public class EmailChannel : INotificationChannel
         {
             Subject = message.Subject ?? "(no subject)",
             Body = message.Body ?? string.Empty,
-            IsBodyHtml = false
+            IsBodyHtml = true 
         };
 
         // Não há cancelamento no SmtpClient, então fazemos Task.Run simples

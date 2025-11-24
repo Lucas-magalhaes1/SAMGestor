@@ -9,11 +9,13 @@ using SAMGestor.Application.Features.Families.Lock;
 using SAMGestor.Application.Features.Families.Reset;
 using SAMGestor.Application.Features.Families.Unassigned;
 using SAMGestor.Application.Features.Families.Update;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace SAMGestor.API.Controllers;
+namespace SAMGestor.API.Controllers.Family;
 
 [ApiController]
 [Route("api/retreats/{retreatId:guid}")]
+[SwaggerTag("Operações relacionadas às famílias de um retiro")]
 public class RetreatFamiliesController(IMediator mediator) : ControllerBase
 {
     /// <summary>
@@ -82,6 +84,11 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         return Ok(result);
     }
     
+    /// <summary>
+    ///  Trava ou destrava todas as famílias do retiro.
+    /// </summary>
+    
+    
     [HttpPost("families/lock")]
     public async Task<ActionResult<LockFamiliesResponse>> Lock(
         [FromRoute] Guid retreatId,
@@ -91,6 +98,10 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         var res = await mediator.Send(new LockFamiliesCommand(retreatId, body.Lock), ct);
         return Ok(res);
     }
+    
+    /// <summary>
+    ///  Trava ou destrava uma família específica do retiro.
+    /// </summary>
     
     [HttpPost("families/{familyId:guid}/lock")]
     public async Task<ActionResult<LockSingleFamilyResponse>> LockFamily(
@@ -103,6 +114,10 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
     
+    /// <summary>
+    ///  Deleta uma família específica do retiro.
+    /// </summary>
+    
     [HttpDelete("families/{familyId:guid}")]
     public async Task<IActionResult> DeleteFamily(
         [FromRoute] Guid retreatId,
@@ -112,6 +127,10 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         await mediator.Send(new DeleteFamilyCommand(retreatId, familyId), ct);
         return NoContent();
     }
+    
+    /// <summary>
+    ///  Lista os participantes não atribuídos a nenhuma família, com filtros opcionais.
+    /// </summary>
     
     [HttpGet("families/unassigned")]
     public async Task<ActionResult<GetUnassignedResponse>> Unassigned(
@@ -125,6 +144,10 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
     
+    /// <summary>
+    ///  Reseta todas as famílias do retiro, com opção de forçar a remoção das travadas.
+    /// </summary>  
+    
     [HttpPost("families/reset")]
     public async Task<ActionResult<ResetFamiliesResponse>> Reset(
         [FromRoute] Guid retreatId,
@@ -134,6 +157,10 @@ public class RetreatFamiliesController(IMediator mediator) : ControllerBase
         var res = await mediator.Send(new ResetFamiliesCommand(retreatId, body.ForceLockedFamilies), ct);
         return Ok(res);
     }
+    
+    /// <summary>
+    ///  Cria uma nova família no retiro, retornando 422 se houver warnings sem IgnoreWarnings.
+    /// </summary>
     
     [HttpPost("create/families")]
     public async Task<IActionResult> CreateFamily(

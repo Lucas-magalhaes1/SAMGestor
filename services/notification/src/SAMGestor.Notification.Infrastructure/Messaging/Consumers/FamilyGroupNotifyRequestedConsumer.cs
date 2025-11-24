@@ -97,15 +97,79 @@ public sealed class FamilyGroupNotifyRequestedConsumer(
         var emailChannel    = channels.FirstOrDefault(c => c.Name == "email");
         var whatsappChannel = channels.FirstOrDefault(c => c.Name == "whatsapp"); 
 
-        const string subjectTpl = "Reenvio: Grupo da sua família no retiro";
-        const string bodyTpl = """
-            Olá {{Name}},
+       const string subjectTpl = "Reenvio: Grupo da sua família no retiro";
+const string bodyTpl = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <title>Grupo da sua família no retiro</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f5; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+               style="background-color:#ffffff; border-radius:8px; padding:24px;
+                      font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#111827;">
 
-            Este é o link do grupo da sua família: {{GroupLink}}
+          <tr>
+            <td style="font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#6b7280; padding-bottom:4px;">
+              Retiro · Grupo da Família
+            </td>
+          </tr>
 
-            Se já está no grupo, ignore esta mensagem.
-            """;
+          <tr>
+            <td style="font-size:20px; font-weight:600; padding-bottom:8px;">
+              Olá {{Name}} 👋
+            </td>
+          </tr>
 
+          <tr>
+            <td style="font-size:14px; line-height:1.6; padding-bottom:16px;">
+              Estamos reenviando o link do grupo da sua família no retiro, para garantir que você tenha
+              tudo em mãos e não perca nenhuma informação importante.
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding:20px 0;">
+              <a href="{{GroupLink}}"
+                 style="display:inline-block; padding:12px 28px; border-radius:6px;
+                        background-color:#2563eb; color:#ffffff; text-decoration:none;
+                        font-size:14px; font-weight:600;">
+                Entrar no grupo da minha família
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:13px; line-height:1.6; padding-bottom:16px;">
+              Se o botão acima não funcionar, copie e cole este link no seu navegador ou diretamente no WhatsApp:<br />
+              <span style="font-size:12px; color:#2563eb;">{{GroupLink}}</span>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#6b7280; padding-bottom:16px;">
+              Se você já está no grupo, pode desconsiderar este e-mail.
+            </td>
+          </tr>
+
+          <tr>
+            <td style="font-size:12px; line-height:1.6; color:#9ca3af; padding-top:16px; border-top:1px solid #e5e7eb;">
+              Qualquer dúvida, é só responder esta mensagem.<br />
+              <span style="color:#6b7280;">Equipe de coordenação do retiro</span>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+""";
         var seenEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var seenPhones = new HashSet<string>(StringComparer.Ordinal);
 
