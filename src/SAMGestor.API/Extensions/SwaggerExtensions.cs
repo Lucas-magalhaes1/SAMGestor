@@ -1,8 +1,11 @@
 using System.Globalization;
 using System.Reflection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace SAMGestor.API.Extensions
 {
@@ -12,8 +15,7 @@ namespace SAMGestor.API.Extensions
         {
             var cad = apiDesc.ActionDescriptor as ControllerActionDescriptor;
 
-            // Lê o atributo no método (ou no controller como fallback)
-            var methodOrder = cad?.MethodInfo.GetCustomAttribute<SwaggerOrderAttribute>()?.Order;
+            var methodOrder     = cad?.MethodInfo.GetCustomAttribute<SwaggerOrderAttribute>()?.Order;
             var controllerOrder = cad?.ControllerTypeInfo.GetCustomAttribute<SwaggerOrderAttribute>()?.Order;
 
             int order = methodOrder ?? controllerOrder ?? 0;
@@ -23,7 +25,7 @@ namespace SAMGestor.API.Extensions
             string method = apiDesc.HttpMethod   ?? string.Empty;
 
             return string.Format(CultureInfo.InvariantCulture, "{0:D4}_{1}_{2}_{3}",
-                                 order, group, rel, method);
+                order, group, rel, method);
         }
 
         public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services)
@@ -34,27 +36,37 @@ namespace SAMGestor.API.Extensions
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "SAMGestor API",
-                    Version = "v1",
+                    Title       = "SAMGestor API",
+                    Version     = "v1",
                     Description = "Documentação da API SAMGestor."
                 });
 
                 c.CustomSchemaIds(t => t.FullName?.Replace("+", "."));
                 c.OrderActionsBy(SwaggerOrderSelector);
-                
+
+                // habilita [SwaggerOperation], [SwaggerResponse], etc.
+                c.EnableAnnotations();
+
+                // comentários XML da própria API
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+
                 var scheme = new OpenApiSecurityScheme
                 {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
+                    Name         = "Authorization",
+                    Type         = SecuritySchemeType.Http,
+                    Scheme       = "bearer",
                     BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "Insira: Bearer {seu_jwt}"
+                    In           = ParameterLocation.Header,
+                    Description  = "Insira: Bearer {seu_jwt}"
                 };
+
                 c.AddSecurityDefinition("Bearer", scheme);
+
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-                    { scheme, new List<string>() }
+                    { scheme, Array.Empty<string>() }
                 });
             });
 
@@ -67,7 +79,7 @@ namespace SAMGestor.API.Extensions
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "SAMGestor API v1");
-                c.RoutePrefix = "swagger";
+                c.RoutePrefix  = "swagger";
                 c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
             });
 
