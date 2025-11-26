@@ -15,6 +15,13 @@ var schema = builder.Configuration["DB_SCHEMA"] ?? PaymentDbContext.Schema;
 builder.Services.AddDbContext<PaymentDbContext>(opt =>
     opt.UseNpgsql(cs, npg => npg.MigrationsHistoryTable("__EFMigrationsHistory", schema)));
 
+builder.Services.Configure<MercadoPagoOptions>(
+    builder.Configuration.GetSection("MercadoPago"));
+
+builder.Services.AddHttpClient("mercadopago", client =>
+{
+    client.BaseAddress = new Uri("https://api.mercadopago.com/");
+});
 
 var mqOpt = new RabbitMqOptions
 {
@@ -40,6 +47,7 @@ builder.Services.AddHostedService<PaymentRequestedConsumer>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
 
 var app = builder.Build();
 
