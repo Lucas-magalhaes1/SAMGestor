@@ -12,7 +12,7 @@ public class Payment
     public decimal Amount { get; private set; }
     public string Currency { get; private set; } = "BRL";
 
-    public string Provider { get; private set; } = "fake"; // depois: "mercadopago"
+    public string Provider { get; private set; } = "mercadopago";
     public string? ProviderPreferenceId { get; private set; } // id da preference / intent
     public string? ProviderPaymentId { get; private set; }    // id do pagamento aprovado
     public string? LinkUrl { get; private set; }
@@ -31,6 +31,12 @@ public class Payment
         RetreatId = retreatId;
         Amount = amount;
         Currency = currency;
+    }
+    
+    public void SetProvider(string provider)
+    {
+        Provider = provider;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 
     public void SetLink(string linkUrl, string? preferenceId, DateTimeOffset? expiresAt = null)
