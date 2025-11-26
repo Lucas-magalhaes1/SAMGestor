@@ -128,7 +128,7 @@ services:
       MessageBus__User: ${RABBITMQ_USER}
       MessageBus__Pass: ${RABBITMQ_PASS}
       MercadoPago__AccessToken: ${MERCADO_PAGO_ACCESS_TOKEN}
-      PaymentLink__PublicBaseUrl: http://localhost:5002
+      PaymentLink__PublicBaseUrl: https://cacodaemonic-arcelia-nonpolarizable.ngrok-free.dev
     ports:
       - "5002:8080"
     depends_on:
