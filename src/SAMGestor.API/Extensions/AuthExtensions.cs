@@ -27,7 +27,23 @@ public static class AuthExtensions
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         // Authentication (JWT)
-        var jwt = config.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
+        var jwtSection = config.GetSection(JwtOptions.SectionName);
+        var jwt = jwtSection.Get<JwtOptions>();
+
+        if (jwt is null)
+        {
+            throw new InvalidOperationException(
+                $"Config section '{JwtOptions.SectionName}' não foi encontrada. " +
+                "Verifique se a seção Jwt está configurada (appsettings, user-secrets ou variáveis de ambiente).");
+        }
+
+        if (string.IsNullOrWhiteSpace(jwt.Secret))
+        {
+            throw new InvalidOperationException(
+                "JWT Secret não configurado (Jwt:Secret). " +
+                "Defina Jwt__Secret nas variáveis de ambiente ou Jwt:Secret no appsettings/user-secrets.");
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Secret));
 
         services

@@ -76,6 +76,11 @@ services:
       Storage__Provider: Local
       Storage__BasePath: /app/wwwroot/uploads
       Storage__PublicBaseUrl: http://localhost:5000/uploads
+      Jwt__Secret: ${JWT_SECRET}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__RefreshTokenDays: ${JWT_REFRESH_DAYS}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_MINUTES}
     ports:
       - "5000:8080"
     depends_on:
