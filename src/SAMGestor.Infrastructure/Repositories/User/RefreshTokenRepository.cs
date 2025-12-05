@@ -21,4 +21,9 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
         _db.RefreshTokens.Update(token);
         return Task.CompletedTask;
     }
+
+    public async Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(Guid userId, DateTimeOffset now, CancellationToken ct = default)
+        => await _db.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null && t.ExpiresAt > now)
+            .ToListAsync(ct);
 }

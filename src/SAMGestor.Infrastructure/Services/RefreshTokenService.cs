@@ -4,17 +4,23 @@ using Microsoft.Extensions.Options;
 using SAMGestor.Application.Common.Auth;
 using SAMGestor.Application.Interfaces.Auth;
 using SAMGestor.Domain.Entities;
+using SAMGestor.Domain.Interfaces;
 
 namespace SAMGestor.Infrastructure.Services;
 
 public sealed class RefreshTokenService : IRefreshTokenService
 {
     private readonly IOpaqueTokenGenerator _opaque;
+    private readonly IRefreshTokenRepository _repo;
     private readonly JwtOptions _opt;
 
-    public RefreshTokenService(IOpaqueTokenGenerator opaque, IOptions<JwtOptions> options)
+    public RefreshTokenService(
+        IOpaqueTokenGenerator opaque, 
+        IRefreshTokenRepository repo,
+        IOptions<JwtOptions> options)
     {
         _opaque = opaque;
+        _repo = repo;
         _opt = options.Value;
     }
 
@@ -24,7 +30,6 @@ public sealed class RefreshTokenService : IRefreshTokenService
         string? userAgent = null,
         string? ipAddress = null)
     {
-        // raw opaco, URL-safe
         var raw = _opaque.GenerateSecureToken(64);
         var hash = Hash(raw);
 
@@ -37,7 +42,6 @@ public sealed class RefreshTokenService : IRefreshTokenService
             ip: ipAddress
         );
 
-        // “async gap” para manter assinatura async (se precisar IO futuramente)
         await Task.CompletedTask;
         return (raw, entity);
     }
@@ -48,5 +52,23 @@ public sealed class RefreshTokenService : IRefreshTokenService
         var bytes = Encoding.UTF8.GetBytes(rawToken);
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
+    }
+
+    public async Task<RefreshToken> ValidateAsync(
+        string rawToken,
+        Guid userId,
+        DateTimeOffset now,
+        CancellationToken ct = default)
+    {
+        var hash = Hash(rawToken);
+        var token = await _repo.GetByHashAsync(userId, hash, ct);
+
+        if (token == null)
+            throw new UnauthorizedAccessException("Invalid refresh token");
+
+        if (!token.IsActive(now))
+            throw new UnauthorizedAccessException("Refresh token expired or revoked");
+
+        return token;
     }
 }
