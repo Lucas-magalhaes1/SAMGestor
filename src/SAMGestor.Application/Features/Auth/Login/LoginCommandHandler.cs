@@ -1,5 +1,6 @@
 using MediatR;
-using SAMGestor.Application.Common;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SAMGestor.Application.Common.Auth;
 using SAMGestor.Application.Dtos.Auth;
 using SAMGestor.Application.Dtos.Users;
@@ -18,6 +19,8 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
     private readonly IRefreshTokenRepository _refreshRepo;
     private readonly IUnitOfWork _uow;
     private readonly IDateTimeProvider _clock;
+    private readonly LockoutOptions _lockoutOpts;
+    private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
         IUserRepository users,
@@ -26,7 +29,9 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
         IRefreshTokenService refresh,
         IRefreshTokenRepository refreshRepo,
         IUnitOfWork uow,
-        IDateTimeProvider clock)
+        IDateTimeProvider clock,
+        IOptions<LockoutOptions> lockoutOpts,
+        ILogger<LoginCommandHandler> logger)
     {
         _users = users;
         _hasher = hasher;
@@ -35,31 +40,110 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
         _refreshRepo = refreshRepo;
         _uow = uow;
         _clock = clock;
+        _lockoutOpts = lockoutOpts.Value;
+        _logger = logger;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken ct)
     {
+        // 1. Validação básica
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            throw new InvalidOperationException("Missing email or password"); // middleware mapeia p/ 400
-
-        var user = await _users.GetByEmailAsync(request.Email, ct);
-        if (user is null || !_hasher.Verify(user.PasswordHash.Value, request.Password))
-            throw new UnauthorizedAccessException("Invalid credentials");
+            throw new InvalidOperationException("E-mail e senha são obrigatórios");
 
         var now = _clock.UtcNow;
 
-        // sucesso de login
+        // 2. Buscar usuário
+        var user = await _users.GetByEmailAsync(request.Email, ct);
+        if (user is null)
+        {
+            _logger.LogWarning("Tentativa de login para e-mail inexistente: {Email}", request.Email);
+            // Delay proposital para dificultar enumeração de e-mails
+            await Task.Delay(Random.Shared.Next(100, 300), ct);
+            throw new UnauthorizedAccessException("Credenciais inválidas");
+        }
+
+        // 3. Verificar se conta está habilitada
+        if (!user.Enabled)
+        {
+            _logger.LogWarning("Tentativa de login em conta desabilitada: {UserId}", user.Id);
+            throw new UnauthorizedAccessException("Conta desabilitada. Entre em contato com o administrador.");
+        }
+
+        // 4. VERIFICAR LOCKOUT (bloqueio por tentativas falhas)
+        if (user.IsLocked(now))
+        {
+            var remainingTime = user.LockoutEndAt!.Value - now;
+            var minutesLeft = Math.Ceiling(remainingTime.TotalMinutes);
+            
+            _logger.LogWarning(
+                "Tentativa de login em conta bloqueada {UserId}. Tempo restante: {Minutes} minutos",
+                user.Id, minutesLeft);
+
+            throw new UnauthorizedAccessException(
+                $"Conta temporariamente bloqueada devido a múltiplas tentativas falhas. " +
+                $"Tente novamente em {minutesLeft} minutos.");
+        }
+
+        // 5. Verificar senha
+        if (!_hasher.Verify(user.PasswordHash.Value, request.Password))
+        {
+            // ️ REGISTRAR FALHA DE LOGIN
+            user.RegisterFailedLogin(
+                now,
+                _lockoutOpts.MaxFailedAttempts,
+                TimeSpan.FromMinutes(_lockoutOpts.LockoutDurationMinutes));
+
+            await _users.UpdateAsync(user, ct);
+            await _uow.SaveChangesAsync(ct);
+
+            // Verificar se acabou de ser bloqueado
+            if (user.IsLocked(now))
+            {
+                _logger.LogWarning(
+                    "Usuário {UserId} foi bloqueado após {Attempts} tentativas falhas",
+                    user.Id, _lockoutOpts.MaxFailedAttempts);
+
+                throw new UnauthorizedAccessException(
+                    $"Credenciais inválidas. Conta bloqueada por {_lockoutOpts.LockoutDurationMinutes} minutos " +
+                    "devido a múltiplas tentativas falhas.");
+            }
+
+            // Informar tentativas restantes
+            var attemptsLeft = _lockoutOpts.MaxFailedAttempts - user.FailedAccessCount;
+            
+            _logger.LogWarning(
+                "Falha de login para usuário {UserId}. Tentativas restantes: {AttemptsLeft}",
+                user.Id, attemptsLeft);
+
+            var message = attemptsLeft > 0
+                ? $"Credenciais inválidas. {attemptsLeft} tentativa(s) restante(s) antes do bloqueio da conta."
+                : "Credenciais inválidas.";
+
+            throw new UnauthorizedAccessException(message);
+        }
+
+        // 6. LOGIN BEM-SUCEDIDO
         user.MarkLoginSuccess(now);
-        // gera tokens
-        var access = _jwt.GenerateAccessToken(user, now);
-        var (rawRefresh, entity) = await _refresh.GenerateAsync(user, now, request.UserAgent, request.Ip);
-        await _refreshRepo.AddAsync(entity, ct);
         await _users.UpdateAsync(user, ct);
+
+        // 7. Gerar tokens
+        var access = _jwt.GenerateAccessToken(user, now);
+        var (rawRefresh, entity) = await _refresh.GenerateAsync(
+            user, now, request.UserAgent, request.Ip);
+        
+        await _refreshRepo.AddAsync(entity, ct);
         await _uow.SaveChangesAsync(ct);
 
-        var summary = new UserSummary(user.Id, user.Name.Value, user.Email.Value, user.Role.ToShortName());
+        _logger.LogInformation("Usuário {UserId} realizou login com sucesso", user.Id);
+
+        var summary = new UserSummary(
+            user.Id, 
+            user.Name.Value, 
+            user.Email.Value, 
+            user.Role.ToShortName());
+
         return new LoginResponse(
-            Message: "Login successful",
+            Message: "Login realizado com sucesso",
             Success: true,
             AccessToken: access,
             RefreshToken: rawRefresh,

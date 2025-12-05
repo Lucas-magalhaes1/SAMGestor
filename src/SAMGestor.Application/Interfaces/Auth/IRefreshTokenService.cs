@@ -21,4 +21,15 @@ public interface IRefreshTokenService
     /// Calcula o hash (ex.: SHA256) de um token opaco para armazenamento.
     /// </summary>
     string Hash(string rawToken);
+
+    /// <summary>
+    /// Valida o refresh token e retorna a entidade se ativo.
+    /// Lança exceção se inválido, expirado ou revogado.
+    /// </summary>
+    Task<RefreshToken> ValidateAsync(
+        string rawToken,
+        Guid userId,
+        DateTimeOffset now,
+        CancellationToken ct = default
+    );
 }
