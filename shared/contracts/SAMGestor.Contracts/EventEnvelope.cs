@@ -20,6 +20,9 @@ public static class EventTypes
     public const string FamilyGroupNotifyRequestedV1 = "family.group.notify.requested.v1";
 
     public const string ServingParticipantSelectedV1 = "serving.participant.selected.v1";
+    
+    public const string UserInvitedV1 = "user.invited.v1";
+    public const string PasswordResetRequestedV1 = "user.password.reset.requested.v1";
 
 }
 
