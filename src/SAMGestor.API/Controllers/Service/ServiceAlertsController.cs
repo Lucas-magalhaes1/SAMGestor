@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Service.Alerts.GetAll;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -7,7 +9,8 @@ namespace SAMGestor.API.Controllers.Service;
 
 [ApiController]
 [Route("api/retreats/{retreatId:guid}/service/alerts")]
-[SwaggerTag("Operações relacionadas aos alertas de serviço.")]
+[SwaggerTag("Operações relacionadas aos alertas de serviço. (Admin,Gestor,Consultor)")]
+[Authorize(Policy = Policies.ReadOnly)]
 public class ServiceAlertsController(IMediator mediator) : ControllerBase
 {
     /// <summary> Lista os alertas de serviço para um retiro. </summary>

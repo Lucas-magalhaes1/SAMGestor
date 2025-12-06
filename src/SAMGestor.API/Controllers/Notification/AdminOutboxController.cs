@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SAMGestor.API.Auth;
 using SAMGestor.Infrastructure.Persistence;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -7,7 +9,8 @@ namespace SAMGestor.API.Controllers.Notification;
 
 [ApiController]
 [Route("admin/outbox")]
-[SwaggerTag("Operações relacionadas à fila de mensagens de saída (outbox) para notificações.")]
+[SwaggerTag("Operações relacionadas à fila de mensagens de saída (outbox) para notificações. (Admin,Gestor)")]
+[Authorize(Policy = Policies.ManagerOrAbove)]
 public sealed class AdminOutboxController : ControllerBase
 {
     private readonly SAMContext _db;

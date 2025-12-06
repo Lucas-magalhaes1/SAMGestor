@@ -1,6 +1,8 @@
 using System.Reflection;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.API.Extensions;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Registrations.GetAll;
@@ -28,9 +30,11 @@ public class RegistrationsController(
 
     /// <summary>
     /// Cria uma nova inscrição para um retiro.
+    /// (Público)
     /// </summary>
     
     [HttpPost]
+    [AllowAnonymous] 
     [Consumes("application/json")]
     [Produces("application/json")]
     [SwaggerOperation(
@@ -65,10 +69,12 @@ public class RegistrationsController(
     }
     
     /// <summary>
-    /// Retorna a incrição complea de um incrito pelo id 
+    /// Retorna a incrição complea de um incrito pelo id  
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     
     [HttpGet("{id:guid}", Name = nameof(GetById))]
+    [Authorize(Policy = Policies.ReadOnly)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var dto = await mediator.Send(new GetRegistrationByIdQuery(id), CT);
@@ -77,9 +83,11 @@ public class RegistrationsController(
     
     /// <summary>
     /// Lista as inscrições de um retiro.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
 
     [HttpGet]
+    [Authorize(Policy = Policies.ReadOnly)] 
     public async Task<IActionResult> List(
         [FromQuery] Guid retreatId,
         [FromQuery] string? status = null,
@@ -119,11 +127,13 @@ public class RegistrationsController(
 
     /// <summary>
     ///  Faz upload da foto do inscrito.
+    ///  (Público)
     /// </summary>
     
     
     // ----------------- Upload de FOTO -----------------
 [HttpPost("{id:guid}/photo")]
+[AllowAnonymous]
 public async Task<IActionResult> UploadPhoto(Guid id, IFormFile? file) 
 {
     if (file is null || file.Length == 0)
@@ -158,10 +168,12 @@ public async Task<IActionResult> UploadPhoto(Guid id, IFormFile? file)
     
         /// <summary>
         ///  Faz upload do documento de identificação do inscrito.
+        ///  (Público)
         /// </summary>
 
 // ----------------- Upload de DOCUMENTO -----------------
 [HttpPost("{id:guid}/document")]
+[AllowAnonymous]
 public async Task<IActionResult> UploadDocument(
     Guid id,
     IFormFile? file,                     
@@ -207,9 +219,11 @@ public async Task<IActionResult> UploadDocument(
 }
      /// <summary>
     /// Retorna as opções de enums e restrições para inscrições.
+    /// (Público)
     /// </summary>
             
     [HttpGet("options")]
+    [AllowAnonymous]
     public IActionResult GetOptions()
     {
         return Ok(new

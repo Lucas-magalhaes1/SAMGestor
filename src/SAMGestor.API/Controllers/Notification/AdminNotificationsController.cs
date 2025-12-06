@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Contracts;
 using SAMGestor.Domain.Enums;
@@ -10,7 +12,8 @@ namespace SAMGestor.API.Controllers.Notification;
 
 [ApiController]
 [Route("admin/notifications")]
-[SwaggerTag("Operações relacionadas às notificações.")]
+[SwaggerTag("Operações relacionadas às notificações. (Admin,Gestor)")]
+[Authorize(Policy = Policies.ManagerOrAbove)] 
 public class AdminNotificationsController(SAMContext db, IEventBus bus) : ControllerBase
 {
     /// <summary>

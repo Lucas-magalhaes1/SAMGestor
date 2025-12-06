@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Dtos.Reports;
 using SAMGestor.Application.Features.Reports.Create;
 using SAMGestor.Application.Features.Reports.Delete;
@@ -16,19 +18,23 @@ namespace SAMGestor.API.Controllers.Reports;
 [ApiController]
 [Route("api/reports")]
 [SwaggerTag("Operações relacionadas às gerações de relatórios.")]
+[Authorize(Policy = Policies.ReadOnly)]
 public sealed class ReportsController : ControllerBase
 {
     private readonly IMediator _mediator;
     public ReportsController(IMediator mediator) => _mediator = mediator;
     
 
-    /// <summary> Lista os relatórios disponíveis. </summary>
+    /// <summary> Lista os relatórios disponíveis. (Admin,Gestor,Consultor)</summary>
+   
     [HttpGet]
     public async Task<ActionResult<PaginatedResponse<ReportListItemDto>>> List([FromQuery] int page = 1, [FromQuery] int limit = 10, CancellationToken ct = default)
         => Ok(await _mediator.Send(new ListReportsQuery(page, limit), ct));
 
-    /// <summary> Cria um novo relatório. </summary>
+    /// <summary> Cria um novo relatório. (Admin, Gestor)</summary>
+
     [HttpPost]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<ActionResult<object>> Create([FromBody] CreateReportCommand cmd, CancellationToken ct)
     {
         var created = await _mediator.Send(cmd, ct);
@@ -40,7 +46,9 @@ public sealed class ReportsController : ControllerBase
         });
     }
 
-    /// <summary> Detalhe de um relatório. </summary>
+    /// <summary> Detalhe de um relatório.(Admin,Gestor,Consultor) </summary>
+   
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<ReportPayload>> Detail(string id, [FromQuery] int page = 1, [FromQuery] int pageLimit = 0, CancellationToken ct = default)
     {
@@ -49,8 +57,11 @@ public sealed class ReportsController : ControllerBase
         return Ok(payload);
     }
 
-    /// <summary> Atualiza dados básicos do relatório. </summary>
+    /// <summary> Atualiza dados básicos do relatório. (Admin, Gestor)</summary>
+    
+    
     [HttpPut("{id}")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<ActionResult<ReportListItemDto>> Update(string id, [FromBody] UpdateReportCommand body, CancellationToken ct)
     {
         var updated = await _mediator.Send(body with { Id = id }, ct);
@@ -58,8 +69,10 @@ public sealed class ReportsController : ControllerBase
         return Ok(updated);
     }
 
-    /// <summary> Exclui um relatório. </summary>
+    /// <summary> Exclui um relatório. (Admin, Gestor)</summary>
+ 
     [HttpDelete("{id}")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<ActionResult<object>> Delete(string id, CancellationToken ct)
     {
         var ok = await _mediator.Send(new DeleteReportCommand(id), ct);
@@ -67,12 +80,13 @@ public sealed class ReportsController : ControllerBase
         return Ok(new { message = "Relatório excluído com sucesso", id });
     }
     
-    /// <summary> Lista os templates de relatório disponíveis. </summary>
+    /// <summary> Lista os templates de relatório disponíveis. (Admin,Gestor,Consultor)</summary>
+
     [HttpGet("templates")]
     public async Task<ActionResult<IReadOnlyList<ReportTemplateSchemaDto>>> Templates(CancellationToken ct)
         => Ok(await _mediator.Send(new GetTemplatesSchemasQuery(), ct));    
     
-    /// <summary> Lista os relatórios de um retiro. </summary>
+    /// <summary> Lista os relatórios de um retiro. (Admin,Gestor,Consultor)</summary>
     [HttpGet("retreats/{retreatId:guid}")]
     public async Task<ActionResult<PaginatedResponse<ReportListItemDto>>> ListByRetreat(
         Guid retreatId, [FromQuery] int page = 1, [FromQuery] int limit = 10, CancellationToken ct = default)
@@ -87,7 +101,8 @@ public sealed class ReportsController : ControllerBase
         pdf
     }
     
-    /// <summary> Exporta um relatório. </summary>
+    /// <summary> Exporta um relatório. (Admin,Gestor,Consultor)</summary>
+
     [HttpGet("{id}/export")]
     public async Task<IActionResult> Export(
         string id,

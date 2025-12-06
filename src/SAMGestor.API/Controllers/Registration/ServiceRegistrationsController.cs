@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Service.Registrations.Confirmed;
 using SAMGestor.Application.Features.Service.Registrations.Create;
 using SAMGestor.Application.Features.Service.Registrations.GetById;
@@ -16,9 +18,11 @@ public class ServiceRegistrationsController(IMediator mediator) : ControllerBase
 {
     /// <summary>
     ///  Criar uma nova inscrição de serviço para um retiro específico.
+    ///  (Público)
     /// </summary>
 
     [HttpPost]
+    [AllowAnonymous]
     public async Task<ActionResult<CreateServiceRegistrationResponse>> Create(
         Guid retreatId,
         [FromBody] CreateServiceRegistrationCommand body,
@@ -35,9 +39,11 @@ public class ServiceRegistrationsController(IMediator mediator) : ControllerBase
     
     /// <summary>
     ///  Obter os detalhes de uma inscrição de serviço específica por ID.
+    ///  (Admin,Gestor,Consultor)
     /// </summary>
     
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = Policies.ReadOnly)] 
     public async Task<ActionResult<GetServiceRegistrationResponse>> GetById(
         Guid retreatId,
         Guid id,
@@ -49,26 +55,33 @@ public class ServiceRegistrationsController(IMediator mediator) : ControllerBase
     
     /// <summary>
     ///  Obter a lista de membros de serviço atribuídos para um retiro específico.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     
     [HttpGet("roster")]
+    [Authorize(Policy = Policies.ReadOnly)] 
+    
     public async Task<ActionResult<GetServiceRosterResponse>> GetRoster(Guid retreatId, CancellationToken ct)
         => Ok(await mediator.Send(new GetServiceRosterQuery(retreatId), ct));
     
     /// <summary>
     ///  Obter a lista de membros de serviço não atribuídos para um retiro específico.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     
     
     [HttpGet("roster/unassigned")]
+    [Authorize(Policy = Policies.ReadOnly)] 
     public async Task<ActionResult<GetUnassignedServiceMembersResponse>> GetUnassigned(Guid retreatId, CancellationToken ct)
         => Ok(await mediator.Send(new GetUnassignedServiceMembersQuery(retreatId), ct));
     
     /// <summary>
     ///  Obter a lista de inscrições de serviço confirmadas para um retiro específico.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     
     [HttpGet("confirmed")]
+    [Authorize(Policy = Policies.ReadOnly)] 
         public async Task<IActionResult> GetConfirmed([FromRoute] Guid retreatId, CancellationToken ct)
         {
             var result = await mediator.Send(new GetConfirmedServiceRegistrationsQuery(retreatId), ct);

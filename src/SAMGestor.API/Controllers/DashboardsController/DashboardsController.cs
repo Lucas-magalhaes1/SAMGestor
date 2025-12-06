@@ -1,7 +1,7 @@
-// SAMGestor.API/Controllers/DashboardsController.cs
-
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Dtos.Dashboards;
 using SAMGestor.Application.Features.Dashboards.Families;
 using SAMGestor.Application.Features.Dashboards.Overview;
@@ -13,7 +13,8 @@ namespace SAMGestor.API.Controllers.DashboardsController;
 
 [ApiController]
 [Route("api/dashboards")]
-[SwaggerTag("Operações relacionadas às telas de painel de controle.")]
+[SwaggerTag("Operações relacionadas às telas de painel de controle. (Admin,Gestor,Consultor)")]
+[Authorize(Policy = Policies.ReadOnly)] 
 public class DashboardsController : ControllerBase
 {
     private readonly IMediator _mediator;

@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Lottery;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -7,7 +9,8 @@ namespace SAMGestor.API.Controllers.Retreat;
 
 [ApiController]
 [Route("api/retreats/{retreatId:guid}")]
-[SwaggerTag("Operações relacionadas às inscrições em retiros.")]
+[SwaggerTag("Operações relacionadas às inscrições em retiros. (Admin,Gestor)")]
+[Authorize(Policy = Policies.ManagerOrAbove)]   
 public class RetreatLotteryController : ControllerBase
 {
     private readonly IMediator _mediator;

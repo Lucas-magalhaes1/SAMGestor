@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Families.Groups.Create;
 using SAMGestor.Application.Features.Families.Groups.Notify;
 using Swashbuckle.AspNetCore.Annotations;
@@ -8,7 +10,8 @@ namespace SAMGestor.API.Controllers.Family;
 
 [ApiController]
 [Route("admin/retreats/{retreatId:guid}/groups")]
-[SwaggerTag("Operações relacionadas às famílias.")]
+[SwaggerTag("Operações relacionadas às famílias. (Admin,Gestor)")]
+[Authorize(Policy = Policies.ManagerOrAbove)]  
 public class AdminFamilyGroupsController(IMediator mediator) : ControllerBase
 {
     /// <summary>

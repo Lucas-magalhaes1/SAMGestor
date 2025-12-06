@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Retreats.Delete;
 using SAMGestor.Application.Features.Retreats.GetAll;
@@ -12,14 +14,17 @@ namespace SAMGestor.API.Controllers.Retreat;
 [ApiController]
 [Route("api/[controller]")]
 [SwaggerTag("Operações relacionadas aos retiros")]
+[Authorize(Policy = Policies.ReadOnly)]
 public class RetreatsController(IMediator mediator) : ControllerBase
 {
     
     /// <summary>
     ///  Cria um novo retiro.
+    ///  (Admin,Gestor)
     /// </summary>
     
     [HttpPost]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<IActionResult> CreateRetreat(CreateRetreatCommand command)
     {
         var result = await mediator.Send(command);
@@ -29,6 +34,7 @@ public class RetreatsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Obtém os detalhes de um retiro específico pelo seu ID.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     
     [HttpGet("{id:guid}")]
@@ -40,6 +46,7 @@ public class RetreatsController(IMediator mediator) : ControllerBase
     
     /// <summary>
     /// Lista todos os retiros com paginação.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     
     [HttpGet]
@@ -53,9 +60,11 @@ public class RetreatsController(IMediator mediator) : ControllerBase
     
     /// <summary>
     /// Atualiza os detalhes de um retiro existente.
+    /// (Admin,Gestor)
     /// </summary>
     
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<IActionResult> Update(Guid id, UpdateRetreatCommand body)
     {
         var command = body with { Id = id };          
@@ -65,9 +74,11 @@ public class RetreatsController(IMediator mediator) : ControllerBase
     
     /// <summary>
     /// Exclui um retiro pelo seu ID.
+    /// (Admin,Gestor)
     /// </summary>
     
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await mediator.Send(new DeleteRetreatCommand(id));

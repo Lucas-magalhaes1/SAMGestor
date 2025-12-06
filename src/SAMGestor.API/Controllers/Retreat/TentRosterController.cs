@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Tents.TentRoster.Assign;
 using SAMGestor.Application.Features.Tents.TentRoster.AutoAssign;
 using SAMGestor.Application.Features.Tents.TentRoster.Get;
@@ -12,9 +14,12 @@ namespace SAMGestor.API.Controllers.Retreat;
 [ApiController]
 [Route("api/retreats/{retreatId:guid}/tents/roster")]
 [SwaggerTag("Operações relacionadas às alocações das barracas de um retiro.")]
+[Authorize(Policy = Policies.ReadOnly)] 
 public sealed class TentRosterController(IMediator mediator) : ControllerBase
 {
-    /// <summary>Snapshot do quadro de barracas (com membros e posições).</summary>
+    /// <summary>Snapshot do quadro de barracas (com membros e posições).
+    /// (Admin,Gestor,Consultor)</summary>
+    
     [HttpGet]
     public async Task<ActionResult<GetTentRosterResponse>> Get(
         [FromRoute] Guid retreatId,
@@ -24,7 +29,9 @@ public sealed class TentRosterController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
 
-    /// <summary>Lista participantes pagos e sem barraca.</summary>
+    /// <summary>Lista participantes pagos e sem barraca.
+    /// (Admin,Gestor,Consultor)</summary>
+    
     [HttpGet("unassigned")]
     public async Task<ActionResult<GetTentUnassignedResponse>> Unassigned(
         [FromRoute] Guid retreatId,
@@ -36,8 +43,11 @@ public sealed class TentRosterController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
 
-    /// <summary>Remove a alocação do participante (fica sem barraca).</summary>
+    /// <summary>Remove a alocação do participante (fica sem barraca).
+    /// (Admin,Gestor)</summary>
+    
     [HttpPost("unassign")]
+    [Authorize(Policy = Policies.ManagerOrAbove)] 
     public async Task<ActionResult<UnassignFromTentResponse>> Unassign(
         [FromRoute] Guid retreatId,
         [FromBody]  UnassignRequest body,
@@ -52,8 +62,10 @@ public sealed class TentRosterController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
 
-    /// <summary>Distribui automaticamente pagos/sem-barraca nas barracas disponíveis.</summary>
+    /// <summary>Distribui automaticamente pagos/sem-barraca nas barracas disponíveis.
+    /// (Admin,Gestor)</summary>
     [HttpPost("auto-assign")]
+    [Authorize(Policy = Policies.ManagerOrAbove)] 
     public async Task<ActionResult<AutoAssignTentsResponse>> AutoAssign(
         [FromRoute] Guid retreatId,
         [FromBody]  AutoAssignRequest body,
@@ -68,8 +80,10 @@ public sealed class TentRosterController(IMediator mediator) : ControllerBase
         return Ok(res);
     }
 
-    /// <summary>Salva o snapshot do quadro (mover pessoas, reordenar, etc.).</summary>
+    /// <summary>Salva o snapshot do quadro (mover pessoas, reordenar, etc.).
+    /// (Admin,Gestor)</summary>
     [HttpPut]
+    [Authorize(Policy = Policies.ManagerOrAbove)] 
     public async Task<ActionResult<UpdateTentRosterResponse>> Update(
         [FromRoute] Guid retreatId,
         [FromBody]  UpdateTentRosterCommand body,

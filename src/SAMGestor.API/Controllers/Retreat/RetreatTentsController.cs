@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SAMGestor.API.Auth;
 using SAMGestor.Application.Features.Tents.BulkCreate;
 using SAMGestor.Application.Features.Tents.Create;
 using SAMGestor.Application.Features.Tents.Delete;
@@ -15,10 +17,12 @@ namespace SAMGestor.API.Controllers.Retreat;
 [ApiController]
 [Route("api/retreats/{retreatId:guid}/tents")]
 [SwaggerTag("Operações relacionadas às barracas dos retiros.")]
+[Authorize(Policy = Policies.ReadOnly)] 
 public class RetreatTentsController(IMediator mediator) : ControllerBase
 {
     /// <summary>
     /// Lista barracas do retiro com filtros opcionais.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<ListTentsResponse>> List(
@@ -41,6 +45,7 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Detalhe de uma barraca.
+    /// (Admin,Gestor,Consultor)
     /// </summary>
     [HttpGet("{tentId:guid}")]
     public async Task<ActionResult<GetTentByIdResponse>> GetById(
@@ -54,8 +59,10 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Cria uma barraca individual.
+    /// (Admin,Gestor)
     /// </summary>
     [HttpPost]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<IActionResult> Create(
         [FromRoute] Guid retreatId,
         [FromBody]  CreateTentCommand body,
@@ -74,8 +81,10 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Criação em lote de barracas.
+    /// (Admin,Gestor)
     /// </summary>
-        [HttpPost("tents/bulk")]
+    [HttpPost("tents/bulk")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
         public async Task<ActionResult<BulkCreateTentsResponse>> BulkCreate(
             [FromRoute] Guid retreatId,
             [FromBody]  BulkCreateTentsRequest body,
@@ -114,8 +123,10 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Atualiza dados básicos da barraca (número, categoria, capacidade, observação).
+    /// (Admin,Gestor)
     /// </summary>
     [HttpPut("{tentId:guid}")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<ActionResult<UpdateTentResponse>> Update(
         [FromRoute] Guid retreatId,
         [FromRoute] Guid tentId,
@@ -129,8 +140,10 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Exclui uma barraca (sem remover alocações ainda; bloqueado se estiver locked).
+    /// (Admin,Gestor)
     /// </summary>
     [HttpDelete("{tentId:guid}")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<IActionResult> Delete(
         [FromRoute] Guid retreatId,
         [FromRoute] Guid tentId,
@@ -142,8 +155,10 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Lock/Unlock global das barracas do retiro.
+    /// (Admin,Gestor)
     /// </summary>
     [HttpPost("lock")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<ActionResult<SetTentsGlobalLockResponse>> SetGlobalLock(
         [FromRoute] Guid retreatId,
         [FromBody]  LockRequest body,
@@ -155,8 +170,10 @@ public class RetreatTentsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Lock/Unlock de uma barraca específica.
+    /// (Admin,Gestor)
     /// </summary>
     [HttpPost("{tentId:guid}/lock")]
+    [Authorize(Policy = Policies.ManagerOrAbove)]
     public async Task<ActionResult<SetTentLockResponse>> SetTentLock(
         [FromRoute] Guid retreatId,
         [FromRoute] Guid tentId,
