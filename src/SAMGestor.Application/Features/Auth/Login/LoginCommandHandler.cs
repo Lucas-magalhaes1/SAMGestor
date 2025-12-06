@@ -62,32 +62,32 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
             throw new UnauthorizedAccessException("Credenciais inválidas");
         }
 
-        // 3. Verificar se conta está habilitada
+        // 3.  VERIFICAR SE CONTA ESTÁ DESABILITADA (bloqueada pelo admin)
         if (!user.Enabled)
         {
             _logger.LogWarning("Tentativa de login em conta desabilitada: {UserId}", user.Id);
-            throw new UnauthorizedAccessException("Conta desabilitada. Entre em contato com o administrador.");
+            throw new UnauthorizedAccessException("Conta desabilitada. Entre em contato com o administrador");
         }
 
-        // 4. VERIFICAR LOCKOUT (bloqueio por tentativas falhas)
+        // 4.  VERIFICAR LOCKOUT TEMPORÁRIO (por tentativas falhas)
         if (user.IsLocked(now))
         {
             var remainingTime = user.LockoutEndAt!.Value - now;
             var minutesLeft = Math.Ceiling(remainingTime.TotalMinutes);
             
             _logger.LogWarning(
-                "Tentativa de login em conta bloqueada {UserId}. Tempo restante: {Minutes} minutos",
+                "Tentativa de login em conta bloqueada temporariamente: {UserId}. Tempo restante: {Minutes}min",
                 user.Id, minutesLeft);
 
             throw new UnauthorizedAccessException(
                 $"Conta temporariamente bloqueada devido a múltiplas tentativas falhas. " +
-                $"Tente novamente em {minutesLeft} minutos.");
+                $"Tente novamente em {minutesLeft} minuto(s)");
         }
 
         // 5. Verificar senha
         if (!_hasher.Verify(user.PasswordHash.Value, request.Password))
         {
-            // ️ REGISTRAR FALHA DE LOGIN
+            //  REGISTRAR FALHA DE LOGIN
             user.RegisterFailedLogin(
                 now,
                 _lockoutOpts.MaxFailedAttempts,
@@ -100,24 +100,25 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
             if (user.IsLocked(now))
             {
                 _logger.LogWarning(
-                    "Usuário {UserId} foi bloqueado após {Attempts} tentativas falhas",
+                    "Usuário {UserId} foi bloqueado temporariamente após {Attempts} tentativas falhas",
                     user.Id, _lockoutOpts.MaxFailedAttempts);
 
                 throw new UnauthorizedAccessException(
                     $"Credenciais inválidas. Conta bloqueada por {_lockoutOpts.LockoutDurationMinutes} minutos " +
-                    "devido a múltiplas tentativas falhas.");
+                    "devido a múltiplas tentativas falhas");
             }
 
-            // Informar tentativas restantes
+            // Informar tentativas restantes (segurança: só se < 3)
             var attemptsLeft = _lockoutOpts.MaxFailedAttempts - user.FailedAccessCount;
             
             _logger.LogWarning(
                 "Falha de login para usuário {UserId}. Tentativas restantes: {AttemptsLeft}",
                 user.Id, attemptsLeft);
 
-            var message = attemptsLeft > 0
-                ? $"Credenciais inválidas. {attemptsLeft} tentativa(s) restante(s) antes do bloqueio da conta."
-                : "Credenciais inválidas.";
+            // Só mostra tentativas restantes se estiver perto do limite
+            var message = attemptsLeft <= 2
+                ? $"Credenciais inválidas. {attemptsLeft} tentativa(s) restante(s) antes do bloqueio temporário"
+                : "Credenciais inválidas";
 
             throw new UnauthorizedAccessException(message);
         }
@@ -134,7 +135,7 @@ public sealed class LoginCommandHandler : IRequestHandler<LoginCommand, LoginRes
         await _refreshRepo.AddAsync(entity, ct);
         await _uow.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Usuário {UserId} realizou login com sucesso", user.Id);
+        _logger.LogInformation("Usuário {UserId} ({Email}) realizou login com sucesso", user.Id, user.Email.Value);
 
         var summary = new UserSummary(
             user.Id, 

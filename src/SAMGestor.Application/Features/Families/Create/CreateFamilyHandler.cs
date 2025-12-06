@@ -71,15 +71,19 @@ public sealed class CreateFamilyHandler(
 
         // SAME_SURNAME (tratado como ERRO no MVP)
         var surnames = regsMap.Values
-            .Select(r => r.Name.Last.Trim().ToLowerInvariant())
+            .Where(r => r.Name != null)
+            .Select(r => r.Name!.Last.Trim().ToLowerInvariant())
             .GroupBy(s => s)
             .Where(g => g.Count() > 1)
             .ToList();
 
         if (surnames.Count > 0)
         {
+            var surnameKeys = surnames.Select(s => s.Key).ToHashSet();
+
             var ids = regsMap.Values
-                .Where(r => surnames.Select(s => s.Key).Contains(r.Name.Last.Trim().ToLowerInvariant()))
+                .Where(r => r.Name != null &&
+                            surnameKeys.Contains(r.Name.Last.Trim().ToLowerInvariant()))
                 .Select(r => r.Id)
                 .ToList();
 
