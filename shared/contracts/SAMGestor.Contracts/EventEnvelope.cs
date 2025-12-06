@@ -23,6 +23,9 @@ public static class EventTypes
     
     public const string UserInvitedV1 = "user.invited.v1";
     public const string PasswordResetRequestedV1 = "user.password.reset.requested.v1";
+    public const string EmailChangedByAdminV1 = "user.email.changed.by.admin.v1";
+    public const string EmailChangedNotificationV1 = "user.email.changed.notification.v1";
+    public const string PasswordChangedByAdminV1 = "user.password.changed.by.admin.v1";
 
 }
 
