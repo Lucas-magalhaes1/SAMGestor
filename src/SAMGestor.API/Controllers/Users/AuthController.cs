@@ -105,23 +105,23 @@ public async Task<IActionResult> Logout([FromBody] LogoutRequest body, Cancellat
     
     /// <summary> Solicitação de redefinição de senha. </summary>
     [HttpPost("auth/request-password-reset")]
-    [EnableRateLimiting(RateLimitPolicies.PasswordReset)]
+    [EnableRateLimiting(RateLimitPolicies.PasswordReset)] // ⬅️ 3 por hora
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetRequest body, CancellationToken ct)
     {
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         await _mediator.Send(new RequestPasswordResetCommand(body.Email, baseUrl), ct);
-        return Ok(new { message = "Se o e‑mail existir, um link para redefinição foi enviado." });
+        return Ok(new { message = "Se o e-mail existir, um link para redefinição foi enviado." });
     }
-    
+
     /// <summary> Redefinição de senha. </summary>
     [HttpPost("auth/reset-password")]
-    [EnableRateLimiting(RateLimitPolicies.PasswordReset)]
+    [EnableRateLimiting(RateLimitPolicies.PasswordReset)] // ⬅️ 3 por hora
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest body, CancellationToken ct)
     {
         try
         {
             await _mediator.Send(new ResetPasswordCommand(body.Token, body.NewPassword), ct);
-            return Ok(new { message = "Senha resetada com sucesso" });
+            return Ok(new { message = "Senha redefinida com sucesso" });
         }
         catch (Exception ex)
         {
@@ -130,6 +130,7 @@ public async Task<IActionResult> Logout([FromBody] LogoutRequest body, Cancellat
         }
     }
     
+
     /// <summary> Informações do usuário atual. </summary>
     [HttpGet("user")]
     public ActionResult<object> CurrentUser()

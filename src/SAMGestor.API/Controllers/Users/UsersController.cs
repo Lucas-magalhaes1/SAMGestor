@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.API.Auth;
 using SAMGestor.Application.Dtos.Users;
+using SAMGestor.Application.Features.Users.BlockUser;
 using SAMGestor.Application.Features.Users.Create;
 using SAMGestor.Application.Features.Users.Delete;
+using SAMGestor.Application.Features.Users.ForceChangeEmail;
+using SAMGestor.Application.Features.Users.ForceChangePassword;
 using SAMGestor.Application.Features.Users.GetById;
 using SAMGestor.Application.Features.Users.GetCredentials;
+using SAMGestor.Application.Features.Users.UnblockUser;
 using SAMGestor.Application.Features.Users.Update;
 using SAMGestor.Domain.Exceptions;
 using Swashbuckle.AspNetCore.Annotations;
@@ -115,20 +119,105 @@ public class UsersController : ControllerBase
         return StatusCode(StatusCodes.Status501NotImplemented, new { message = "Alteração de função ainda não implementada" });
     }
     
-    /// <summary> Desbloqueia manualmente uma conta (apenas Admin). </summary>
-    [HttpPost("{id:guid}/unlock")]
+    /// <summary> Admin força mudança de e-mail de um usuário. </summary>
+    [HttpPost("{id:guid}/force-change-email")]
     [Authorize(Policy = Policies.AdminOnly)]
-    public async Task<IActionResult> UnlockAccount([FromRoute] Guid id, CancellationToken ct)
+    public async Task<IActionResult> ForceChangeEmail(
+        [FromRoute] Guid id,
+        [FromBody] ForceChangeEmailRequest body,
+        CancellationToken ct)
     {
-        var user = await _mediator.Send(new GetUserByIdQuery(id), ct);
-        if (user == null)
-            return NotFound(new { error = "Usuário não encontrado" });
+        try
+        {
+            await _mediator.Send(new ForceChangeEmailCommand(id, body.NewEmail), ct);
+            return Ok(new
+            {
+                message = "E-mail alterado com sucesso. Usuário receberá link de confirmação no novo e-mail"
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 
-        // Criar um Command para isso ou fazer direto:
-        // user.FailedAccessCount = 0;
-        // user.LockoutEndAt = null;
-        // await _uow.SaveChangesAsync(ct);
+    /// <summary> Admin força mudança de senha de um usuário. </summary>
+    [HttpPost("{id:guid}/force-change-password")]
+    [Authorize(Policy = Policies.AdminOnly)]
+    public async Task<IActionResult> ForceChangePassword(
+        [FromRoute] Guid id,
+        [FromBody] ForceChangePasswordRequest body,
+        CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new ForceChangePasswordCommand(id, body.NewPassword), ct);
+            return Ok(new
+            {
+                message = "Senha alterada com sucesso. Todas as sessões do usuário foram encerradas"
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+    
+    public sealed record ForceChangeEmailRequest(string NewEmail);
+    public sealed record ForceChangePasswordRequest(string NewPassword);
+    
+    /// <summary> Admin bloqueia um usuário . </summary>
+    [HttpPost("{id:guid}/block")]
+    [Authorize(Policy = Policies.AdminOnly)]
+    public async Task<IActionResult> BlockUser([FromRoute] Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new BlockUserCommand(id), ct);
+            return Ok(new
+            {
+                message = "Usuário bloqueado com sucesso. Todas as sessões foram encerradas"
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 
-        return Ok(new { message = "Conta desbloqueada com sucesso" });
+    /// <summary> Admin desbloqueia um usuário (reabilita conta). </summary>
+    [HttpPost("{id:guid}/unblock")]
+    [Authorize(Policy = Policies.AdminOnly)]
+    public async Task<IActionResult> UnblockUser([FromRoute] Guid id, CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(new UnblockUserCommand(id), ct);
+            return Ok(new
+            {
+                message = "Usuário desbloqueado com sucesso. Pode fazer login novamente"
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }
+
