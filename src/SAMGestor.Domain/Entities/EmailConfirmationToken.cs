@@ -27,4 +27,10 @@ public class EmailConfirmationToken : Entity<Guid>
     public bool IsValid(DateTimeOffset now) => UsedAt == null && ExpiresAt > now;
 
     public void MarkUsed(DateTimeOffset now) => UsedAt = now;
+    
+    public void ForceExpire()
+    {
+        ExpiresAt = DateTimeOffset.UtcNow.AddDays(-1);
+    }
+    
 }
