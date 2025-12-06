@@ -3,4 +3,4 @@ using SAMGestor.Application.Dtos.Users;
 
 namespace SAMGestor.Application.Features.Users.GetById;
 
-public sealed record GetUserByIdQuery(Guid Id) : IRequest<UserSummary>;
+public sealed record GetUserByIdQuery(Guid Id) : IRequest<UserDetail>;

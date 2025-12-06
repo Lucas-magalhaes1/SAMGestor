@@ -21,7 +21,9 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
     private readonly IDateTimeProvider _clock;
     private readonly ICurrentUser _currentUser;
     private readonly IEventBus _bus; 
-    private readonly ILogger<CreateUserCommandHandler> _logger;
+    private readonly ILogger<CreateUserCommandHandler> _logger;  
+    private readonly IPasswordHasher _hasher;
+    
 
     public CreateUserCommandHandler(
         IUserRepository users,
@@ -31,7 +33,8 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         IDateTimeProvider clock,
         ICurrentUser currentUser,
         IEventBus bus,
-        ILogger<CreateUserCommandHandler> logger)
+        ILogger<CreateUserCommandHandler> logger,
+        IPasswordHasher hasher)
     {
         _users = users;
         _emailTokens = emailTokens;
@@ -41,6 +44,7 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         _currentUser = currentUser;
         _bus = bus;
         _logger = logger;
+        _hasher = hasher;
     }
 
     public async Task<CreateUserResponse> Handle(CreateUserCommand request, CancellationToken ct)
@@ -87,13 +91,14 @@ public sealed class CreateUserCommandHandler : IRequestHandler<CreateUserCommand
         }
 
         // 4.  CRIAR USUÁRIO SEM SENHA (será definida na confirmação)
-        var placeholderHash = new PasswordHash("PENDING_CONFIRMATION");
-        
+        var tempPassword = Guid.NewGuid().ToString(); // senha aleatória temporária
+        var placeholderHash = new PasswordHash(_hasher.Hash(tempPassword)); // ⬅️ HASH REAL
+    
         var user = new User(
             new FullName(request.Name),
             new EmailAddress(request.Email),
             request.Phone,
-            placeholderHash,
+            placeholderHash, // ⬅️ Agora é um hash válido
             newUserRole);
 
         await _users.AddAsync(user, ct);

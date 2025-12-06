@@ -1,5 +1,7 @@
 using MediatR;
 using SAMGestor.Application.Interfaces;
+using SAMGestor.Application.Interfaces.Auth;
+using SAMGestor.Domain.Exceptions;
 using SAMGestor.Domain.ValueObjects;
 using SAMGestor.Domain.Interfaces;
 
@@ -9,16 +11,29 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
 {
     private readonly IUserRepository _users;
     private readonly IUnitOfWork _uow;
-
-    public UpdateUserCommandHandler(IUserRepository users, IUnitOfWork uow)
+    private readonly ICurrentUser _currentUser;
+    
+    public UpdateUserCommandHandler(IUserRepository users, IUnitOfWork uow, ICurrentUser currentUser)
     {
         _users = users;
         _uow = uow;
+        _currentUser = currentUser;
     }
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken ct)
     {
-        var u = await _users.GetByIdAsync(request.Id, ct) ?? throw new KeyNotFoundException("User not found");
+        var u = await _users.GetByIdAsync(request.Id, ct) 
+                ?? throw new KeyNotFoundException("User not found");
+
+        var isAdmin = _currentUser.Role?.ToLowerInvariant() == "administrator" 
+                      || _currentUser.Role?.ToLowerInvariant() == "admin";
+        var isSelf = _currentUser.UserId == request.Id;
+
+        if (!isAdmin && !isSelf)
+        {
+            throw new ForbiddenException("Você só pode editar seu próprio perfil");
+        }
+
         u = Update(u, request);
         await _users.UpdateAsync(u, ct);
         await _uow.SaveChangesAsync(ct);
@@ -27,7 +42,6 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
 
     private static Domain.Entities.User Update(Domain.Entities.User u, UpdateUserCommand r)
     {
-        // FullName é VO imutável: recria
         u = new Domain.Entities.User(new FullName(r.Name), u.Email, r.Phone, u.PasswordHash, u.Role);
         return u;
     }
