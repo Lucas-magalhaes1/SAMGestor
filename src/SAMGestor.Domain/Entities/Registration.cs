@@ -93,7 +93,7 @@ public class Registration : Entity<Guid>
         Guid retreatId)
     {
         Id = Guid.NewGuid();
-        Name = name;
+        Name = name ?? throw new ArgumentNullException(nameof(name));
         Cpf = cpf;
         Email = email;
         Phone = phone.Trim();

@@ -18,7 +18,7 @@ public class User : Entity<Guid>
     public bool Enabled { get; private set; }
 
     // Segurança / Sessão
-    public bool EmailConfirmed { get; private set; }
+    public bool EmailConfirmed { get; private set; }    
     public DateTimeOffset? EmailConfirmedAt { get; private set; }
     public int FailedAccessCount { get; private set; }           // tentativas seguidas
     public DateTimeOffset? LockoutEndAt { get; private set; }    // se futuro => bloqueado até lá
@@ -91,4 +91,11 @@ public class User : Entity<Guid>
     public void AddRefreshToken(RefreshToken token) => _refreshTokens.Add(token);
     public void AddEmailConfirmationToken(EmailConfirmationToken token) => _emailConfirmationTokens.Add(token);
     public void AddPasswordResetToken(PasswordResetToken token) => _passwordResetTokens.Add(token);
+    
+    public void ChangeEmail(EmailAddress newEmail)
+    {
+        Email = newEmail;
+        EmailConfirmed = false;
+        EmailConfirmedAt = null;
+    }
 }
