@@ -74,6 +74,7 @@ public sealed class DocumentReportExporter : IReportExporter
     }
 
     // ---------- PDF ----------
+    [Obsolete("Obsolete")]
     private (string ContentType, string FileName, byte[] Bytes) ExportPdf(ReportPayload p, string name)
     {
         var title = string.IsNullOrWhiteSpace(p.report.Title) ? "Relatório" : p.report.Title;

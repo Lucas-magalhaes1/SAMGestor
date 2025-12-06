@@ -30,4 +30,29 @@ public sealed class UserRepository : IUserRepository
         _db.Users.Remove(user);
         return Task.CompletedTask;
     }
+    
+    public async Task<(List<Domain.Entities.User> Users, int Total)> ListAsync(
+        int skip, 
+        int take, 
+        string? search, 
+        CancellationToken ct = default)
+    {
+        var query = _db.Users.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.ToLower();
+            query = query.Where(u => 
+                u.Name.Value.ToLower().Contains(searchLower) ||
+                u.Email.Value.ToLower().Contains(searchLower));
+        }
+
+        var total = await query.CountAsync(ct);
+        var users = await query
+            .OrderBy(u => u.Name.Value)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(ct);
+
+        return (users, total);
+    }
 }

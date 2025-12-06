@@ -105,6 +105,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmailConfirmationTokenRepository, EmailConfirmationTokenRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IJwtTokenDecoder, JwtTokenDecoder>();
+     
        
 
         services.AddHttpClient<IImageFetcher, HttpImageFetcher>(client =>
