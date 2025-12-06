@@ -43,30 +43,35 @@ namespace SAMGestor.API.Extensions
 
                 c.CustomSchemaIds(t => t.FullName?.Replace("+", "."));
                 c.OrderActionsBy(SwaggerOrderSelector);
-
-                // habilita [SwaggerOperation], [SwaggerResponse], etc.
                 c.EnableAnnotations();
 
-                // comentários XML da própria API
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
-
-                var scheme = new OpenApiSecurityScheme
+                
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name         = "Authorization",
                     Type         = SecuritySchemeType.Http,
                     Scheme       = "bearer",
                     BearerFormat = "JWT",
                     In           = ParameterLocation.Header,
-                    Description  = "Insira: Bearer {seu_jwt}"
-                };
-
-                c.AddSecurityDefinition("Bearer", scheme);
-
+                    Description  = "Insira o token JWT no formato: Bearer {seu_jwt}"
+                });
+                
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
-                    { scheme, Array.Empty<string>() }
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"  
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
             });
 

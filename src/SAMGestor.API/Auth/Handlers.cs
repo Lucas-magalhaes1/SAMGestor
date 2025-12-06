@@ -16,9 +16,9 @@ public sealed class ReadOnlyHandler : AuthorizationHandler<ReadOnlyRequirement>
     }
 }
 
-public sealed class ManageAllButDeleteUsersHandler : AuthorizationHandler<ManageAllButDeleteUsersRequirement>
+public sealed class ManagerOrAboveHandler : AuthorizationHandler<ManagerOrAboveRequirement>
 {
-    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ManageAllButDeleteUsersRequirement requirement)
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, ManagerOrAboveRequirement requirement)
     {
         var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirstValue("role");
         if (role is RoleNames.Manager or RoleNames.Admin)

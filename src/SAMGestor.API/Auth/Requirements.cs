@@ -4,7 +4,7 @@ namespace SAMGestor.API.Auth;
 
 public sealed class ReadOnlyRequirement : IAuthorizationRequirement { }
 
-public sealed class ManageAllButDeleteUsersRequirement : IAuthorizationRequirement { }
+public sealed class ManagerOrAboveRequirement : IAuthorizationRequirement { }
 
 public sealed class AdminOnlyRequirement : IAuthorizationRequirement { }
 

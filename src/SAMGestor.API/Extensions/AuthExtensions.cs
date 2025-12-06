@@ -71,20 +71,28 @@ public static class AuthExtensions
                 };
             });
 
-        // Authorization (Policies) — registradas mas NÃO exigidas
+        // Authorization (Policies)
         services.AddAuthorization(options =>
         {
+            // Policy: Qualquer usuário autenticado (apenas JWT válido)
+            options.AddPolicy(Policies.Authenticated, p => p.RequireAuthenticatedUser());
+    
+            // Policy: Consultant + Manager + Admin (leitura)
             options.AddPolicy(Policies.ReadOnly, p => p.Requirements.Add(new ReadOnlyRequirement()));
-            options.AddPolicy(Policies.ManageAllButDeleteUsers, p => p.Requirements.Add(new ManageAllButDeleteUsersRequirement()));
+    
+            // Policy: Manager + Admin
+            options.AddPolicy(Policies.ManagerOrAbove, p => p.Requirements.Add(new ManagerOrAboveRequirement()));
+    
+            // Policy: Só Admin
             options.AddPolicy(Policies.AdminOnly, p => p.Requirements.Add(new AdminOnlyRequirement()));
+    
+            // Policy: E-mail confirmado
             options.AddPolicy(Policies.EmailConfirmed, p => p.Requirements.Add(new EmailConfirmedRequirement()));
-
-            // Importante: NÃO setar options.FallbackPolicy → nada fica protegido por padrão.
         });
 
         // Handlers
         services.AddScoped<IAuthorizationHandler, ReadOnlyHandler>();
-        services.AddScoped<IAuthorizationHandler, ManageAllButDeleteUsersHandler>();
+        services.AddScoped<IAuthorizationHandler, ManagerOrAboveHandler>();
         services.AddScoped<IAuthorizationHandler, AdminOnlyHandler>();
         services.AddScoped<IAuthorizationHandler, EmailConfirmedHandler>();
 

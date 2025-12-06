@@ -28,8 +28,9 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
-   /// <summary> Login de usuário. Retorna token de acesso e refresh. </summary>
+   /// <summary> Login de usuário. Retorna token de acesso e refresh. (Público) </summary>
 [HttpPost("login")]
+[AllowAnonymous]
 [EnableRateLimiting(RateLimitPolicies.Login)]
 public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest body, CancellationToken ct)
 {
@@ -47,8 +48,9 @@ public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest bod
     }
 }
 
-/// <summary> Refresh de token de acesso com rotação. </summary>
+/// <summary> Refresh de token de acesso com rotação. (Público)</summary>
 [HttpPost("refresh")]
+[AllowAnonymous]
 [EnableRateLimiting(RateLimitPolicies.Refresh)]
 public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshRequest body, CancellationToken ct)
 {
@@ -67,7 +69,7 @@ public async Task<ActionResult<RefreshResponse>> Refresh([FromBody] RefreshReque
     }
 }
 
-/// <summary> Logout de usuário (revoga refresh token). </summary>
+/// <summary> Logout de usuário (revoga refresh token). (Admin,Gestor,Consultor)</summary>
 [HttpPost("logout")]
 [Authorize]
 public async Task<IActionResult> Logout([FromBody] LogoutRequest body, CancellationToken ct)
@@ -86,8 +88,9 @@ public async Task<IActionResult> Logout([FromBody] LogoutRequest body, Cancellat
     }
 }
     
-    /// <summary> Confirmação de e-mail. </summary>
+    /// <summary> Confirmação de e-mail. (Público) </summary>
     [HttpPost("auth/confirm-email")]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.EmailConfirmation)]
     public async Task<ActionResult<LoginResponse>> ConfirmEmail([FromBody] ConfirmEmailRequest body, CancellationToken ct)
     {
@@ -103,8 +106,9 @@ public async Task<IActionResult> Logout([FromBody] LogoutRequest body, Cancellat
         }
     }
     
-    /// <summary> Solicitação de redefinição de senha. </summary>
+    /// <summary> Solicitação de redefinição de senha. (Público) </summary>
     [HttpPost("auth/request-password-reset")]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.PasswordReset)] // ⬅️ 3 por hora
     public async Task<IActionResult> RequestPasswordReset([FromBody] RequestPasswordResetRequest body, CancellationToken ct)
     {
@@ -113,8 +117,9 @@ public async Task<IActionResult> Logout([FromBody] LogoutRequest body, Cancellat
         return Ok(new { message = "Se o e-mail existir, um link para redefinição foi enviado." });
     }
 
-    /// <summary> Redefinição de senha. </summary>
+    /// <summary> Redefinição de senha. (Público) </summary>
     [HttpPost("auth/reset-password")]
+    [AllowAnonymous]
     [EnableRateLimiting(RateLimitPolicies.PasswordReset)] // ⬅️ 3 por hora
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest body, CancellationToken ct)
     {
@@ -131,8 +136,9 @@ public async Task<IActionResult> Logout([FromBody] LogoutRequest body, Cancellat
     }
     
 
-    /// <summary> Informações do usuário atual. </summary>
+    /// <summary> Informações do usuário atual. (Admin,Gestor,Consultor) </summary>
     [HttpGet("user")]
+    [Authorize] 
     public ActionResult<object> CurrentUser()
     {
         if (!User.Identity?.IsAuthenticated ?? true)
