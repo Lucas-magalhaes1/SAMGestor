@@ -43,6 +43,10 @@ builder.Services.AddHostedService<FamilyGroupCreateRequestedConsumer>();
 builder.Services.AddHostedService<FamilyGroupNotifyRequestedConsumer>();
 builder.Services.AddHostedService<ServingSelectionEventConsumer>();
 builder.Services.AddHostedService<UserInvitedConsumer>();
+builder.Services.AddHostedService<PasswordResetRequestedConsumer>();
+builder.Services.AddHostedService<EmailChangedByAdminConsumer>();
+builder.Services.AddHostedService<EmailChangedNotificationConsumer>();
+builder.Services.AddHostedService<PasswordChangedByAdminConsumer>();
     
 
 builder.Services.AddEndpointsApiExplorer();
