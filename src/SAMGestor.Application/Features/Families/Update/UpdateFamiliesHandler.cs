@@ -223,9 +223,11 @@ public sealed class UpdateFamiliesHandler(
             family.Rename(new Domain.ValueObjects.FamilyName(f.Name));
             family.SetCapacity(f.Capacity);
             await familyRepo.UpdateAsync(family, ct);
-
+            
             await familyMemberRepo.RemoveByFamilyIdAsync(f.FamilyId, ct);
-
+            
+            await uow.SaveChangesAsync(ct); 
+            
             var ordered = f.Members.OrderBy(m => m.Position).ToList();
             var newLinks = new List<FamilyMember>(ordered.Count);
             for (int k = 0; k < ordered.Count; k++)

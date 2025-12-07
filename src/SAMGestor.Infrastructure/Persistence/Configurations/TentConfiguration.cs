@@ -9,20 +9,17 @@ public class TentConfiguration : IEntityTypeConfiguration<Tent>
 {
     public void Configure(EntityTypeBuilder<Tent> b)
     {
-        
         b.ToTable("tents", t =>
         {
             t.HasCheckConstraint("ck_tents_capacity_positive", "capacity > 0");
         });
 
         b.HasKey(t => t.Id);
-
-        // Owned: TentNumber → coluna "number"
+    
         b.OwnsOne(t => t.Number, n =>
         {
             n.Property(p => p.Value)
                 .HasColumnName("number")
-                .HasMaxLength(32)
                 .IsRequired();
         });
 
@@ -53,7 +50,7 @@ public class TentConfiguration : IEntityTypeConfiguration<Tent>
         b.Property(t => t.Notes)
             .HasColumnName("notes")
             .HasMaxLength(280);
-        
+
         b.HasIndex(t => t.RetreatId);
     }
 }
