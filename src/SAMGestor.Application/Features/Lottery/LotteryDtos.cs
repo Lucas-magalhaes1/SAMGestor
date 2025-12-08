@@ -1,7 +1,10 @@
 namespace SAMGestor.Application.Features.Lottery;
 
 public sealed record LotteryResultDto(
-    IReadOnlyList<Guid> Male,
-    IReadOnlyList<Guid> Female,
-    int MaleCap,
-    int FemaleCap);
+    List<Guid> Male,
+    List<Guid> Female,
+    int MaleCapacity,
+    int FemaleCapacity,
+    List<Guid> MalePriority,   
+    List<Guid> FemalePriority   
+);
