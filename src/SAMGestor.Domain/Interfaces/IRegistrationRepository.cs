@@ -11,6 +11,7 @@ public interface IRegistrationRepository
     Task<bool> IsCpfBlockedAsync(CPF cpf, CancellationToken ct = default);
     Task<Registration?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Registration?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default);
+
     Task<IReadOnlyList<Registration>> ListAsync(
         Guid retreatId,
         string? status = null,
@@ -18,12 +19,13 @@ public interface IRegistrationRepository
         int skip = 0,
         int take = 20,
         CancellationToken ct = default);
+
     Task<int> CountAsync(
         Guid retreatId,
         string? status = null,
         string? region = null,
         CancellationToken ct = default);
-    
+
     Task<int> CountByStatusesAndGenderAsync(
         Guid retreatId,
         RegistrationStatus[] statuses,
@@ -39,15 +41,24 @@ public interface IRegistrationRepository
         IEnumerable<Guid> registrationIds,
         RegistrationStatus newStatus,
         CancellationToken ct);
-    
+
     Task<Dictionary<Guid, Registration>> GetMapByIdsAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
-    Task<List<Registration>> ListPaidByRetreatAndGenderAsync(Guid retreatId, Gender gender, CancellationToken ct = default);
+
+    Task<List<Registration>> ListPaidByRetreatAndGenderAsync(Guid retreatId, Gender gender,
+        CancellationToken ct = default);
+
     Task<List<Registration>> ListPaidByRetreatAsync(Guid retreatId, CancellationToken ct = default);
     Task<int> CountByTentAsync(Guid tentId, CancellationToken ct = default);
-    Task<Dictionary<Guid,int>> GetAssignedCountMapByTentIdsAsync(
+
+    Task<Dictionary<Guid, int>> GetAssignedCountMapByTentIdsAsync(
         Guid retreatId,
         Guid[] tentIds,
         CancellationToken ct = default);
+
+    Task<List<Registration>> ListPaidUnassignedAsync(Guid retreatId, Gender? gender = null, string? search = null,
+        CancellationToken ct = default);
+
+    Task<List<Registration>> ListAppliedByGenderAsync(Guid retreatId, CancellationToken ct = default);
     
-    Task<List<Registration>> ListPaidUnassignedAsync(Guid retreatId, Gender? gender = null, string? search = null, CancellationToken ct = default);
+    Task AddRangeAsync(IEnumerable<Registration> registrations, CancellationToken ct = default);
 }
