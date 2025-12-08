@@ -164,5 +164,21 @@ namespace SAMGestor.Infrastructure.Repositories
 
             return rows.ToDictionary(x => x.TentId, x => x.Count);
         }
+        
+        public async Task<List<Registration>> ListAppliedByGenderAsync(Guid retreatId, CancellationToken ct = default)
+        {
+            return await _ctx.Registrations
+                .Where(r => r.RetreatId == retreatId
+                            && r.Enabled
+                            && r.Status == RegistrationStatus.NotSelected)
+                .ToListAsync(ct);
+        }
+        
+        public async Task AddRangeAsync(IEnumerable<Registration> registrations, CancellationToken ct = default)
+        {
+            await _ctx.Registrations.AddRangeAsync(registrations, ct);
+        }
+
+
     }
 }

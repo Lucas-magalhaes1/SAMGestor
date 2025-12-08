@@ -17,50 +17,85 @@ public class RetreatLotteryController : ControllerBase
     public RetreatLotteryController(IMediator mediator) => _mediator = mediator;
     
     /// <summary>
-    ///  Realiza o sorteio das inscrições para um retiro específico.
+    /// Realiza o preview do sorteio com suporte a prioridades por cidade e/ou faixa etária.
     /// </summary>
-
-    // PREVIEW do sorteio (não persiste nada)
+    /// <param name="retreatId">ID do retiro</param>
+    /// <param name="request">Critérios de prioridade (opcionais)</param>
     [HttpPost("lottery/preview")]
-    public async Task<ActionResult<LotteryResultDto>> Preview([FromRoute] Guid retreatId, CancellationToken ct)
+    public async Task<ActionResult<LotteryResultDto>> Preview(
+        [FromRoute] Guid retreatId,
+        [FromBody] LotteryPreviewRequest? request,
+        CancellationToken ct)
     {
-        var result = await _mediator.Send(new LotteryPreviewQuery(retreatId), ct);
+        var query = new LotteryPreviewQuery(
+            retreatId,
+            request?.PriorityCities,
+            request?.MinAge,
+            request?.MaxAge
+        );
+
+        var result = await _mediator.Send(query, ct);
         return Ok(result);
     }
     
     /// <summary>
-    ///  Confirma o sorteio das inscrições para um retiro específico, aplicando as seleções.
+    /// Confirma o sorteio com suporte a prioridades por cidade e/ou faixa etária.
     /// </summary>
-
-    // COMMIT do sorteio (aplica seleção)
+    /// <param name="retreatId">ID do retiro</param>
+    /// <param name="request">Critérios de prioridade (opcionais)</param>
     [HttpPost("lottery/commit")]
-    public async Task<ActionResult<LotteryResultDto>> Commit([FromRoute] Guid retreatId, CancellationToken ct)
+    public async Task<ActionResult<LotteryResultDto>> Commit(
+        [FromRoute] Guid retreatId,
+        [FromBody] LotteryCommitRequest? request,
+        CancellationToken ct)
     {
-        var result = await _mediator.Send(new LotteryCommitCommand(retreatId), ct);
+        var command = new LotteryCommitCommand(
+            retreatId,
+            request?.PriorityCities,
+            request?.MinAge,
+            request?.MaxAge
+        );
+
+        var result = await _mediator.Send(command, ct);
         return Ok(result);
     }
 
     /// <summary>
-    ///  Realiza a seleção manual de uma inscrição para um retiro específico.
+    /// Realiza a seleção manual de uma inscrição para um retiro específico.
     /// </summary>
-    
-    // Seleção manual (contemplar)
     [HttpPost("selections/{registrationId:guid}")]
-    public async Task<IActionResult> ManualSelect([FromRoute] Guid retreatId, [FromRoute] Guid registrationId, CancellationToken ct)
+    public async Task<IActionResult> ManualSelect(
+        [FromRoute] Guid retreatId,
+        [FromRoute] Guid registrationId,
+        CancellationToken ct)
     {
         await _mediator.Send(new ManualSelectCommand(retreatId, registrationId), ct);
         return NoContent();
     }
     
     /// <summary>
-    ///  Desfaz a seleção manual de uma inscrição para um retiro específico.
+    /// Desfaz a seleção manual de uma inscrição para um retiro específico.
     /// </summary>
-
-    // Desfazer seleção manual
     [HttpDelete("selections/{registrationId:guid}")]
-    public async Task<IActionResult> ManualUnselect([FromRoute] Guid retreatId, [FromRoute] Guid registrationId, CancellationToken ct)
+    public async Task<IActionResult> ManualUnselect(
+        [FromRoute] Guid retreatId,
+        [FromRoute] Guid registrationId,
+        CancellationToken ct)
     {
         await _mediator.Send(new ManualUnselectCommand(retreatId, registrationId), ct);
         return NoContent();
     }
 }
+
+// Request DTOs
+public sealed record LotteryPreviewRequest(
+    List<string>? PriorityCities = null,
+    int? MinAge = null,
+    int? MaxAge = null
+);
+
+public sealed record LotteryCommitRequest(
+    List<string>? PriorityCities = null,
+    int? MinAge = null,
+    int? MaxAge = null
+);

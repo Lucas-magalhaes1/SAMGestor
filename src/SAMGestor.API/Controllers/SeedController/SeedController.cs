@@ -87,4 +87,33 @@ public class SeedController : ControllerBase
 
         return Ok(new { message = $"{created.Count} usuários criados", users = created });
     }
+    
+    /// <summary> Remove usuários de teste </summary>
+    [HttpDelete("initial-users")]
+    public async Task<IActionResult> DeleteInitialUsers(CancellationToken ct)
+    {
+        var testEmails = new[]
+        {
+            "admin@samgestor.local",
+            "manager@samgestor.local",
+            "consultant@samgestor.local"
+        };
+
+        var deleted = 0;
+        foreach (var email in testEmails)
+        {
+            var user = await _users.GetByEmailAsync(email, ct);
+            if (user != null)
+            {
+                await _users.DeleteAsync(user, ct);
+                deleted++;
+            }
+        }
+
+        await _uow.SaveChangesAsync(ct);
+
+        return Ok(new { message = $"{deleted} usuários removidos" });
+    }
+
+
 }
