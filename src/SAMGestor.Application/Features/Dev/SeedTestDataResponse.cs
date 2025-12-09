@@ -1,8 +1,10 @@
-namespace SAMGestor.Application.Features.Dev.Seed;
-
-public sealed record SeedTestDataResponse(
-    Guid Seed1RetreatId,  // Contemplação
+public record SeedTestDataResponse(
+    Guid Seed1RetreatId,
     int Seed1Registrations,
-    Guid Seed2RetreatId,  // Famílias/Barracas
-    int Seed2Registrations
-);
+    int Seed1ServiceRegistrations,
+    int Seed1ServiceSpaces,
+    Guid Seed2RetreatId,
+    int Seed2Registrations,
+    int Seed2ServiceRegistrations,
+    int Seed2ServiceSpaces,
+    int Seed2ServiceAssignments);
