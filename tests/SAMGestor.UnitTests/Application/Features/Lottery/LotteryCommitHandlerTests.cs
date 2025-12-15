@@ -39,10 +39,19 @@ public class LotteryCommitHandlerTests
 
         retRepo.Setup(r => r.GetByIdAsync(retreatId, default)).ReturnsAsync(retreat);
 
-        var malePicked = new[] { Guid.NewGuid() };
-        var femalePicked = new[] { Guid.NewGuid() };
+        // Corrigido: Criar como List<Guid> ao invés de array
+        var malePicked = new List<Guid> { Guid.NewGuid() };
+        var femalePicked = new List<Guid> { Guid.NewGuid() };
+    
         mediator.Setup(m => m.Send(It.Is<LotteryPreviewQuery>(q => q.RetreatId == retreatId), default))
-                .ReturnsAsync(new LotteryResultDto(malePicked, femalePicked, 1, 1));
+            .ReturnsAsync(new LotteryResultDto(
+                malePicked, 
+                femalePicked, 
+                1, 
+                1,
+                null,  // PriorityCities
+                null   // AgeRange
+            ));
 
         var handler = new LotteryCommitHandler(mediator.Object, uow.Object, retRepo.Object, regRepo.Object);
 

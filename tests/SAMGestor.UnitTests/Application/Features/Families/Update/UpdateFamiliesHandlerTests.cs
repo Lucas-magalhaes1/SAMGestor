@@ -453,7 +453,7 @@ public sealed class UpdateFamiliesHandlerTests
         res2.Families.Should().NotBeEmpty();
         res2.Version.Should().Be(prev + 1);
 
-        uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -517,6 +517,6 @@ public sealed class UpdateFamiliesHandlerTests
         res.Families.Should().HaveCount(1);
         res.Version.Should().Be(prev + 1);
 
-        uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        uow.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 }
