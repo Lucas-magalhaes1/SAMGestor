@@ -114,7 +114,8 @@ public sealed class OutboxDispatcher : BackgroundService
             catch (Exception ex)
             {
                 msg.Attempts += 1;
-                msg.LastError = ex.Message;
+                msg.LastError = ex.ToString();
+                _logger.LogError(ex, "Failed to publish outbox message {Id} type={Type}", msg.Id, msg.Type);
             }
         }
 

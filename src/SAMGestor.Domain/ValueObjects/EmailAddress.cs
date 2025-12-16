@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Text.Json.Serialization;
 using SAMGestor.Domain.Commom;
 
 namespace SAMGestor.Domain.ValueObjects;
@@ -12,40 +13,36 @@ public sealed class EmailAddress : ValueObject
 
     public string Value { get; }
 
-    private EmailAddress() { } 
+    private EmailAddress() { } // EF ok
 
-    public EmailAddress(string email)
+    [JsonConstructor]
+    public EmailAddress(string value)
     {
-        if (string.IsNullOrWhiteSpace(email))
-            throw new ArgumentException("E-mail não pode ser vazio", nameof(email));
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException("E-mail não pode ser vazio", nameof(value));
 
-        var normalized = email.Trim().ToLowerInvariant();
-        
+        var normalized = value.Trim().ToLowerInvariant();
+
         if (!IsValid(normalized))
-            throw new ArgumentException("E-mail inválido", nameof(email));
+            throw new ArgumentException("E-mail inválido", nameof(value));
 
         Value = normalized;
     }
 
-    /// <summary>
-    /// Valida se o e-mail tem formato válido (sem criar instância)
-    /// </summary>
     public static bool IsValid(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
             return false;
 
         var normalized = email.Trim();
-        
-        // Validações básicas
+
         if (normalized.Length < 5 || normalized.Length > 254)
             return false;
 
-        // Regex básico para formato de e-mail
         return EmailRegex.IsMatch(normalized);
     }
 
-    protected override IEnumerable<object> GetEqualityComponents()
+    protected override IEnumerable<object?> GetEqualityComponents()
     {
         yield return Value;
     }
