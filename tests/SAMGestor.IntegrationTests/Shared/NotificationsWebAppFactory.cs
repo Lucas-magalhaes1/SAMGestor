@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SAMGestor.Application.Interfaces;
-using SAMGestor.Infrastructure.Messaging.Outbox;
+using SAMGestor.IntegrationTests.TestDoubles;
 
 namespace SAMGestor.IntegrationTests.Shared;
 
@@ -16,12 +17,10 @@ public class NotificationsWebAppFactory : PostgresWebAppFactory
 
         builder.ConfigureServices(services =>
         {
-            var busDescriptor = services.Single(d => d.ServiceType == typeof(IEventBus));
-            services.Remove(busDescriptor);
+            services.RemoveAll<IEventBus>();
 
-            var capturing = new SAMGestor.IntegrationTests.TestDoubles.CapturingEventBus();
-            services.AddSingleton(capturing);
-            services.AddSingleton<IEventBus>(sp => sp.GetRequiredService<SAMGestor.IntegrationTests.TestDoubles.CapturingEventBus>());
+            services.AddSingleton<CapturingEventBus>();
+            services.AddSingleton<IEventBus>(sp => sp.GetRequiredService<CapturingEventBus>());
         });
     }
 }

@@ -1,22 +1,23 @@
+using System.Linq;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SAMGestor.Application.Interfaces;
 using SAMGestor.Infrastructure.Messaging.Outbox;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
+using Xunit;
 
 namespace SAMGestor.IntegrationTests.Shared;
 
-public class RabbitOutboxWebAppFactory : PostgresWebAppFactory, IAsyncDisposable
+public class RabbitOutboxWebAppFactory : PostgresWebAppFactory, IAsyncLifetime
 {
     private readonly RabbitContainer _rabbit = new();
 
     public string RabbitHost { get; private set; } = "localhost";
     public int RabbitPort { get; private set; }
-    
-    public string MailhogHost { get; } = Environment.GetEnvironmentVariable("MAILHOG_HOST") ?? "localhost";
-    public int    MailhogHttpPort { get; } = int.TryParse(Environment.GetEnvironmentVariable("MAILHOG_HTTP_PORT"), out var p) ? p : 8025;
-
 
     public RabbitOutboxWebAppFactory()
     {
@@ -25,49 +26,94 @@ public class RabbitOutboxWebAppFactory : PostgresWebAppFactory, IAsyncDisposable
         RabbitPort = _rabbit.Port;
     }
 
+    async Task IAsyncLifetime.InitializeAsync()
+    {
+        await base.InitializeAsync();
+    }
+
+    async Task IAsyncLifetime.DisposeAsync()
+    {
+        await _rabbit.DisposeAsync();
+        await base.DisposeAsync();
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         base.ConfigureWebHost(builder);
-
-        builder.ConfigureServices(services =>
+        builder.UseEnvironment("Development");
+        builder.ConfigureAppConfiguration((ctx, cfg) =>
         {
-            var busDesc = services.SingleOrDefault(d => d.ServiceType == typeof(IEventBus));
-            if (busDesc is not null) services.Remove(busDesc);
-            services.AddScoped<IEventBus, OutboxEventBus>();
+            cfg.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Outbox:PublishTimeoutSeconds"] = "5",
+                ["Outbox:PollIntervalSeconds"] = "1",
+                ["Outbox:UseListenNotify"] = "false",
 
-            if (!services.Any(d => d.ServiceType == typeof(OutboxDispatcher)))
-                services.AddHostedService<OutboxDispatcher>();
-            
-            foreach (var d in services.Where(d =>
-                     d.ServiceType == typeof(RabbitMqOptions) ||
-                     d.ServiceType.FullName == "Microsoft.Extensions.Options.IOptions`1"
-                     && d.ImplementationType?.GenericTypeArguments.FirstOrDefault() == typeof(RabbitMqOptions)).ToList())
-            {
-                services.Remove(d);
-            }
-            
-            services.AddSingleton(new RabbitMqOptions
-            {
-                HostName = RabbitHost,
-                Port     = RabbitPort,
-                UserName = "guest",
-                Password = "guest",
-                Exchange = "sam.topic"
+                ["MessageBus:Host"] = RabbitHost,
+                ["MessageBus:HostName"] = RabbitHost,
+                ["MessageBus:Port"] = RabbitPort.ToString(),
+                ["MessageBus:User"] = "guest",
+                ["MessageBus:UserName"] = "guest",
+                ["MessageBus:Pass"] = "guest",
+                ["MessageBus:Password"] = "guest",
+                ["MessageBus:Exchange"] = "sam.topic",
+
+                ["RabbitMq:HostName"] = RabbitHost,
+                ["RabbitMq:Port"] = RabbitPort.ToString(),
+                ["RabbitMq:UserName"] = "guest",
+                ["RabbitMq:Password"] = "guest",
+                ["RabbitMq:Exchange"] = "sam.topic",
             });
         });
 
-        builder.UseEnvironment("Development");
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<IEventBus>();
+            services.AddScoped<IEventBus, OutboxEventBus>();
+
+            var hasDispatcherHosted = services.Any(d =>
+                d.ServiceType == typeof(IHostedService) &&
+                d.ImplementationType == typeof(OutboxDispatcher));
+
+            if (!hasDispatcherHosted)
+                services.AddHostedService<OutboxDispatcher>();
+
+            // remove opções/conexões/publicador pra evitar “vazar” config antiga
+            services.RemoveAll<RabbitMqOptions>();
+            services.RemoveAll<RabbitMqConnection>();
+            services.RemoveAll<EventPublisher>();
+
+            services.AddSingleton(new RabbitMqOptions
+            {
+                HostName = RabbitHost,
+                Port = RabbitPort,
+                UserName = "guest",
+                Password = "guest",
+                Exchange = "sam.topic",
+                ServingPaymentQueue = "core.payment.serving"
+            });
+
+            services.AddOptions<RabbitMqOptions>();
+            services.PostConfigure<RabbitMqOptions>(o =>
+            {
+                o.HostName = RabbitHost;
+                o.Port = RabbitPort;
+                o.UserName = "guest";
+                o.Password = "guest";
+                o.Exchange = "sam.topic";
+                if (string.IsNullOrWhiteSpace(o.ServingPaymentQueue))
+                    o.ServingPaymentQueue = "core.payment.serving";
+            });
+
+            services.AddSingleton<RabbitMqConnection>();
+            services.AddSingleton<EventPublisher>();
+        });
+
         builder.ConfigureLogging(lb =>
         {
             lb.ClearProviders();
             lb.AddConsole();
             lb.SetMinimumLevel(LogLevel.Information);
         });
-    }
-
-    public override async ValueTask DisposeAsync()
-    {
-        await _rabbit.DisposeAsync();
-        await base.DisposeAsync();
     }
 }
