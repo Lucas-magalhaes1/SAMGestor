@@ -141,8 +141,8 @@ public class LotteryIntegrationTests(PostgresWebAppFactory factory) : IClassFixt
         prevResp.StatusCode.Should().Be(HttpStatusCode.OK, $"body: {prevErr}");
 
         var preview = await prevResp.Content.ReadFromJsonAsync<PreviewDto>();
-        preview!.MaleCap.Should().Be(2);
-        preview.FemaleCap.Should().Be(1);
+        preview!.MaleCapacity.Should().Be(2);
+        preview.FemaleCapacity.Should().Be(1);
         preview.Male.Count.Should().Be(2);
         preview.Female.Count.Should().Be(1);
         
@@ -201,8 +201,8 @@ public class LotteryIntegrationTests(PostgresWebAppFactory factory) : IClassFixt
     {
         public List<Guid> Male { get; set; } = new();
         public List<Guid> Female { get; set; } = new();
-        public int MaleCap { get; set; }
-        public int FemaleCap { get; set; }
+        public int MaleCapacity { get; set; }
+        public int FemaleCapacity { get; set; }
     }
 
     private sealed class CreatedRetreatDto
