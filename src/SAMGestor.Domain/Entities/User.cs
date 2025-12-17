@@ -98,4 +98,9 @@ public class User : Entity<Guid>
         EmailConfirmed = false;
         EmailConfirmedAt = null;
     }
+    
+    public void ChangeName(FullName name) => Name = name;
+
+    public void ChangePhone(string phone) => Phone = phone.Trim();
+
 }

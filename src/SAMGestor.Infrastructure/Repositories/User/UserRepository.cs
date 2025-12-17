@@ -21,9 +21,9 @@ public sealed class UserRepository : IUserRepository
 
     public Task UpdateAsync(Domain.Entities.User user, CancellationToken ct = default)
     {
-        _db.Users.Update(user);
         return Task.CompletedTask;
     }
+
     
     public Task DeleteAsync(Domain.Entities.User user, CancellationToken ct = default)
     {

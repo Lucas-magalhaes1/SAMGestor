@@ -22,23 +22,25 @@ public sealed class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken ct)
     {
-        var u = await _users.GetByIdAsync(request.Id, ct) 
+        var u = await _users.GetByIdAsync(request.Id, ct)
                 ?? throw new KeyNotFoundException("User not found");
 
-        var isAdmin = _currentUser.Role?.ToLowerInvariant() == "administrator" 
-                      || _currentUser.Role?.ToLowerInvariant() == "admin";
+        var role = _currentUser.Role?.ToLowerInvariant();
+        var isAdmin = role is "administrator" or "admin";
         var isSelf = _currentUser.UserId == request.Id;
 
         if (!isAdmin && !isSelf)
-        {
             throw new ForbiddenException("Você só pode editar seu próprio perfil");
-        }
 
-        u = Update(u, request);
-        await _users.UpdateAsync(u, ct);
+        u.ChangeName(new FullName(request.Name));
+        u.ChangePhone(request.Phone);
+        
+        
         await _uow.SaveChangesAsync(ct);
+
         return Unit.Value;
     }
+
 
     private static Domain.Entities.User Update(Domain.Entities.User u, UpdateUserCommand r)
     {
