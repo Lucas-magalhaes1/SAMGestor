@@ -1,21 +1,5 @@
 # SAMGestor - Sistema de Gestão de Retiros
 
-## 📋 Índice
-
-1. [Visão Geral do Sistema](#visão-geral-do-sistema)
-2. [Arquitetura do Sistema](#arquitetura-do-sistema)
-3. [Módulo de Inscrição/Registro](#módulo-de-inscriçãoregistro)
-4. [Módulo de Contemplação (Sorteio)](#módulo-de-contemplação-sorteio)
-5. [Processamento de Pagamentos](#processamento-de-pagamentos)
-6. [Módulo de Geração de Famílias](#módulo-de-geração-de-famílias)
-7. [Notificações e Gestão de Grupos](#notificações-e-gestão-de-grupos)
-8. [Alocação em Tendas/Barracas](#alocação-em-tendasbarracas)
-9. [Módulo de Serviço - Fluxo Completo](#módulo-de-serviço---fluxo-completo)
-10. [Modelos de Dados e Relacionamentos](#modelos-de-dados-e-relacionamentos)
-11. [Sistema de Eventos e Mensageria](#sistema-de-eventos-e-mensageria)
-
----
-
 ## 🎯 Visão Geral do Sistema
 
 O **SAMGestor** é um sistema completo de gestão de retiros espirituais que gerencia todo o ciclo de vida de um retiro, desde a inscrição dos participantes até a alocação em barracas e serviços. O sistema é construído com arquitetura de microserviços orientada a eventos, utilizando .NET 8, PostgreSQL e RabbitMQ.
@@ -67,86 +51,6 @@ SAMGestor/
 
 ---
 
-## 📝 Módulo de Inscrição/Registro
-
-### Fluxo de Registro
-
-```mermaid
-graph TD
-    A[Usuário Preenche Formulário] --> B[Validação de Dados]
-    B --> C{CPF Bloqueado?}
-    C -->|Sim| D[Rejeita Inscrição]
-    C -->|Não| E{CPF já Registrado?}
-    E -->|Sim| D
-    E -->|Não| F[Cria Registro]
-    F --> G[Status: NotSelected]
-    G --> H[Salva no Banco]
-    H --> I[Retorna ID da Inscrição]
-```
-
-### Processo de Registro
-
-1. **Recepção de Dados**
-   - Endpoint: `POST /api/registrations`
-   - Controller: `RegistrationsController.Create()`
-   - Enriquece com IP e User-Agent do cliente
-
-2. **Validação de Negócio**
-   - **CPF Bloqueado**: Verifica se o CPF está na lista de bloqueados
-   - **CPF Duplicado**: Verifica se já existe inscrição para o mesmo retiro
-   - **Termos Aceitos**: Obrigatório aceitar termos e condições
-   - **Janela de Inscrição**: Valida se está dentro do período permitido
-
-3. **Validações de Dados** (FluentValidation)
-   - Nome completo (mínimo 2 palavras)
-   - CPF válido (11 dígitos)
-   - Email válido
-   - Telefone (10-11 dígitos)
-   - Data de nascimento válida
-   - Peso: 0-400kg
-   - Altura: 0-300cm
-   - Gravidez: Apenas para gênero feminino
-
-4. **Criação da Entidade**
-   - Status inicial: `NotSelected`
-   - Data de registro: UTC atual
-   - Enabled: `true`
-
-### Dados Coletados
-
-#### Dados Pessoais
-- Nome completo, CPF, Email, Telefone
-- Data de nascimento, Gênero, Cidade, Estado
-- Endereço completo
-- Foto (upload posterior)
-
-#### Dados Familiares
-- Estado civil
-- Status de gravidez (se aplicável)
-- Informações sobre pais (nome, telefone, status)
-- Informações sobre cônjuge
-- Perdas familiares recentes
-
-#### Dados de Saúde
-- Peso e altura
-- Uso de álcool, tabaco, drogas
-- Alergias e detalhes
-- Restrições médicas
-- Medicações em uso
-- Limitações físicas
-- Cirurgias/procedimentos recentes
-
-#### Dados de Contato
-- WhatsApp
-- Facebook, Instagram
-- Telefone de vizinho
-- Telefone de parente
-
-#### Dados Espirituais/Histórico
-- Religião
-- Edições anteriores do Rahamim Vida
-- Tentativas anteriores não contempladas
-- Indicação por amigos/parentes
 
 ### Regras de Negócio
 
