@@ -9,7 +9,7 @@ O **SAMGestor** é um sistema completo de gestão de retiros espirituais que ger
 - **Gestão de Inscrições**: Registro completo de participantes com validações de negócio
 - **Sistema de Contemplação**: Sorteio aleatório com quotas regionais
 - **Processamento de Pagamentos**: Integração com gateway de pagamento (fake/MercadoPago)
-- **Geração de Famílias**: Criação automática de grupos de 4 pessoas (2H + 2M)
+- **Geração de Famílias**: Criação automática de grupos 
 - **Gestão de Grupos**: Criação e notificação de grupos de WhatsApp/Email
 - **Alocação em Barracas**: Distribuição automática por gênero e capacidade
 - **Gestão de Serviços**: Alocação de equipe de serviço em espaços específicos
