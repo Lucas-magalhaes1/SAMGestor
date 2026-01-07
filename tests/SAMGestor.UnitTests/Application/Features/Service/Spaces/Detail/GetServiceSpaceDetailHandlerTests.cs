@@ -18,7 +18,8 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
         private readonly Mock<IServiceRegistrationRepository> _regRepo = new();
 
         private GetServiceSpaceDetailHandler Handler()
-            => new GetServiceSpaceDetailHandler(_retreatRepo.Object, _spaceRepo.Object, _assignRepo.Object, _regRepo.Object);
+            => new GetServiceSpaceDetailHandler(_retreatRepo.Object, _spaceRepo.Object, _assignRepo.Object,
+                _regRepo.Object);
 
         private static Retreat OpenRetreat()
             => new Retreat(
@@ -29,22 +30,27 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
                 10, 10,
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
                 DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5)),
-                new Money(0,"BRL"), new Money(0,"BRL"),
+                new Money(0, "BRL"), new Money(0, "BRL"),
                 new Percentage(50), new Percentage(50));
 
-        private static ServiceSpace Space(Guid retreatId, string name, int min = 0, int max = 10, bool isActive = true, bool isLocked = false)
+        private static ServiceSpace Space(Guid retreatId, string name, int min = 0, int max = 10, bool isActive = true,
+            bool isLocked = false)
         {
             var s = new ServiceSpace(retreatId, name, description: null, maxPeople: max, minPeople: min);
             if (!isActive)
             {
-                var f = typeof(ServiceSpace).GetField("<IsActive>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                var f = typeof(ServiceSpace).GetField("<IsActive>k__BackingField",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
                 f?.SetValue(s, false);
             }
+
             if (isLocked)
             {
-                var f = typeof(ServiceSpace).GetField("<IsLocked>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                var f = typeof(ServiceSpace).GetField("<IsLocked>k__BackingField",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
                 f?.SetValue(s, true);
             }
+
             return s;
         }
 
@@ -58,7 +64,7 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
                 new CPF(cpf),
                 new EmailAddress($"{emailUser}@mail.com"),
                 "11999999999",
-                new DateOnly(1990,1,1),
+                new DateOnly(1990, 1, 1),
                 Gender.Male,
                 "SP",
                 "Oeste");
@@ -68,7 +74,7 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
         {
             var q = new GetServiceSpaceDetailQuery(Guid.NewGuid(), Guid.NewGuid());
             _retreatRepo.Setup(r => r.GetByIdAsync(q.RetreatId, It.IsAny<CancellationToken>()))
-                        .ReturnsAsync((Retreat?)null);
+                .ReturnsAsync((Retreat?)null);
 
             await FluentActions.Invoking(() => Handler().Handle(q, default))
                 .Should().ThrowAsync<NotFoundException>()
@@ -113,9 +119,9 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
             var space = Space(retreat.Id, "Cozinha", min: 1, max: 5, isActive: true, isLocked: false);
 
             var rCoord = Reg(retreat.Id, "Alice Souza", "alice", "52998224725");
-            var rVice  = Reg(retreat.Id, "Bruno Lima", "bruno", "52998224726");
-            var rA     = Reg(retreat.Id, "Carla Mendes", "carla", "52998224727");
-            var rB     = Reg(retreat.Id, "Daniel Alves", "daniel", "52998224728");
+            var rVice = Reg(retreat.Id, "Bruno Lima", "bruno", "52998224726");
+            var rA = Reg(retreat.Id, "Carla Mendes", "carla", "52998224727");
+            var rB = Reg(retreat.Id, "Daniel Alves", "daniel", "52998224728");
 
             var assigns = new List<ServiceAssignment>
             {
@@ -129,12 +135,12 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
             _spaceRepo.Setup(s => s.GetByIdAsync(space.Id, default)).ReturnsAsync(space);
             _assignRepo.Setup(a => a.ListBySpaceIdsAsync(It.IsAny<Guid[]>(), default)).ReturnsAsync(assigns);
             _regRepo.Setup(r => r.GetMapByIdsAsync(It.IsAny<Guid[]>(), default))
-                    .ReturnsAsync(new Dictionary<Guid, ServiceRegistration>
-                    {
-                        [rCoord.Id]=rCoord, [rVice.Id]=rVice, [rA.Id]=rA, [rB.Id]=rB
-                    });
-
-            var q = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Page: 1, PageSize: 50, Search: null);
+                .ReturnsAsync(new Dictionary<Guid, ServiceRegistration>
+                {
+                    [rCoord.Id] = rCoord, [rVice.Id] = rVice, [rA.Id] = rA, [rB.Id] = rB
+                });
+            
+            var q = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Search: null, Skip: 0, Take: 50);
             var res = await Handler().Handle(q, default);
 
             res.Version.Should().Be(retreat.ServiceSpacesVersion);
@@ -148,10 +154,12 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
             res.Space.HasVice.Should().BeTrue();
             res.Space.Allocated.Should().Be(4);
 
-            res.TotalMembers.Should().Be(4);
-            res.Members.Should().HaveCount(4);
-            res.Members.Select(m => m.Name).Should().Equal("Alice Souza", "Bruno Lima", "Carla Mendes", "Daniel Alves");
-            res.Members.Select(m => m.Role).Should().Equal(
+           
+            res.Members.TotalCount.Should().Be(4);
+            res.Members.Items.Should().HaveCount(4);
+            res.Members.Items.Select(m => m.Name).Should()
+                .Equal("Alice Souza", "Bruno Lima", "Carla Mendes", "Daniel Alves");
+            res.Members.Items.Select(m => m.Role).Should().Equal(
                 nameof(ServiceRole.Coordinator),
                 nameof(ServiceRole.Vice),
                 nameof(ServiceRole.Member),
@@ -180,26 +188,27 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
             _spaceRepo.Setup(s => s.GetByIdAsync(space.Id, default)).ReturnsAsync(space);
             _assignRepo.Setup(a => a.ListBySpaceIdsAsync(It.IsAny<Guid[]>(), default)).ReturnsAsync(assigns);
             _regRepo.Setup(r => r.GetMapByIdsAsync(It.IsAny<Guid[]>(), default))
-                    .ReturnsAsync(new Dictionary<Guid, ServiceRegistration>
-                    {
-                        [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3
-                    });
+                .ReturnsAsync(new Dictionary<Guid, ServiceRegistration>
+                {
+                    [r1.Id] = r1, [r2.Id] = r2, [r3.Id] = r3
+                });
 
-            var q1 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, 1, 50, "ana");
+           
+            var q1 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, "ana", 0, 50);
             var rName = await Handler().Handle(q1, default);
-            rName.Members.Should().ContainSingle(m => m.Name == "Ana Lima");
+            rName.Members.Items.Should().ContainSingle(m => m.Name == "Ana Lima");
 
-            var q2 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, 1, 50, "pedro.s@mail.com");
+            var q2 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, "pedro.s@mail.com", 0, 50);
             var rEmail = await Handler().Handle(q2, default);
-            rEmail.Members.Should().ContainSingle(m => m.Email == "pedro.s@mail.com");
+            rEmail.Members.Items.Should().ContainSingle(m => m.Email == "pedro.s@mail.com");
 
-            var q3 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, 1, 50, "11111111111");
+            var q3 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, "11111111111", 0, 50);
             var rCpf = await Handler().Handle(q3, default);
-            rCpf.Members.Should().ContainSingle(m => m.Cpf == "11111111111");
+            rCpf.Members.Items.Should().ContainSingle(m => m.Cpf == "11111111111");
         }
 
         [Fact]
-        public async Task Paginate_with_defaults_when_invalid_inputs_and_cap_pagesize()
+        public async Task Paginate_correctly_with_skip_and_take()
         {
             var retreat = OpenRetreat();
             var space = Space(retreat.Id, "Secretaria");
@@ -213,25 +222,30 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Spaces.Detail
             _spaceRepo.Setup(s => s.GetByIdAsync(space.Id, default)).ReturnsAsync(space);
             _assignRepo.Setup(a => a.ListBySpaceIdsAsync(It.IsAny<Guid[]>(), default)).ReturnsAsync(assigns);
             _regRepo.Setup(r => r.GetMapByIdsAsync(It.IsAny<Guid[]>(), default))
-                    .ReturnsAsync(regs.ToDictionary(x => x.Id, x => x));
+                .ReturnsAsync(regs.ToDictionary(x => x.Id, x => x));
 
-            var qDefaults = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Page: 0, PageSize: 0, Search: null);
-            var rDefaults = await Handler().Handle(qDefaults, default);
-            rDefaults.Page.Should().Be(1);
-            rDefaults.PageSize.Should().Be(50);
-            rDefaults.Members.Count.Should().Be(50);
-            rDefaults.TotalMembers.Should().Be(230);
+           
+            var q1 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Search: null, Skip: 0, Take: 50);
+            var r1 = await Handler().Handle(q1, default);
+            r1.Members.Skip.Should().Be(0);
+            r1.Members.Take.Should().Be(50);
+            r1.Members.Items.Count.Should().Be(50);
+            r1.Members.TotalCount.Should().Be(230);
+            r1.Members.HasNextPage.Should().BeTrue();
 
-            var qCap = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Page: 1, PageSize: 1000, Search: null);
-            var rCap = await Handler().Handle(qCap, default);
-            rCap.PageSize.Should().Be(200);
-            rCap.Members.Count.Should().Be(200);
-            rCap.TotalMembers.Should().Be(230);
+            
+            var q2 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Search: null, Skip: 0, Take: 0);
+            var r2 = await Handler().Handle(q2, default);
+            r2.Members.Items.Count.Should().Be(230);
+            r2.Members.TotalCount.Should().Be(230);
+            r2.Members.HasNextPage.Should().BeFalse();
 
-            var qPage2 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Page: 2, PageSize: 200, Search: null);
-            var rPage2 = await Handler().Handle(qPage2, default);
-            rPage2.Members.Count.Should().Be(30);
-            rPage2.TotalMembers.Should().Be(230);
+            
+            var q3 = new GetServiceSpaceDetailQuery(retreat.Id, space.Id, Search: null, Skip: 50, Take: 50);
+            var r3 = await Handler().Handle(q3, default);
+            r3.Members.Skip.Should().Be(50);
+            r3.Members.Items.Count.Should().Be(50);
+            r3.Members.HasPreviousPage.Should().BeTrue();
         }
     }
 }

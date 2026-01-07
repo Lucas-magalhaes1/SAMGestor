@@ -1,20 +1,22 @@
 using MediatR;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Interfaces;
 
 namespace SAMGestor.Application.Features.Registrations.GetAll;
 
 public sealed class GetAllRegistrationsHandler(IRegistrationRepository repo, IStorageService storage)
-    : IRequestHandler<GetAllRegistrationsQuery, GetAllRegistrationsResponse>
+    : IRequestHandler<GetAllRegistrationsQuery, PagedResult<RegistrationDto>>
 {
-    public async Task<GetAllRegistrationsResponse> Handle(GetAllRegistrationsQuery query, CancellationToken ct)
+    public async Task<PagedResult<RegistrationDto>> Handle(GetAllRegistrationsQuery query, CancellationToken ct)
     {
-       
+        // 1. Busca todas do banco (sem paginação ainda pois filtros são em memória)
         var list = await repo.ListAsync(query.retreatId, query.status, region: null, ct: ct);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var filtered = list.AsEnumerable();
 
+        // 2. Filtros em memória
         if (!string.IsNullOrWhiteSpace(query.status) &&
             Enum.TryParse<RegistrationStatus>(query.status, true, out var st))
             filtered = filtered.Where(r => r.Status == st);
@@ -52,11 +54,12 @@ public sealed class GetAllRegistrationsHandler(IRegistrationRepository repo, ISt
             filtered = filtered.Where(r => (r.PhotoStorageKey != null || r.PhotoUrl != null) == want);
         }
 
-        var total = filtered.Count();
+        // 3. Total APÓS filtros
+        var totalCount = filtered.Count();
 
-        var page = filtered
-            .Skip(query.skip)
-            .Take(query.take)
+        // 4. Paginação em memória + projeção
+        var items = filtered
+            .ApplyPagination(query.skip, query.take)
             .Select(r =>
             {
                 var photoUrl = r.PhotoUrl?.Value;
@@ -78,6 +81,6 @@ public sealed class GetAllRegistrationsHandler(IRegistrationRepository repo, ISt
             })
             .ToList();
 
-        return new GetAllRegistrationsResponse(page, total, query.skip, query.take);
+        return new PagedResult<RegistrationDto>(items, totalCount, query.skip, query.take);
     }
 }

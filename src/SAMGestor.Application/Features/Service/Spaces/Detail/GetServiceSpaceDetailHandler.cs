@@ -1,4 +1,5 @@
 using MediatR;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Enums;
 using SAMGestor.Domain.Exceptions;
@@ -35,11 +36,16 @@ public sealed class GetServiceSpaceDetailHandler(
             {
                 var r = regMap[a.ServiceRegistrationId];
                 return new MemberItem(
-                    r.Id, (string)r.Name, r.Email.Value, r.Cpf.Value, a.Role.ToString()
+                    r.Id, 
+                    (string)r.Name, 
+                    r.Email.Value, 
+                    r.Cpf.Value, 
+                    a.Role.ToString()
                 );
             })
             .ToList();
         
+        // Filtro por search
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
             var s = q.Search.Trim().ToLowerInvariant();
@@ -50,19 +56,19 @@ public sealed class GetServiceSpaceDetailHandler(
                 .ToList();
         }
 
-        
+        // Ordenação
         members = members
             .OrderByDescending(m => m.Role == nameof(ServiceRole.Coordinator))
             .ThenByDescending(m => m.Role == nameof(ServiceRole.Vice))
             .ThenBy(m => m.Name)
             .ToList();
 
-        var total = members.Count;
+        var totalCount = members.Count;
 
-        
-        var page     = q.Page <= 0 ? 1 : q.Page;
-        var pageSize = q.PageSize <= 0 ? 50 : Math.Min(q.PageSize, 200);
-        var paged = members.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        // Paginação usando extension
+        var pagedMembers = members
+            .ApplyPagination(q.Skip, q.Take)
+            .ToList();
 
         var hasCoord = list.Any(a => a.Role == ServiceRole.Coordinator);
         var hasVice  = list.Any(a => a.Role == ServiceRole.Vice);
@@ -80,13 +86,12 @@ public sealed class GetServiceSpaceDetailHandler(
             Allocated: list.Count
         );
 
+        var pagedResult = new PagedResult<MemberItem>(pagedMembers, totalCount, q.Skip, q.Take);
+
         return new GetServiceSpaceDetailResponse(
             Version: retreat.ServiceSpacesVersion,
             Space: view,
-            TotalMembers: total,
-            Page: page,
-            PageSize: pageSize,
-            Members: paged
+            Members: pagedResult
         );
     }
 }

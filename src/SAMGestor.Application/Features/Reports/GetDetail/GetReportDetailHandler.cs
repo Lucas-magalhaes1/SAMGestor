@@ -14,7 +14,7 @@ public sealed class GetReportDetailHandler : IRequestHandler<GetReportDetailQuer
         try
         {
             var ctx = await _engine.BuildContextAsync(request.Id, ct);
-            return await _engine.GetPayloadAsync(ctx, request.Page, request.PageLimit, ct);
+            return await _engine.GetPayloadAsync(ctx, request.Skip, request.Take, ct);
         }
         catch (KeyNotFoundException)
         {
