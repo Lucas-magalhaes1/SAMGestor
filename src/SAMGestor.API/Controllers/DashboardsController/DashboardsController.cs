@@ -1,7 +1,8 @@
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MediatR;
 using SAMGestor.API.Auth;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Dtos.Dashboards;
 using SAMGestor.Application.Features.Dashboards.Families;
 using SAMGestor.Application.Features.Dashboards.Overview;
@@ -34,13 +35,14 @@ public class DashboardsController : ControllerBase
 
     /// <summary> Lista de famílias com métricas.</summary>
     [HttpGet("families")]
-    public async Task<ActionResult<FamiliesListDto>> Families(
+    public async Task<ActionResult<PagedResult<FamilyRowDto>>> Families(
         [FromQuery] Guid retreatId,
-        [FromQuery] int top = 10,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 10,
         CancellationToken ct = default)
     {
-        var dto = await _mediator.Send(new GetFamiliesQuery(retreatId, top), ct);
-        return Ok(dto);
+        var result = await _mediator.Send(new GetFamiliesQuery(retreatId, skip, take), ct);
+        return Ok(result);
     }
 
     /// <summary> Séries de pagamentos confirmados e pendentes.</summary>
@@ -57,7 +59,6 @@ public class DashboardsController : ControllerBase
     }
 
     /// <summary> Resumo de métricas do serviço.</summary>
-    // NOVO
     [HttpGet("service/overview")]
     public async Task<ActionResult<OverviewServiceDto>> ServiceOverview(
         [FromQuery] Guid retreatId,

@@ -71,11 +71,7 @@ public sealed class BreakdownItemDto
 }
 
 // ---------- Families list ----------
-public sealed class FamiliesListDto
-{
-    public int Total { get; init; }
-    public FamilyRowDto[] Items { get; init; } = Array.Empty<FamilyRowDto>();
-}
+
 
 public sealed class FamilyRowDto
 {
