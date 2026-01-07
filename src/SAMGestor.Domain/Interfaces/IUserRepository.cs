@@ -9,11 +9,10 @@ public interface IUserRepository
     Task AddAsync(User user, CancellationToken ct = default);
     Task UpdateAsync(User user, CancellationToken ct = default);
     Task DeleteAsync(User user, CancellationToken ct = default);
-    Task<(List<User> Users, int Total)> ListAsync(
+    
+    Task<(List<User> Items, int TotalCount)> ListAsync(
         int skip, 
         int take, 
         string? search, 
         CancellationToken ct = default);
-   
-    
 }

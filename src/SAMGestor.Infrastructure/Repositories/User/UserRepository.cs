@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Infrastructure.Persistence;
 
@@ -31,13 +32,15 @@ public sealed class UserRepository : IUserRepository
         return Task.CompletedTask;
     }
     
-    public async Task<(List<Domain.Entities.User> Users, int Total)> ListAsync(
+    
+    public async Task<(List<Domain.Entities.User> Items, int TotalCount)> ListAsync(
         int skip, 
         int take, 
         string? search, 
         CancellationToken ct = default)
     {
         var query = _db.Users.AsQueryable();
+        
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.ToLower();
@@ -46,13 +49,13 @@ public sealed class UserRepository : IUserRepository
                 u.Email.Value.ToLower().Contains(searchLower));
         }
 
-        var total = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync(ct);
+        
         var users = await query
             .OrderBy(u => u.Name.Value)
-            .Skip(skip)
-            .Take(take)
+            .ApplyPagination(skip, take) 
             .ToListAsync(ct);
 
-        return (users, total);
+        return (users, totalCount);
     }
 }

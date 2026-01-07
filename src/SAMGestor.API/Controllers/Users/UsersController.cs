@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.API.Auth;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Dtos.Users;
 using SAMGestor.Application.Features.Users.BlockUser;
 using SAMGestor.Application.Features.Users.Create;
@@ -10,6 +11,7 @@ using SAMGestor.Application.Features.Users.ForceChangeEmail;
 using SAMGestor.Application.Features.Users.ForceChangePassword;
 using SAMGestor.Application.Features.Users.GetById;
 using SAMGestor.Application.Features.Users.GetCredentials;
+using SAMGestor.Application.Features.Users.List;
 using SAMGestor.Application.Features.Users.UnblockUser;
 using SAMGestor.Application.Features.Users.Update;
 using SAMGestor.Domain.Exceptions;
@@ -228,14 +230,14 @@ public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateUs
     /// </summary>
     [HttpGet]
     [Authorize(Policy = Policies.ManagerOrAbove)]
-    public async Task<ActionResult<ListUsersResponse>> List(
+    public async Task<ActionResult<PagedResult<UserListItem>>> List(
         [FromQuery] int skip = 0,
         [FromQuery] int take = 20,
         [FromQuery] string? search = null,
         CancellationToken ct = default)
     {
-        var res = await _mediator.Send(new ListUsersQuery(skip, take, search), ct);
-        return Ok(res);
+        var result = await _mediator.Send(new ListUsersQuery(search, skip, take), ct);
+        return Ok(result);
     }
 }
 

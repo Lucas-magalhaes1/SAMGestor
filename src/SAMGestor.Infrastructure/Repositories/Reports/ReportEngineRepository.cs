@@ -3,7 +3,6 @@ using SAMGestor.Application.Dtos.Reports;
 using SAMGestor.Application.Interfaces.Reports;
 using SAMGestor.Infrastructure.Persistence;
 
-
 namespace SAMGestor.Infrastructure.Repositories.Reports;
 
 public sealed class ReportEngineRepository : IReportEngine
@@ -34,15 +33,12 @@ public sealed class ReportEngineRepository : IReportEngine
         );
     }
 
-    public async Task<ReportPayload> GetPayloadAsync(ReportContext ctx, int page, int pageLimit, CancellationToken ct)
+    public async Task<ReportPayload> GetPayloadAsync(ReportContext ctx, int skip, int take, CancellationToken ct)
     {
         if (!_templates.TryGetValue(ctx.TemplateKey, out var template))
             throw new KeyNotFoundException($"Template '{ctx.TemplateKey}' não registrado.");
 
-        page = page <= 0 ? 1 : page;
-        pageLimit = pageLimit < 0 ? 0 : pageLimit;
-
-        var payload = await template.GetDataAsync(ctx, page, pageLimit, ct);
+        var payload = await template.GetDataAsync(ctx, skip, take, ct);
 
         if (string.IsNullOrWhiteSpace(payload.report.Title))
         {

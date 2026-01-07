@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
@@ -22,15 +23,20 @@ public sealed class RetreatRepository(SAMContext ctx) : IRetreatRepository
             r.Name.Value == name.Value && r.Edition == edition.Trim(), ct);
     }
 
-    public async Task<IReadOnlyList<Retreat>> ListAsync(
-        int skip, int take, CancellationToken ct = default)
+    public async Task<(List<Retreat> Items, int TotalCount)> ListAsync(
+        int skip, 
+        int take, 
+        CancellationToken ct = default)
     {
-        return await ctx.Retreats
-            .AsNoTracking()
-            .OrderBy(r => r.StartDate)
-            .Skip(skip)
-            .Take(take)
+        var query = ctx.Retreats.AsNoTracking().OrderBy(r => r.StartDate);
+    
+        var totalCount = await query.CountAsync(ct);
+    
+        var retreats = await query
+            .ApplyPagination(skip, take)
             .ToListAsync(ct);
+
+        return (retreats, totalCount);
     }
 
     public Task<int> CountAsync(CancellationToken ct = default)

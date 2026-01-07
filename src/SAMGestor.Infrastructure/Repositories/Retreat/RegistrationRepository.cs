@@ -33,14 +33,19 @@ namespace SAMGestor.Infrastructure.Repositories
                 .AnyAsync(b => b.Cpf == cpf, ct);
         
         public async Task<IReadOnlyList<Registration>> ListAsync(
-            Guid retreatId, string? status = null, string? region = null,
-            int skip = 0, int take = 20, CancellationToken ct = default)
+            Guid retreatId, 
+            string? status = null, 
+            string? region = null,
+            int skip = 0, 
+            int take = 20, 
+            CancellationToken ct = default)
         {
             var query = _ctx.Registrations.Where(r => r.RetreatId == retreatId);
 
             if (!string.IsNullOrEmpty(status) && Enum.TryParse<RegistrationStatus>(status, true, out var parsedStatus))
                 query = query.Where(r => r.Status == parsedStatus);
-            return await query.Skip(skip).Take(take).AsNoTracking().ToListAsync(ct);
+            
+            return await query.AsNoTracking().ToListAsync(ct);
         }
 
         public Task<int> CountAsync(Guid retreatId, string? status = null, string? region = null, CancellationToken ct = default)
