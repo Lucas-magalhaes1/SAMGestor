@@ -1,18 +1,21 @@
 using MediatR;
 using SAMGestor.Application.Common.Auth;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Domain.Interfaces;
 
-public sealed class ListUsersHandler : IRequestHandler<ListUsersQuery, ListUsersResponse>
+namespace SAMGestor.Application.Features.Users.List;
+
+public sealed class ListUsersHandler : IRequestHandler<ListUsersQuery, PagedResult<UserListItem>>
 {
     private readonly IUserRepository _users;
 
     public ListUsersHandler(IUserRepository users) => _users = users;
 
-    public async Task<ListUsersResponse> Handle(ListUsersQuery request, CancellationToken ct)
+    public async Task<PagedResult<UserListItem>> Handle(ListUsersQuery request, CancellationToken ct)
     {
-        var (users, total) = await _users.ListAsync(request.Skip, request.Take, request.Search, ct);
+        var result = await _users.ListAsync(request.Skip, request.Take, request.Search, ct);
         
-        var items = users.Select(u => new UserListItem(
+        var items = result.Items.Select(u => new UserListItem(
             u.Id,
             u.Name.Value,
             u.Email.Value,
@@ -21,6 +24,6 @@ public sealed class ListUsersHandler : IRequestHandler<ListUsersQuery, ListUsers
             u.EmailConfirmed
         )).ToList();
 
-        return new ListUsersResponse(items, total);
+        return new PagedResult<UserListItem>(items, result.TotalCount, request.Skip, request.Take);
     }
 }

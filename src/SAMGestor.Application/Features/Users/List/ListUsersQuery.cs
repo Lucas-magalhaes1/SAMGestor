@@ -1,15 +1,13 @@
 using MediatR;
+using SAMGestor.Application.Common.Pagination;
+
+namespace SAMGestor.Application.Features.Users.List;
 
 public sealed record ListUsersQuery(
+    string? Search = null,
     int Skip = 0,
-    int Take = 20,
-    string? Search = null
-) : IRequest<ListUsersResponse>;
-
-public sealed record ListUsersResponse(
-    List<UserListItem> Users,
-    int Total
-);
+    int Take = 20
+) : IRequest<PagedResult<UserListItem>>;
 
 public sealed record UserListItem(
     Guid Id,

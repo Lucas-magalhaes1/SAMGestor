@@ -1,24 +1,24 @@
 using MediatR;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Domain.Interfaces;
 
 namespace SAMGestor.Application.Features.Retreats.GetAll;
 
 public sealed class ListRetreatsHandler
-    : IRequestHandler<ListRetreatsQuery, ListRetreatsResponse>
+    : IRequestHandler<ListRetreatsQuery, PagedResult<RetreatDto>>
 {
     private readonly IRetreatRepository _repo;
 
     public ListRetreatsHandler(IRetreatRepository repo) => _repo = repo;
 
-    public async Task<ListRetreatsResponse> Handle(
+    public async Task<PagedResult<RetreatDto>> Handle(
         ListRetreatsQuery query,
         CancellationToken ct)
     {
-        var skip = Math.Max(query.Skip, 0);
-        var take = query.Take <= 0 ? 20 : query.Take;
-
-        var total   = await _repo.CountAsync(ct);
-        var retreats = await _repo.ListAsync(skip, take, ct);
+        var skip = Math.Max(0, query.Skip);
+        var take = query.Take;
+        
+        var (retreats, totalCount) = await _repo.ListAsync(query.Skip, query.Take, ct);
 
         var items = retreats.Select(r => new RetreatDto(
                 r.Id,
@@ -28,6 +28,6 @@ public sealed class ListRetreatsHandler
                 r.EndDate))
             .ToList();
 
-        return new ListRetreatsResponse(items, total, skip, take);
+        return new PagedResult<RetreatDto>(items, totalCount, query.Skip, query.Take);
     }
 }
