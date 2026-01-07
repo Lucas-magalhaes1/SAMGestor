@@ -14,7 +14,7 @@ public interface IRetreatRepository
         string   edition,
         CancellationToken ct = default);
     
-    Task<IReadOnlyList<Retreat>> ListAsync(
+    Task<(List<Retreat> Items, int TotalCount)> ListAsync(
         int skip,
         int take,
         CancellationToken ct = default);

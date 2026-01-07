@@ -2,7 +2,6 @@ using SAMGestor.Application.Dtos.Reports;
 
 namespace SAMGestor.Application.Interfaces.Reports;
 
-/// Cada relatório concreto implementa esta interface.
 public interface IReportTemplate
 {
     string Key { get; }
@@ -10,8 +9,8 @@ public interface IReportTemplate
 
     Task<ReportPayload> GetDataAsync(
         ReportContext ctx,
-        int page,
-        int pageLimit,
+        int skip,
+        int take,
         CancellationToken ct
     );
 }
