@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.API.Auth;
 using SAMGestor.API.Extensions;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Registrations.GetAll;
 using SAMGestor.Application.Features.Registrations.GetById;
@@ -88,7 +89,7 @@ public class RegistrationsController(
 
     [HttpGet]
     [Authorize(Policy = Policies.ReadOnly)] 
-    public async Task<IActionResult> List(
+    public async Task<ActionResult<PagedResult<RegistrationDto>>> List(
         [FromQuery] Guid retreatId,
         [FromQuery] string? status = null,
         [FromQuery] Gender? gender = null,
@@ -99,13 +100,13 @@ public class RegistrationsController(
         [FromQuery] string? search = null,
         [FromQuery] bool? hasPhoto = null,
         [FromQuery] int skip = 0,
-        [FromQuery] int take = 20)
+        [FromQuery] int take = 20,
+        CancellationToken ct = default)
     {
-        // Evita NRE se alguém resolver "normalizar" string no futuro:
         static string? Clean(string? s) =>
             string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
-        var response = await mediator.Send(
+        var result = await mediator.Send(
             new GetAllRegistrationsQuery(
                 retreatId,
                 Clean(status),
@@ -119,10 +120,10 @@ public class RegistrationsController(
                 skip,
                 take
             ),
-            CT
+            ct
         );
 
-        return Ok(response);
+        return Ok(result);
     }
 
     /// <summary>

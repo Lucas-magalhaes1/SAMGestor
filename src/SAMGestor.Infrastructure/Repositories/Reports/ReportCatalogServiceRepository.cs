@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Dtos.Reports;
 using SAMGestor.Application.Interfaces.Reports;
 using SAMGestor.Domain.Entities;
 using SAMGestor.Infrastructure.Persistence;
-
 
 namespace SAMGestor.Infrastructure.Repositories.Reports;
 
@@ -13,17 +13,14 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
 
     public ReportCatalogServiceRepository(SAMContext db) => _db = db;
 
-    public async Task<PaginatedResponse<ReportListItemDto>> ListAsync(int page, int limit, CancellationToken ct)
+    public async Task<PagedResult<ReportListItemDto>> ListAsync(int skip, int take, CancellationToken ct)
     {
-        page  = page  <= 0 ? 1 : page;
-        limit = limit <= 0 ? 10 : limit;
-
         var query = _db.Reports.AsNoTracking().OrderByDescending(r => r.DateCreation);
 
-        var total = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync(ct);
+        
         var items = await query
-            .Skip((page - 1) * limit)
-            .Take(limit)
+            .ApplyPagination(skip, take)
             .Select(r => new ReportListItemDto(
                 r.Id.ToString(),
                 r.Title,
@@ -31,7 +28,7 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
             ))
             .ToListAsync(ct);
 
-        return new PaginatedResponse<ReportListItemDto>(items, total, page, limit);
+        return new PagedResult<ReportListItemDto>(items, totalCount, skip, take);
     }
 
     public async Task<string> CreateAsync(CreateReportRequest request, CancellationToken ct)
@@ -79,23 +76,20 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
         return (true, id);
     }
     
-    public async Task<PaginatedResponse<ReportListItemDto>> ListByRetreatAsync(Guid retreatId, int page, int limit, CancellationToken ct)
+    public async Task<PagedResult<ReportListItemDto>> ListByRetreatAsync(Guid retreatId, int skip, int take, CancellationToken ct)
     {
-        page  = page  <= 0 ? 1 : page;
-        limit = limit <= 0 ? 10 : limit;
-
         var query = _db.Reports
             .AsNoTracking()
             .Where(r => r.RetreatId == retreatId)
             .OrderByDescending(r => r.DateCreation);
 
-        var total = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync(ct);
+        
         var items = await query
-            .Skip((page - 1) * limit)
-            .Take(limit)
+            .ApplyPagination(skip, take)
             .Select(r => new ReportListItemDto(r.Id.ToString(), r.Title, r.DateCreation))
             .ToListAsync(ct);
 
-        return new PaginatedResponse<ReportListItemDto>(items, total, page, limit);
+        return new PagedResult<ReportListItemDto>(items, totalCount, skip, take);
     }
 }

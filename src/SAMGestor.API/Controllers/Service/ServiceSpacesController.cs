@@ -54,14 +54,20 @@ public class ServiceSpacesController(IMediator mediator) : ControllerBase
     
     /// <summary> Detalhe de uma área de serviço.(Admin,Gestor,Consultor) </summary>
     [HttpGet("{spaceId:guid}")]
-    public async Task<IActionResult> Detail(
+    public async Task<ActionResult<GetServiceSpaceDetailResponse>> Detail(
         Guid retreatId,
         Guid spaceId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
         [FromQuery] string? q = null,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50,
         CancellationToken ct = default)
-        => Ok(await mediator.Send(new GetServiceSpaceDetailQuery(retreatId, spaceId, page, pageSize, q), ct));
+    {
+        var result = await mediator.Send(
+            new GetServiceSpaceDetailQuery(retreatId, spaceId, q, skip, take), 
+            ct
+        );
+        return Ok(result);
+    }
     
     /// <summary> Cria uma nova área de serviço. (Admin,Gestor)</summary>
     [HttpPost]

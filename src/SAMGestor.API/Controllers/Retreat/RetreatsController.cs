@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SAMGestor.API.Auth;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Retreats.Delete;
 using SAMGestor.Application.Features.Retreats.GetAll;
@@ -48,14 +49,14 @@ public class RetreatsController(IMediator mediator) : ControllerBase
     /// Lista todos os retiros com paginação.
     /// (Admin,Gestor,Consultor)
     /// </summary>
-    
     [HttpGet]
-    public async Task<IActionResult> List(
+    public async Task<ActionResult<PagedResult<RetreatDto>>> List(
         [FromQuery] int skip = 0,
-        [FromQuery] int take = 20)
+        [FromQuery] int take = 20,
+        CancellationToken ct = default)
     {
-        var response = await mediator.Send(new ListRetreatsQuery(skip, take));
-        return Ok(response);
+        var result = await mediator.Send(new ListRetreatsQuery(skip, take), ct);
+        return Ok(result);
     }
     
     /// <summary>

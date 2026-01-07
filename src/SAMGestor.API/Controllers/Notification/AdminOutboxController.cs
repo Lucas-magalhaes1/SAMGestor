@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SAMGestor.API.Auth;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Infrastructure.Persistence;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -19,7 +20,6 @@ public sealed class AdminOutboxController : ControllerBase
     /// <summary>
     /// Obtém um resumo do estado atual da fila de mensagens de saída (outbox).
     /// </summary>
-    
     [HttpGet("summary")]
     public async Task<IActionResult> Summary(CancellationToken ct)
     {
@@ -44,32 +44,42 @@ public sealed class AdminOutboxController : ControllerBase
     /// <summary>
     /// Obtém uma lista de mensagens na fila de saída (outbox) com filtros opcionais.
     /// </summary>  
-    
     [HttpGet]
-    public async Task<IActionResult> List(
+    public async Task<ActionResult<PagedResult<OutboxMessageDto>>> List(
         [FromQuery] bool? processed,
         [FromQuery] string? type,
-        [FromQuery] int limit = 50,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 50,
         CancellationToken ct = default)
     {
-        var q = _db.OutboxMessages.AsNoTracking().OrderByDescending(x => x.CreatedAt).AsQueryable();
+        var query = _db.OutboxMessages
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .AsQueryable();
 
-        if (processed is true)  q = q.Where(x => x.ProcessedAt != null);
-        if (processed is false) q = q.Where(x => x.ProcessedAt == null);
-        if (!string.IsNullOrWhiteSpace(type)) q = q.Where(x => x.Type == type);
+        if (processed is true)  query = query.Where(x => x.ProcessedAt != null);
+        if (processed is false) query = query.Where(x => x.ProcessedAt == null);
+        if (!string.IsNullOrWhiteSpace(type)) query = query.Where(x => x.Type == type);
 
-        var items = await q
-            .Take(Math.Clamp(limit, 1, 500))
-            .Select(x => new OutboxMessageDto(x.Id, x.Type, x.CreatedAt, x.ProcessedAt, x.Attempts, x.LastError))
-            .ToListAsync(ct);
+        var totalCount = await query.CountAsync(ct);
 
-        return Ok(items);
+        var items = await query
+            .ApplyPagination(skip, take)
+            .Select(x => new OutboxMessageDto(
+                x.Id, 
+                x.Type, 
+                x.CreatedAt, 
+                x.ProcessedAt, 
+                x.Attempts, 
+                x.LastError))
+            .ToListAsync(ct); // ✅ ToListAsync<OutboxMessageDto>
+
+        return Ok(new PagedResult<OutboxMessageDto>(items, totalCount, skip, take));
     }
 
     /// <summary>
     /// Obtém os detalhes de uma mensagem específica na fila de saída (outbox) pelo seu ID.
     /// </summary>  
-    
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Get(Guid id, CancellationToken ct)
     {
@@ -85,7 +95,6 @@ public sealed class AdminOutboxController : ControllerBase
     /// <summary>
     /// Reenfileira uma mensagem específica na fila de saída (outbox) para reprocessamento.
     /// </summary>  
-    
     [HttpPost("{id:guid}/requeue")]
     public async Task<IActionResult> Requeue(Guid id, CancellationToken ct)
     {

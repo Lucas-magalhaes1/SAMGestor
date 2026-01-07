@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
 using SAMGestor.API.Controllers.Retreat;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Features.Retreats.Create;
 using SAMGestor.Application.Features.Retreats.Delete;
 using SAMGestor.Application.Features.Retreats.GetAll;
@@ -137,16 +138,15 @@ namespace SAMGestor.UnitTests.API.Controllers
         public async Task List_Returns_Ok_With_Response()
         {
             // Arrange
-            var response = new ListRetreatsResponse(
-                new List<RetreatDto>
-                {
-                    new(Guid.NewGuid(),"Retiro 1","2024",
-                        new DateOnly(2024,1,1),
-                        new DateOnly(2024,1,2))
-                },
-                TotalCount: 1,
-                Skip: 0,
-                Take: 20);
+            var items = new List<RetreatDto>
+            {
+                new(Guid.NewGuid(),"Retiro 1","2024",
+                    new DateOnly(2024,1,1),
+                    new DateOnly(2024,1,2))
+            };
+
+            // ✅ Parâmetros sem nomes (ordem: items, totalCount, skip, take)
+            var response = new PagedResult<RetreatDto>(items, 1, 0, 20);
 
             _mediator.Setup(m => m.Send(
                     It.Is<ListRetreatsQuery>(q => q.Skip == 0 && q.Take == 20),
@@ -157,11 +157,13 @@ namespace SAMGestor.UnitTests.API.Controllers
             var result = await _controller.List();
 
             // Assert
-            var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+            var ok = result.Result.Should().BeOfType<OkObjectResult>().Subject;
             ok.Value.Should().Be(response);
 
             _mediator.Verify(m => m.Send(It.IsAny<ListRetreatsQuery>(), It.IsAny<CancellationToken>()), Times.Once);
         }
+
+
         
         [Fact]
         public async Task GetById_Returns_Ok_With_Response()

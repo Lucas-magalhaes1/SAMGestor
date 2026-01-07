@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using SAMGestor.API.Controllers;
 using SAMGestor.API.Controllers.Registration;
+using SAMGestor.Application.Common.Pagination;
 using SAMGestor.Application.Features.Registrations.Create;
 using SAMGestor.Application.Features.Registrations.GetAll;
 using SAMGestor.Application.Interfaces;            
@@ -62,7 +63,8 @@ public class RegistrationsControllerTests
     {
         var retreatId = Guid.NewGuid();
         var emptyItems = new List<RegistrationDto>();
-        var response = new GetAllRegistrationsResponse(emptyItems, 0, 0, 20);
+        
+        var response = new PagedResult<RegistrationDto>(emptyItems, 0, 0, 20);
 
         _mediator
             .Setup(m => m.Send(
@@ -70,6 +72,7 @@ public class RegistrationsControllerTests
                     q.retreatId == retreatId && q.skip == 0 && q.take == 20),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(response);
+        
         var result = await _controller.List(
             retreatId,
             status: null,
@@ -83,11 +86,12 @@ public class RegistrationsControllerTests
             skip: 0,
             take: 20
         );
-        
-        var ok = result as OkObjectResult;
+    
+        var ok = result.Result as OkObjectResult;
         ok.Should().NotBeNull();
         ok!.Value.Should().BeSameAs(response);
     }
+
     
     private static CreateRegistrationCommand MakeValidCreateCommand() =>
         new CreateRegistrationCommand(
