@@ -5,5 +5,6 @@ public sealed record ReportContext(
     string Title,
     string TemplateKey,
     Guid? RetreatId,
-    string? DefaultParamsJson
+    string? DefaultParamsJson,
+    string? RetreatName      
 );

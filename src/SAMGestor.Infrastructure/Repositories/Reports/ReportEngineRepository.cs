@@ -24,12 +24,24 @@ public sealed class ReportEngineRepository : IReportEngine
         var r = await _db.Reports.AsNoTracking().FirstOrDefaultAsync(x => x.Id == gid, ct);
         if (r is null) throw new KeyNotFoundException("Relatório não encontrado");
 
+        // ← BUSCAR NOME DO RETIRO
+        string? retreatName = null;
+        if (r.RetreatId.HasValue)
+        {
+            retreatName = await _db.Retreats
+                .AsNoTracking() 
+                .Where(ret => ret.Id == r.RetreatId.Value)
+                .Select(ret => ret.Name)
+                .FirstOrDefaultAsync(ct);
+        }
+
         return new ReportContext(
             ReportId: r.Id.ToString(),
             Title: r.Title,
             TemplateKey: r.TemplateKey,
             RetreatId: r.RetreatId,
-            DefaultParamsJson: r.DefaultParamsJson
+            DefaultParamsJson: r.DefaultParamsJson,
+            RetreatName: retreatName  
         );
     }
 

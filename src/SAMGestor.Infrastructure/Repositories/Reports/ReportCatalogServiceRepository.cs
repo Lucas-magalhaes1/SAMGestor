@@ -15,7 +15,9 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
 
     public async Task<PagedResult<ReportListItemDto>> ListAsync(int skip, int take, CancellationToken ct)
     {
-        var query = _db.Reports.AsNoTracking().OrderByDescending(r => r.DateCreation);
+        var query = _db.Reports
+            .AsNoTracking()
+            .OrderByDescending(r => r.DateCreation);
 
         var totalCount = await query.CountAsync(ct);
         
@@ -24,7 +26,44 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
             .Select(r => new ReportListItemDto(
                 r.Id.ToString(),
                 r.Title,
-                r.DateCreation
+                r.DateCreation,
+                r.RetreatId,                                    
+                r.RetreatId.HasValue                            
+                    ? _db.Retreats
+                        .AsNoTracking() 
+                        .Where(ret => ret.Id == r.RetreatId.Value)
+                        .Select(ret => ret.Name)
+                        .FirstOrDefault()
+                    : null
+            ))
+            .ToListAsync(ct);
+
+        return new PagedResult<ReportListItemDto>(items, totalCount, skip, take);
+    }
+
+    public async Task<PagedResult<ReportListItemDto>> ListByRetreatAsync(Guid retreatId, int skip, int take, CancellationToken ct)
+    {
+        var query = _db.Reports
+            .AsNoTracking()
+            .Where(r => r.RetreatId == retreatId)
+            .OrderByDescending(r => r.DateCreation);
+
+        var totalCount = await query.CountAsync(ct);
+        
+        var items = await query
+            .ApplyPagination(skip, take)
+            .Select(r => new ReportListItemDto(
+                r.Id.ToString(), 
+                r.Title, 
+                r.DateCreation,
+                r.RetreatId,                                    
+                r.RetreatId.HasValue                            
+                    ? _db.Retreats
+                        .AsNoTracking() 
+                        .Where(ret => ret.Id == r.RetreatId.Value)
+                        .Select(ret => ret.Name)
+                        .FirstOrDefault()
+                    : null
             ))
             .ToListAsync(ct);
 
@@ -61,7 +100,22 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
 
         await _db.SaveChangesAsync(ct);
 
-        return new ReportListItemDto(entity.Id.ToString(), entity.Title, entity.DateCreation);
+        
+        var retreatName = entity.RetreatId.HasValue
+            ? await _db.Retreats
+                .AsNoTracking()     
+                .Where(r => r.Id == entity.RetreatId.Value)
+                .Select(r => r.Name)
+                .FirstOrDefaultAsync(ct)
+            : null;
+
+        return new ReportListItemDto(
+            entity.Id.ToString(), 
+            entity.Title, 
+            entity.DateCreation,
+            entity.RetreatId,
+            retreatName
+        );
     }
 
     public async Task<(bool ok, string id)> DeleteAsync(string id, CancellationToken ct)
@@ -74,22 +128,5 @@ public sealed class ReportCatalogServiceRepository : IReportCatalog
         _db.Reports.Remove(entity);
         await _db.SaveChangesAsync(ct);
         return (true, id);
-    }
-    
-    public async Task<PagedResult<ReportListItemDto>> ListByRetreatAsync(Guid retreatId, int skip, int take, CancellationToken ct)
-    {
-        var query = _db.Reports
-            .AsNoTracking()
-            .Where(r => r.RetreatId == retreatId)
-            .OrderByDescending(r => r.DateCreation);
-
-        var totalCount = await query.CountAsync(ct);
-        
-        var items = await query
-            .ApplyPagination(skip, take)
-            .Select(r => new ReportListItemDto(r.Id.ToString(), r.Title, r.DateCreation))
-            .ToListAsync(ct);
-
-        return new PagedResult<ReportListItemDto>(items, totalCount, skip, take);
     }
 }
