@@ -92,7 +92,7 @@ public sealed class PeopleEpitaphTemplate : IDescribedReportTemplate
             ["family"] = x.Family
         }).ToList();
 
-        var header = new ReportHeader(ctx.ReportId, string.IsNullOrWhiteSpace(ctx.Title) ? DefaultTitle : ctx.Title, DateTime.UtcNow);
+        var header = new ReportHeader(ctx.ReportId, string.IsNullOrWhiteSpace(ctx.Title) ? DefaultTitle : ctx.Title, DateTime.UtcNow, ctx.RetreatId, ctx.RetreatName);
 
         return new ReportPayload(header, columns, data,
             new Dictionary<string, object?> { ["total"] = total }, total, page, pageLimit);

@@ -140,7 +140,9 @@ public sealed class TentsAllocationsTemplate : IDescribedReportTemplate
         var header = new ReportHeader(
             ctx.ReportId,
             string.IsNullOrWhiteSpace(ctx.Title) ? DefaultTitle : ctx.Title,
-            DateTime.UtcNow
+            DateTime.UtcNow, 
+            ctx.RetreatId,
+            ctx.RetreatName
         );
 
         return new ReportPayload(

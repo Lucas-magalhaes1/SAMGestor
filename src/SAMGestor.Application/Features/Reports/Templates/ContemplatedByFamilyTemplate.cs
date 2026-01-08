@@ -71,7 +71,7 @@ public sealed class ContemplatedByFamilyTemplate : IDescribedReportTemplate
             ["count"] = x.Count
         }).ToList();
 
-        var header = new ReportHeader(ctx.ReportId, string.IsNullOrWhiteSpace(ctx.Title) ? DefaultTitle : ctx.Title, DateTime.UtcNow);
+        var header = new ReportHeader(ctx.ReportId, string.IsNullOrWhiteSpace(ctx.Title) ? DefaultTitle : ctx.Title, DateTime.UtcNow, ctx.RetreatId, ctx.RetreatName);
 
         return new ReportPayload(header, columns, data,
             new Dictionary<string, object?> { ["totalFamilies"] = grouped.Count, ["totalParticipants"] = grouped.Sum(x => x.Count) },
