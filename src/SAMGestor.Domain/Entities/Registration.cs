@@ -253,4 +253,16 @@ public class Registration : Entity<Guid>
         if (new DateOnly(onDate.Year, BirthDate.Month, BirthDate.Day) > onDate) age--;
         return age;
     }
+
+    public void ConfirmManualPayment()
+    {
+        if (Status == RegistrationStatus.Canceled)
+            throw new InvalidOperationException("Não é possível confirmar pagamento de inscrição cancelada.");
+    
+        if (Status != RegistrationStatus.Selected)
+            throw new InvalidOperationException("Apenas inscrições contempladas podem ter pagamento manual confirmado.");
+    
+        Status = RegistrationStatus.PaymentConfirmed;
+    }
+
 }
