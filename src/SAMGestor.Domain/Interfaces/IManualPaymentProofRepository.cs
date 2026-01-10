@@ -8,4 +8,6 @@ public interface IManualPaymentProofRepository
     Task<ManualPaymentProof?> GetByRegistrationIdAsync(Guid registrationId, CancellationToken ct = default);
     Task<ManualPaymentProof?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<bool> ExistsByRegistrationIdAsync(Guid registrationId, CancellationToken ct = default);
+    Task<ManualPaymentProof?> GetByServiceRegistrationIdAsync(Guid serviceRegistrationId, CancellationToken ct = default);
+    Task<bool> ExistsByServiceRegistrationIdAsync(Guid serviceRegistrationId, CancellationToken ct = default);
 }

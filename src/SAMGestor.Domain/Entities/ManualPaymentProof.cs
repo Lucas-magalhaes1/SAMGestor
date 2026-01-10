@@ -6,7 +6,9 @@ namespace SAMGestor.Domain.Entities;
 
 public class ManualPaymentProof : Entity<Guid>
 {
-    public Guid RegistrationId { get; private set; }
+    public Guid? RegistrationId { get; private set; }      
+    public Guid? ServiceRegistrationId { get; private set; } 
+    
     public Money Amount { get; private set; }
     public PaymentMethod Method { get; private set; }
     public DateTime PaymentDate { get; private set; }
@@ -17,11 +19,11 @@ public class ManualPaymentProof : Entity<Guid>
     public DateTime ProofUploadedAt { get; private set; }
     
     public string? Notes { get; private set; }
-    public Guid RegisteredByUserId { get; private set; } 
+    public Guid RegisteredByUserId { get; private set; }
     public DateTime RegisteredAt { get; private set; }
 
     private ManualPaymentProof() { }
-
+    
     public ManualPaymentProof(
         Guid registrationId,
         Money amount,
@@ -35,6 +37,7 @@ public class ManualPaymentProof : Entity<Guid>
     {
         Id = Guid.NewGuid();
         RegistrationId = registrationId;
+        ServiceRegistrationId = null;
         Amount = amount ?? throw new ArgumentNullException(nameof(amount));
         Method = method;
         PaymentDate = paymentDate;
@@ -45,5 +48,34 @@ public class ManualPaymentProof : Entity<Guid>
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         RegisteredByUserId = registeredByUserId;
         RegisteredAt = DateTime.UtcNow;
+    }
+    
+    public static ManualPaymentProof CreateForService(
+        Guid serviceRegistrationId,
+        Money amount,
+        PaymentMethod method,
+        DateTime paymentDate,
+        string proofStorageKey,
+        string? proofContentType,
+        int? proofSizeBytes,
+        string? notes,
+        Guid registeredByUserId)
+    {
+        return new ManualPaymentProof
+        {
+            Id = Guid.NewGuid(),
+            RegistrationId = null,
+            ServiceRegistrationId = serviceRegistrationId,
+            Amount = amount ?? throw new ArgumentNullException(nameof(amount)),
+            Method = method,
+            PaymentDate = paymentDate,
+            ProofStorageKey = proofStorageKey ?? throw new ArgumentNullException(nameof(proofStorageKey)),
+            ProofContentType = proofContentType,
+            ProofSizeBytes = proofSizeBytes,
+            ProofUploadedAt = DateTime.UtcNow,
+            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+            RegisteredByUserId = registeredByUserId,
+            RegisteredAt = DateTime.UtcNow
+        };
     }
 }

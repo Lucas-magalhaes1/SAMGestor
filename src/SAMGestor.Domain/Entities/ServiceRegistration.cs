@@ -91,4 +91,15 @@ public class ServiceRegistration : Entity<Guid>
     {
         PreferredSpaceId = preferredSpaceId;
     }
+    
+    public void ConfirmManualPayment()
+    {
+        if (Status == ServiceRegistrationStatus.Cancelled)
+            throw new InvalidOperationException("Não é possível confirmar pagamento de inscrição cancelada.");
+    
+        if (Status == ServiceRegistrationStatus.Declined)
+            throw new InvalidOperationException("Não é possível confirmar pagamento de inscrição recusada.");
+    
+        Status = ServiceRegistrationStatus.Confirmed;
+    }
 }
