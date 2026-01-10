@@ -8,14 +8,15 @@ public sealed class GetRegistrationByIdHandler(
     IRegistrationRepository regRepo,
     IFamilyMemberRepository familyMemberRepo,
     IFamilyRepository familyRepo,
-    IStorageService storage 
+    IStorageService storage,
+    IManualPaymentProofRepository proofRepo 
 ) : IRequestHandler<GetRegistrationByIdQuery, GetRegistrationByIdResponse?>
 {
     public async Task<GetRegistrationByIdResponse?> Handle(GetRegistrationByIdQuery q, CancellationToken ct)
     {
         var r = await regRepo.GetByIdAsync(q.RegistrationId, ct);
         if (r is null) return null;
-
+        
         FamilyMembershipDto? familyDto = null;
         var link = await familyMemberRepo.GetByRegistrationIdAsync(r.RetreatId, r.Id, ct);
         if (link is not null)
@@ -35,7 +36,6 @@ public sealed class GetRegistrationByIdHandler(
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var age = r.GetAgeOn(today);
 
-        // Fallbacks: se a URL persistida estiver nula, derive da chave via storage
         var photoUrl = r.PhotoUrl?.Value;
         if (string.IsNullOrWhiteSpace(photoUrl) && !string.IsNullOrWhiteSpace(r.PhotoStorageKey))
             photoUrl = storage.GetPublicUrl(r.PhotoStorageKey);
@@ -43,6 +43,23 @@ public sealed class GetRegistrationByIdHandler(
         var docUrl = r.IdDocumentUrl?.Value;
         if (string.IsNullOrWhiteSpace(docUrl) && !string.IsNullOrWhiteSpace(r.IdDocumentStorageKey))
             docUrl = storage.GetPublicUrl(r.IdDocumentStorageKey);
+        
+        ManualPaymentProofDto? manualProofDto = null;
+        var proof = await proofRepo.GetByRegistrationIdAsync(r.Id, ct);
+        if (proof is not null)
+        {
+            manualProofDto = new ManualPaymentProofDto(
+                ProofId: proof.Id,
+                Amount: proof.Amount.Amount,
+                Currency: proof.Amount.Currency,
+                Method: proof.Method.ToString(),
+                PaymentDate: proof.PaymentDate,
+                UploadedAt: proof.ProofUploadedAt,
+                Notes: proof.Notes,
+                RegisteredBy: proof.RegisteredByUserId,
+                RegisteredAt: proof.RegisteredAt
+            );
+        }
 
         return new GetRegistrationByIdResponse(
             r.Id,
@@ -58,7 +75,7 @@ public sealed class GetRegistrationByIdHandler(
             r.TentId,
             r.TeamId,
             birthIso,
-            photoUrl,                 
+            photoUrl,
             r.CompletedRetreat,
             r.RegistrationDate,
             familyDto,
@@ -127,15 +144,16 @@ public sealed class GetRegistrationByIdHandler(
                 r.PhotoContentType,
                 r.PhotoSizeBytes,
                 r.PhotoUploadedAt,
-                photoUrl,            
+                photoUrl,
                 r.IdDocumentType?.ToString(),
                 r.IdDocumentNumber,
                 r.IdDocumentStorageKey,
                 r.IdDocumentContentType,
                 r.IdDocumentSizeBytes,
                 r.IdDocumentUploadedAt,
-                docUrl               
-            )
+                docUrl
+            ),
+            manualProofDto  
         );
     }
 }

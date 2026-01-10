@@ -26,7 +26,8 @@ public sealed record GetRegistrationByIdResponse(
     ReligionHistoryDto ReligionHistory,
     HealthDto          Health,
     ConsentDto         Consents,
-    MediaDto           Media
+    MediaDto           Media,
+    ManualPaymentProofDto? ManualPaymentProof 
 );
 
 public sealed record FamilyMembershipDto(
@@ -114,4 +115,16 @@ public sealed record MediaDto(
     int?      IdDocumentSizeBytes,
     DateTime? IdDocumentUploadedAt,
     string?   IdDocumentUrl
+);
+
+public sealed record ManualPaymentProofDto(
+    Guid ProofId,
+    decimal Amount,
+    string Currency,
+    string Method,
+    DateTime PaymentDate,
+    DateTime UploadedAt,
+    string? Notes,
+    Guid RegisteredBy,
+    DateTime RegisteredAt
 );
