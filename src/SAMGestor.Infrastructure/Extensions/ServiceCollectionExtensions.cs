@@ -25,6 +25,7 @@ using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Infrastructure.Repositories;
 using SAMGestor.Infrastructure.Repositories.Reports;
+using SAMGestor.Infrastructure.Repositories.Retreat;
 using SAMGestor.Infrastructure.Repositories.User;
 using SAMGestor.Infrastructure.Services;
 using SAMGestor.Infrastructure.Services.Reports;
@@ -106,6 +107,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IJwtTokenDecoder, JwtTokenDecoder>();
         services.AddScoped<IRawSqlExecutor, RawSqlExecutor>();
+        services.AddScoped<IManualPaymentProofRepository, ManualPaymentProofRepository>();
 
        
 

@@ -5,7 +5,7 @@ using SAMGestor.Domain.Interfaces;
 using SAMGestor.Domain.ValueObjects;
 using SAMGestor.Infrastructure.Persistence;
 
-namespace SAMGestor.Infrastructure.Repositories
+namespace SAMGestor.Infrastructure.Repositories.Retreat
 {
     public sealed class RegistrationRepository : IRegistrationRepository
     {
