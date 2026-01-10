@@ -47,6 +47,7 @@ builder.Services.AddHostedService<PasswordResetRequestedConsumer>();
 builder.Services.AddHostedService<EmailChangedByAdminConsumer>();
 builder.Services.AddHostedService<EmailChangedNotificationConsumer>();
 builder.Services.AddHostedService<PasswordChangedByAdminConsumer>();
+builder.Services.AddHostedService<ManualPaymentConfirmedConsumer>();
     
 
 builder.Services.AddEndpointsApiExplorer();
