@@ -13,6 +13,7 @@ public static class EventTypes
     public const string PaymentRequestedV1   = "payment.requested.v1";
     public const string PaymentLinkCreatedV1 = "payment.link.created.v1";
     public const string PaymentConfirmedV1   = "payment.confirmed.v1";
+    public const string ManualPaymentConfirmedV1 = "payment.manual.confirmed.v1";
     
     public const string FamilyGroupCreateRequestedV1 = "family.group.create.requested.v1";
     public const string FamilyGroupCreatedV1         = "family.group.created.v1";
