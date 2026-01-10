@@ -73,6 +73,15 @@ public class ClearSeedDataHandler : IRequestHandler<ClearSeedDataCommand, ClearS
               WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
             ct
         );
+        
+        await _sqlExecutor.ExecuteSqlAsync(
+            @"DELETE FROM core.manual_payment_proofs 
+      WHERE registration_id IN (
+          SELECT ""Id"" FROM core.registrations 
+          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
+      )",
+            ct
+        );
 
         // 8️⃣ Deletar registrations (FK: retreat_id - snake_case)
         var registrationsDeleted = await _sqlExecutor.ExecuteSqlAsync(
@@ -80,6 +89,13 @@ public class ClearSeedDataHandler : IRequestHandler<ClearSeedDataCommand, ClearS
               WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
             ct
         );
+        
+        var reportsDeleted = await _sqlExecutor.ExecuteSqlAsync(
+            @"DELETE FROM core.reports 
+      WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+            ct
+        );
+        
 
         // 9️⃣ Deletar retreats (raiz)
         var retreatsDeleted = await _sqlExecutor.ExecuteSqlAsync(
@@ -96,7 +112,8 @@ public class ClearSeedDataHandler : IRequestHandler<ClearSeedDataCommand, ClearS
             ServiceRegistrationsDeleted = serviceRegsDeleted,
             ServiceSpacesDeleted = serviceSpacesDeleted,
             FamiliesDeleted = familiesDeleted,
-            TentsDeleted = tentsDeleted
+            TentsDeleted = tentsDeleted,
+            ReportsDeleted = reportsDeleted
         };
     }
 }

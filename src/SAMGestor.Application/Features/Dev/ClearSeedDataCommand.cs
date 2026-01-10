@@ -14,4 +14,5 @@ public record ClearSeedDataResult
     public int ServiceSpacesDeleted { get; init; }
     public int FamiliesDeleted { get; init; }
     public int TentsDeleted { get; init; }
+    public int ReportsDeleted { get; init; }
 }
