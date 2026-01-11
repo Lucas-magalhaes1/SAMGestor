@@ -8,6 +8,7 @@ public sealed record UserDetail(
     bool Enabled,
     bool IsLocked,
     DateTimeOffset? LockoutEndAt,
-    DateTimeOffset? LastLoginAt
+    DateTimeOffset? LastLoginAt,
+    string? PhotoUrl
     
 );

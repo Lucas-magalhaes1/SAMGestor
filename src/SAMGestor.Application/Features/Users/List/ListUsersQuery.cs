@@ -15,5 +15,6 @@ public sealed record UserListItem(
     string Email,
     string Role,
     bool Enabled,
-    bool EmailConfirmed
+    bool EmailConfirmed,
+    string? PhotoUrl
 );

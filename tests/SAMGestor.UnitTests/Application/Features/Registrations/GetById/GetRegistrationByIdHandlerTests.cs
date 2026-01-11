@@ -29,7 +29,8 @@ public class GetRegistrationByIdHandlerTests
             _regRepo.Object,
             _familyMemberRepo.Object,
             _familyRepo.Object,
-            _storage.Object                 
+            _storage.Object,
+            Mock.Of<IManualPaymentProofRepository>()
         );
     }
 
