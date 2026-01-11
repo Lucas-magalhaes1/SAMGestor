@@ -6,8 +6,9 @@ namespace SAMGestor.Domain.Entities;
 
 /// <summary>
 /// Usuário do sistema. 
-/// Agora inclui: confirmação de e-mail, lockout, contagem de falhas e navegações para tokens.
+/// confirmação de e-mail, lockout, contagem de falhas, navegações para tokens e foto de perfil.
 /// </summary>
+
 public class User : Entity<Guid>
 {
     public FullName Name { get; private set; }
@@ -16,15 +17,18 @@ public class User : Entity<Guid>
     public PasswordHash PasswordHash { get; private set; }
     public UserRole Role { get; private set; }
     public bool Enabled { get; private set; }
-
-    // Segurança / Sessão
+    
     public bool EmailConfirmed { get; private set; }    
     public DateTimeOffset? EmailConfirmedAt { get; private set; }
-    public int FailedAccessCount { get; private set; }           // tentativas seguidas
-    public DateTimeOffset? LockoutEndAt { get; private set; }    // se futuro => bloqueado até lá
+    public int FailedAccessCount { get; private set; }           
+    public DateTimeOffset? LockoutEndAt { get; private set; }    
     public DateTimeOffset? LastLoginAt { get; private set; }
-
-    // Navegações para tokens
+    
+    public string? PhotoStorageKey { get; private set; }
+    public string? PhotoContentType { get; private set; }
+    public int? PhotoSizeBytes { get; private set; }
+    public DateTime? PhotoUploadedAt { get; private set; }
+    
     private readonly List<RefreshToken> _refreshTokens = new();
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
@@ -55,7 +59,6 @@ public class User : Entity<Guid>
     public void ChangePassword(PasswordHash newHash)
     {
         PasswordHash = newHash;
-        // boa prática: resetar lock/contador ao trocar senha com sucesso
         FailedAccessCount = 0;
         LockoutEndAt = null;
     }
@@ -75,7 +78,7 @@ public class User : Entity<Guid>
         if (FailedAccessCount >= maxFailed)
         {
             LockoutEndAt = now.Add(lockDuration ?? TimeSpan.FromMinutes(15));
-            FailedAccessCount = 0; // zera o contador durante o lock
+            FailedAccessCount = 0;
         }
     }
 
@@ -86,8 +89,7 @@ public class User : Entity<Guid>
         EmailConfirmed = true;
         EmailConfirmedAt = now;
     }
-
-    // Navegação: adicionar tokens (as fábricas dos tokens ficam nas entidades de token)
+    
     public void AddRefreshToken(RefreshToken token) => _refreshTokens.Add(token);
     public void AddEmailConfirmationToken(EmailConfirmationToken token) => _emailConfirmationTokens.Add(token);
     public void AddPasswordResetToken(PasswordResetToken token) => _passwordResetTokens.Add(token);
@@ -102,5 +104,31 @@ public class User : Entity<Guid>
     public void ChangeName(FullName name) => Name = name;
 
     public void ChangePhone(string phone) => Phone = phone.Trim();
+    
+    public void SetProfilePhoto(string storageKey, string contentType, int sizeBytes)
+    {
+        if (string.IsNullOrWhiteSpace(storageKey))
+            throw new ArgumentException("Storage key não pode ser vazio", nameof(storageKey));
+        
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("Content type não pode ser vazio", nameof(contentType));
+        
+        if (sizeBytes <= 0)
+            throw new ArgumentException("Tamanho do arquivo deve ser maior que zero", nameof(sizeBytes));
 
+        PhotoStorageKey = storageKey;
+        PhotoContentType = contentType;
+        PhotoSizeBytes = sizeBytes;
+        PhotoUploadedAt = DateTime.UtcNow;
+    }
+
+    public void RemoveProfilePhoto()
+    {
+        PhotoStorageKey = null;
+        PhotoContentType = null;
+        PhotoSizeBytes = null;
+        PhotoUploadedAt = null;
+    }
+
+    public bool HasProfilePhoto() => !string.IsNullOrWhiteSpace(PhotoStorageKey);
 }
