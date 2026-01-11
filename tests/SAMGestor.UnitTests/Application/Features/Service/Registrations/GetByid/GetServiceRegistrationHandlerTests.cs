@@ -15,7 +15,7 @@ namespace SAMGestor.UnitTests.Application.Features.Service.Registrations.GetById
         private readonly Mock<IServiceSpaceRepository> _spaceRepo = new();
 
         private GetServiceRegistrationHandler Handler()
-            => new GetServiceRegistrationHandler(_regRepo.Object, _spaceRepo.Object);
+            => new GetServiceRegistrationHandler(_regRepo.Object, _spaceRepo.Object, Mock.Of<IManualPaymentProofRepository>());
 
         private static ServiceRegistration NewReg(Guid retreatId, string name = "Fulano da Silva", Guid? preferredSpaceId = null)
             => new ServiceRegistration(
