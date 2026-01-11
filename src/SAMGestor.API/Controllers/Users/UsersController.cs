@@ -34,7 +34,7 @@ public class UsersController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary> Detalhe de um usuário. (Admin,Gestor,Consultor - próprio perfil) </summary>
+    /// <summary> Detalhe de um usuário. (Admin,Gestor) </summary>
     [HttpGet("{id:guid}")]
     [Authorize(Policy = Policies.Authenticated)]
     public async Task<ActionResult<UserSummary>> GetById([FromRoute] Guid id, CancellationToken ct)
