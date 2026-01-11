@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SAMGestor.Domain.Entities;
 
+namespace SAMGestor.Infrastructure.Persistence.Configurations;
+
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
@@ -34,8 +36,24 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.FailedAccessCount).HasColumnName("failed_access_count").HasDefaultValue(0).IsRequired();
         builder.Property(u => u.LockoutEndAt).HasColumnName("lockout_end_at");
         builder.Property(u => u.LastLoginAt).HasColumnName("last_login_at");
+        
+        builder.Property(u => u.PhotoStorageKey)
+            .HasColumnName("photo_storage_key")
+            .HasMaxLength(500);
 
-        // ===== Navegações usando a PROPRIEDADE =====
+        builder.Property(u => u.PhotoContentType)
+            .HasColumnName("photo_content_type")
+            .HasMaxLength(100);
+
+        builder.Property(u => u.PhotoSizeBytes)
+            .HasColumnName("photo_size_bytes");
+
+        builder.Property(u => u.PhotoUploadedAt)
+            .HasColumnName("photo_uploaded_at");
+        
+        builder.HasIndex(u => u.PhotoStorageKey)
+            .HasDatabaseName("ix_users_photo_storage_key");
+        
         builder
             .HasMany(u => u.RefreshTokens)
             .WithOne(t => t.User)
@@ -53,8 +71,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(t => t.User)
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ===== Dizer ao EF que o acesso é por backing field =====
+        
         builder.Navigation(u => u.RefreshTokens)
                .UsePropertyAccessMode(PropertyAccessMode.Field);
 

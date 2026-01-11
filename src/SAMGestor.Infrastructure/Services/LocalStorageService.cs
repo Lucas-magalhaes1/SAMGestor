@@ -22,4 +22,16 @@ public sealed class LocalStorageService : IStorageService
     }
 
     public string GetPublicUrl(string key) => $"{_publicBaseUrl}/{key}";
+    
+    public Task DeleteAsync(string key, CancellationToken ct)
+    {
+        var fullPath = Path.Combine(_basePath, key.Replace('/', Path.DirectorySeparatorChar));
+        
+        if (File.Exists(fullPath))
+        {
+            File.Delete(fullPath);
+        }
+        
+        return Task.CompletedTask;
+    }
 }

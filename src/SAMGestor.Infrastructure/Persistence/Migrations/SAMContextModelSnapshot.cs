@@ -290,9 +290,13 @@ namespace SAMGestor.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("registered_by_user_id");
 
-                    b.Property<Guid>("RegistrationId")
+                    b.Property<Guid?>("RegistrationId")
                         .HasColumnType("uuid")
                         .HasColumnName("registration_id");
+
+                    b.Property<Guid?>("ServiceRegistrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_registration_id");
 
                     b.HasKey("Id");
 
@@ -301,7 +305,13 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasIndex("RegistrationId")
                         .IsUnique()
-                        .HasDatabaseName("ix_manual_payment_proofs_registration_id");
+                        .HasDatabaseName("ix_manual_payment_proofs_registration_id")
+                        .HasFilter("registration_id IS NOT NULL");
+
+                    b.HasIndex("ServiceRegistrationId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_manual_payment_proofs_service_registration_id")
+                        .HasFilter("service_registration_id IS NOT NULL");
 
                     b.ToTable("manual_payment_proofs", "core");
                 });
@@ -1447,12 +1457,33 @@ namespace SAMGestor.Infrastructure.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone");
 
+                    b.Property<string>("PhotoContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("photo_content_type");
+
+                    b.Property<int?>("PhotoSizeBytes")
+                        .HasColumnType("integer")
+                        .HasColumnName("photo_size_bytes");
+
+                    b.Property<string>("PhotoStorageKey")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("photo_storage_key");
+
+                    b.Property<DateTime?>("PhotoUploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("photo_uploaded_at");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("role");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PhotoStorageKey")
+                        .HasDatabaseName("ix_users_photo_storage_key");
 
                     b.ToTable("users", "core");
                 });
@@ -1580,8 +1611,12 @@ namespace SAMGestor.Infrastructure.Migrations
                     b.HasOne("SAMGestor.Domain.Entities.Registration", null)
                         .WithMany()
                         .HasForeignKey("RegistrationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SAMGestor.Domain.Entities.ServiceRegistration", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.OwnsOne("SAMGestor.Domain.ValueObjects.Money", "Amount", b1 =>
                         {

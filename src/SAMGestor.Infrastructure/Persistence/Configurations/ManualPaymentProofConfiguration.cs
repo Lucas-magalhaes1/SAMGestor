@@ -11,10 +11,12 @@ public class ManualPaymentProofConfiguration : IEntityTypeConfiguration<ManualPa
         builder.ToTable("manual_payment_proofs");
         
         builder.HasKey(p => p.Id);
-
+        
         builder.Property(p => p.RegistrationId)
-            .HasColumnName("registration_id")
-            .IsRequired();
+            .HasColumnName("registration_id");
+        
+        builder.Property(p => p.ServiceRegistrationId)
+            .HasColumnName("service_registration_id");
 
         builder.OwnsOne(p => p.Amount, m =>
         {
@@ -68,7 +70,14 @@ public class ManualPaymentProofConfiguration : IEntityTypeConfiguration<ManualPa
         
         builder.HasIndex(p => p.RegistrationId)
             .IsUnique()
+            .HasFilter("registration_id IS NOT NULL") 
             .HasDatabaseName("ix_manual_payment_proofs_registration_id");
+
+       
+        builder.HasIndex(p => p.ServiceRegistrationId)
+            .IsUnique()
+            .HasFilter("service_registration_id IS NOT NULL")
+            .HasDatabaseName("ix_manual_payment_proofs_service_registration_id");
 
         builder.HasIndex(p => p.RegisteredAt)
             .HasDatabaseName("ix_manual_payment_proofs_registered_at");
@@ -76,6 +85,11 @@ public class ManualPaymentProofConfiguration : IEntityTypeConfiguration<ManualPa
         builder.HasOne<Registration>()
             .WithMany()
             .HasForeignKey(p => p.RegistrationId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.HasOne<ServiceRegistration>()
+            .WithMany()
+            .HasForeignKey(p => p.ServiceRegistrationId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

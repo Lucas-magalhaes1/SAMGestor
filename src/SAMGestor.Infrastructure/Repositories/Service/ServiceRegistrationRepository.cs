@@ -78,4 +78,7 @@ public sealed class ServiceRegistrationRepository(SAMContext db) : IServiceRegis
                     setters.SetProperty(r => r.PreferredSpaceId, r => (Guid?)null),
                 ct);
     }
+    public Task<ServiceRegistration?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
+        => db.ServiceRegistrations
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
 }

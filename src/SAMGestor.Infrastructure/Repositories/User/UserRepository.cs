@@ -58,4 +58,10 @@ public sealed class UserRepository : IUserRepository
 
         return (users, totalCount);
     }
+    
+    public async Task<Domain.Entities.User?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
+    {
+        return await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == id, ct);
+    }
 }

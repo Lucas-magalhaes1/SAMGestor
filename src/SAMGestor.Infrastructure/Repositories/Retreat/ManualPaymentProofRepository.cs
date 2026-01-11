@@ -32,4 +32,15 @@ public class ManualPaymentProofRepository : IManualPaymentProofRepository
         return await _ctx.Set<ManualPaymentProof>()
             .AnyAsync(p => p.RegistrationId == registrationId, ct);
     }
+    public async Task<ManualPaymentProof?> GetByServiceRegistrationIdAsync(Guid serviceRegistrationId, CancellationToken ct = default)
+    {
+        return await _ctx.Set<ManualPaymentProof>()
+            .FirstOrDefaultAsync(p => p.ServiceRegistrationId == serviceRegistrationId, ct);
+    }
+
+    public async Task<bool> ExistsByServiceRegistrationIdAsync(Guid serviceRegistrationId, CancellationToken ct = default)
+    {
+        return await _ctx.Set<ManualPaymentProof>()
+            .AnyAsync(p => p.ServiceRegistrationId == serviceRegistrationId, ct);
+    }
 }
