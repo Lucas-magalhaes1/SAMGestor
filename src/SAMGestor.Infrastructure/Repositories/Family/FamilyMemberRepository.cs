@@ -69,6 +69,18 @@ public sealed class FamilyMemberRepository(SAMContext ctx) : IFamilyMemberReposi
         return Task.CompletedTask;
     }
     
+    public Task UpdateAsync(FamilyMember member, CancellationToken ct = default)
+    {
+        ctx.FamilyMembers.Update(member);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateRangeAsync(IEnumerable<FamilyMember> members, CancellationToken ct = default)
+    {
+        ctx.FamilyMembers.UpdateRange(members);
+        return Task.CompletedTask;
+    }
+    
     public Task<FamilyMember?> GetByRegistrationIdAsync(Guid retreatId, Guid registrationId, CancellationToken ct = default)
         => ctx.FamilyMembers
             .AsNoTracking()

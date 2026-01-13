@@ -34,6 +34,19 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
             .HasDefaultValue(false)
             .IsRequired();
 
+        builder.OwnsOne(f => f.Color, colorBuilder =>
+        {
+            colorBuilder.Property(c => c.Name)
+                .HasColumnName("color_name")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            colorBuilder.Property(c => c.HexCode)
+                .HasColumnName("color_hex")
+                .HasMaxLength(7)
+                .IsRequired();
+        });
+
         builder.HasIndex(f => f.RetreatId);
 
         builder.Navigation(f => f.Members)
@@ -43,7 +56,7 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
             .WithMany()
             .HasForeignKey(f => f.RetreatId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+    
         builder.Property(f => f.GroupLink)
             .HasColumnName("group_link")
             .HasMaxLength(512);
@@ -72,10 +85,10 @@ public class FamilyConfiguration : IEntityTypeConfiguration<Family>
             .HasColumnName("group_version")
             .HasDefaultValue(0)
             .IsRequired();
-            
+        
         builder.ToTable(t =>
         {
-            t.HasCheckConstraint("ck_families_capacity_positive", "capacity > 0");
+            t.HasCheckConstraint("ck_families_capacity_positive", "capacity >= 4");
         });
         
         builder.HasIndex(f => new { f.RetreatId, f.Name }).IsUnique();

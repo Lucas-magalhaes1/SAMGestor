@@ -24,6 +24,7 @@ using SAMGestor.Infrastructure.Messaging.Outbox;
 using SAMGestor.Infrastructure.Messaging.RabbitMq;
 using SAMGestor.Infrastructure.Persistence;
 using SAMGestor.Infrastructure.Repositories;
+using SAMGestor.Infrastructure.Repositories.Family;
 using SAMGestor.Infrastructure.Repositories.Reports;
 using SAMGestor.Infrastructure.Repositories.Retreat;
 using SAMGestor.Infrastructure.Repositories.User;

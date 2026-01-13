@@ -22,7 +22,7 @@ public sealed class ReportingReadDb : IReportingReadDb
     // -------- Registros principais (Fazer) --------
     public IQueryable<Registration>   Registrations    => Set<Registration>();
     public IQueryable<Payment>        Payments         => Set<Payment>();
-    public IQueryable<Family>         Families         => Set<Family>();
+    public IQueryable<Domain.Entities.Family>         Families         => Set<Domain.Entities.Family>();
     public IQueryable<FamilyMember>   FamilyMembers    => Set<FamilyMember>();
     public IQueryable<Tent>           Tents            => Set<Tent>();
     public IQueryable<TentAssignment> TentAssignments  => Set<TentAssignment>();
