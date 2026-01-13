@@ -45,8 +45,13 @@ public class CreateFamilyGroupsBulkHandlerTests
             retreatId);
     }
 
-    private static Family NewFamily(Guid retreatId, string name, int capacity)
-        => new Family(new FamilyName(name), retreatId, capacity);
+    private static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4, bool locked = false)
+    {
+        var color = FamilyColor.FromName("Azul"); 
+        var fam = new Family(new FamilyName(name), retreatId, capacity, color);
+        if (locked) fam.Lock();
+        return fam;
+    }
 
     private static FamilyMember Link(Guid retreatId, Guid familyId, Guid regId, int pos)
         => new FamilyMember(retreatId, familyId, regId, pos);
@@ -213,101 +218,117 @@ public class CreateFamilyGroupsBulkHandlerTests
     }
 
     [Fact]
-    public async Task DryRun_true_nao_publica_nao_salva_nem_atualiza_mas_retorna_queued_simulado()
-    {
-        var retreat = OpenRetreatLocked();
+public async Task DryRun_true_nao_publica_nao_salva_nem_atualiza_mas_retorna_queued_simulado()
+{
+    var retreat = OpenRetreatLocked();
 
-        var fam1 = NewFamily(retreat.Id, "Fam 1", capacity: 3);
-        var fam2 = NewFamily(retreat.Id, "Fam 2", capacity: 2);
+    var fam1 = NewFamily(retreat.Id, "Fam 1", capacity: 4); // ✓ Ajustado para 4
+    var fam2 = NewFamily(retreat.Id, "Fam 2", capacity: 4); // ✓ Ajustado para 4
 
-        var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
-        var r2 = NewReg(retreat.Id, "Bea Triz", Gender.Female, "b@mail.com");
-        var r3 = NewReg(retreat.Id, "Caio Castro", Gender.Male,   "c@mail.com");
-        var r4 = NewReg(retreat.Id, "Davi Angelo", Gender.Male,   "d@mail.com");
+    var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
+    var r2 = NewReg(retreat.Id, "Bea Triz", Gender.Female, "b@mail.com");
+    var r3 = NewReg(retreat.Id, "Caio Castro", Gender.Male, "c@mail.com");
+    var r4 = NewReg(retreat.Id, "Davi Angelo", Gender.Male, "d@mail.com");
+    var r5 = NewReg(retreat.Id, "Eva Santos", Gender.Female, "e@mail.com"); // ✓ Novo membro
+    var r6 = NewReg(retreat.Id, "Felipe Costa", Gender.Male, "f@mail.com"); // ✓ Novo membro
 
-        var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
-            [fam1.Id] = new() {
-                Link(retreat.Id, fam1.Id, r1.Id, 0),
-                Link(retreat.Id, fam1.Id, r2.Id, 1),
-                Link(retreat.Id, fam1.Id, r3.Id, 2),
-            },
-            [fam2.Id] = new() {
-                Link(retreat.Id, fam2.Id, r4.Id, 0),
-                Link(retreat.Id, fam2.Id, r3.Id, 1),
-            }
-        };
+    var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
+        [fam1.Id] = new() {
+            Link(retreat.Id, fam1.Id, r1.Id, 0),
+            Link(retreat.Id, fam1.Id, r2.Id, 1),
+            Link(retreat.Id, fam1.Id, r3.Id, 2),
+            Link(retreat.Id, fam1.Id, r5.Id, 3), // ✓ 4º membro
+        },
+        [fam2.Id] = new() {
+            Link(retreat.Id, fam2.Id, r4.Id, 0),
+            Link(retreat.Id, fam2.Id, r6.Id, 1), // ✓ Alterado para novo membro
+            Link(retreat.Id, fam2.Id, r1.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, fam2.Id, r2.Id, 3), // ✓ 4º membro
+        }
+    };
 
-        var regsMap = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 };
+    var regsMap = new Dictionary<Guid, Registration> { 
+        [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4, [r5.Id]=r5, [r6.Id]=r6 
+    };
 
-        var sut = BuildHandler(
-            retreat,
-            families: new List<Family> { fam1, fam2 },
-            linksByFamily: linksByFamily,
-            regsMap: regsMap,
-            out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
-        );
+    var sut = BuildHandler(
+        retreat,
+        families: new List<Family> { fam1, fam2 },
+        linksByFamily: linksByFamily,
+        regsMap: regsMap,
+        out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
+    );
 
-        var res = await sut.Handle(new CreateFamilyGroupsCommand(retreat.Id, DryRun:true, ForceRecreate:false), default);
+    var res = await sut.Handle(new CreateFamilyGroupsCommand(retreat.Id, DryRun:true, ForceRecreate:false), default);
 
-        res.TotalFamilies.Should().Be(2);
-        res.Queued.Should().Be(2);  
-        res.Skipped.Should().Be(0);
+    res.TotalFamilies.Should().Be(2);
+    res.Queued.Should().Be(2);  
+    res.Skipped.Should().Be(0);
 
-        bus.Verify(b => b.EnqueueAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
-        familyRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Never);
-        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
+    bus.Verify(b => b.EnqueueAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    familyRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Never);
+    uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+}
 
-    [Fact]
-    public async Task DryRun_false_publica_evento_para_cada_familia_completa_e_chama_update_e_savechanges()
-    {
-        var retreat = OpenRetreatLocked();
 
-        var fam1 = NewFamily(retreat.Id, "Fam 1", capacity: 2);
-        var fam2 = NewFamily(retreat.Id, "Fam 2", capacity: 2);
+   [Fact]
+public async Task DryRun_false_publica_evento_para_cada_familia_completa_e_chama_update_e_savechanges()
+{
+    var retreat = OpenRetreatLocked();
 
-        var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
-        var r2 = NewReg(retreat.Id, "Bea Triz", Gender.Female, "b@mail.com");
-        var r3 = NewReg(retreat.Id, "Caio Castro", Gender.Male,   "c@mail.com");
-        var r4 = NewReg(retreat.Id, "Davi Angelo", Gender.Male,   "d@mail.com");
+    var fam1 = NewFamily(retreat.Id, "Fam 1", capacity: 4);
+    var fam2 = NewFamily(retreat.Id, "Fam 2", capacity: 4); 
 
-        var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
-            [fam1.Id] = new() {
-                Link(retreat.Id, fam1.Id, r1.Id, 0),
-                Link(retreat.Id, fam1.Id, r2.Id, 1),
-            },
-            [fam2.Id] = new() {
-                Link(retreat.Id, fam2.Id, r3.Id, 0),
-                Link(retreat.Id, fam2.Id, r4.Id, 1),
-            }
-        };
+    var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
+    var r2 = NewReg(retreat.Id, "Bea Triz", Gender.Female, "b@mail.com");
+    var r3 = NewReg(retreat.Id, "Caio Castro", Gender.Male, "c@mail.com");
+    var r4 = NewReg(retreat.Id, "Davi Angelo", Gender.Male, "d@mail.com");
+    var r5 = NewReg(retreat.Id, "Eva Lima", Gender.Female, "e@mail.com");   
+    var r6 = NewReg(retreat.Id, "Fabio Reis", Gender.Male, "f@mail.com");  
 
-        var regsMap = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 };
+    var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
+        [fam1.Id] = new() {
+            Link(retreat.Id, fam1.Id, r1.Id, 0),
+            Link(retreat.Id, fam1.Id, r2.Id, 1),
+            Link(retreat.Id, fam1.Id, r5.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, fam1.Id, r3.Id, 3), // ✓ 4º membro
+        },
+        [fam2.Id] = new() {
+            Link(retreat.Id, fam2.Id, r4.Id, 0),
+            Link(retreat.Id, fam2.Id, r6.Id, 1),
+            Link(retreat.Id, fam2.Id, r1.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, fam2.Id, r2.Id, 3), // ✓ 4º membro
+        }
+    };
 
-        var sut = BuildHandler(
-            retreat,
-            families: new List<Family> { fam1, fam2 },
-            linksByFamily: linksByFamily,
-            regsMap: regsMap,
-            out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
-        );
+    var regsMap = new Dictionary<Guid, Registration> { 
+        [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4, [r5.Id]=r5, [r6.Id]=r6 
+    };
 
-        var res = await sut.Handle(new CreateFamilyGroupsCommand(retreat.Id, DryRun:false, ForceRecreate:false), default);
+    var sut = BuildHandler(
+        retreat,
+        families: new List<Family> { fam1, fam2 },
+        linksByFamily: linksByFamily,
+        regsMap: regsMap,
+        out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
+    );
 
-        res.TotalFamilies.Should().Be(2);
-        res.Queued.Should().Be(2);
-        res.Skipped.Should().Be(0);
+    var res = await sut.Handle(new CreateFamilyGroupsCommand(retreat.Id, DryRun:false, ForceRecreate:false), default);
 
-        bus.Verify(b => b.EnqueueAsync(
-            EventTypes.FamilyGroupCreateRequestedV1,
-            "sam.core",
-            It.IsAny<FamilyGroupCreateRequestedV1>(),
-            null,
-            It.IsAny<CancellationToken>()), Times.Exactly(2));
+    res.TotalFamilies.Should().Be(2);
+    res.Queued.Should().Be(2);
+    res.Skipped.Should().Be(0);
 
-        familyRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
+    bus.Verify(b => b.EnqueueAsync(
+        EventTypes.FamilyGroupCreateRequestedV1,
+        "sam.core",
+        It.IsAny<FamilyGroupCreateRequestedV1>(),
+        null,
+        It.IsAny<CancellationToken>()), Times.Exactly(2));
+
+    familyRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+}
 
     [Fact]
     public async Task Evento_publicado_contem_membros_ordenados_por_position_e_dados_de_contato()
@@ -372,57 +393,67 @@ public class CreateFamilyGroupsBulkHandlerTests
     
     
     [Fact]
-public async Task ForceRecreate_false_pula_quando_Family_tem_GroupLink()
-{
-    var retreat = OpenRetreatLocked();
+    public async Task ForceRecreate_false_pula_quando_Family_tem_GroupLink()
+    {
+        var retreat = OpenRetreatLocked();
 
-    var fam = NewFamily(retreat.Id, "Fam 1", capacity: 2);
-    var r1 = NewReg(retreat.Id, "Ana Silva",  Gender.Female, "ana@mail.com");
-    var r2 = NewReg(retreat.Id, "Caio Lima",  Gender.Male,   "caio@mail.com");
+        var fam = NewFamily(retreat.Id, "Fam 1", capacity: 4); // ✓ Ajustado para 4
+        var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "ana@mail.com");
+        var r2 = NewReg(retreat.Id, "Caio Lima", Gender.Male, "caio@mail.com");
+        var r3 = NewReg(retreat.Id, "Bianca Souza", Gender.Female, "bianca@mail.com"); // ✓ Novo
+        var r4 = NewReg(retreat.Id, "Diego Nunes", Gender.Male, "diego@mail.com");     // ✓ Novo
     
-    var links = new List<FamilyMember> {
-        Link(retreat.Id, fam.Id, r1.Id, 0),
-        Link(retreat.Id, fam.Id, r2.Id, 1),
-    };
+        var links = new List<FamilyMember> {
+            Link(retreat.Id, fam.Id, r1.Id, 0),
+            Link(retreat.Id, fam.Id, r2.Id, 1),
+            Link(retreat.Id, fam.Id, r3.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, fam.Id, r4.Id, 3), // ✓ 4º membro
+        };
     
-    fam.MarkGroupActive(
-        link: "https://chat.whatsapp.com/abc",
-        externalId: "ext-123",
-        channel: "whatsapp",
-        createdAt: DateTimeOffset.UtcNow,
-        notifiedAt: null);
+        fam.MarkGroupActive(
+            link: "https://chat.whatsapp.com/abc",
+            externalId: "ext-123",
+            channel: "whatsapp",
+            createdAt: DateTimeOffset.UtcNow,
+            notifiedAt: null);
 
-    var sut = BuildHandler(
-        retreat,
-        families: new List<Family> { fam },
-        linksByFamily: new Dictionary<Guid, List<FamilyMember>> { [fam.Id] = links },
-        regsMap: new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2 },
-        out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
-    );
+        var sut = BuildHandler(
+            retreat,
+            families: new List<Family> { fam },
+            linksByFamily: new Dictionary<Guid, List<FamilyMember>> { [fam.Id] = links },
+            regsMap: new Dictionary<Guid, Registration> { 
+                [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 
+            },
+            out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
+        );
 
-    var res = await sut.Handle(new CreateFamilyGroupsCommand(retreat.Id, DryRun:false, ForceRecreate:false), default);
+        var res = await sut.Handle(new CreateFamilyGroupsCommand(retreat.Id, DryRun:false, ForceRecreate:false), default);
 
-    res.TotalFamilies.Should().Be(1);
-    res.Queued.Should().Be(0);
-    res.Skipped.Should().Be(1);
+        res.TotalFamilies.Should().Be(1);
+        res.Queued.Should().Be(0);
+        res.Skipped.Should().Be(1);
 
-    bus.Verify(b => b.EnqueueAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
-    familyRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Never);
-    uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once); // DryRun=false sempre salva
-}
+        bus.Verify(b => b.EnqueueAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        familyRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Never);
+        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
 
 [Fact]
 public async Task ForceRecreate_true_enfileira_mesmo_com_GroupLink_e_marca_Creating()
 {
     var retreat = OpenRetreatLocked();
 
-    var fam = NewFamily(retreat.Id, "Fam 1", capacity: 2);
+    var fam = NewFamily(retreat.Id, "Fam 1", capacity: 4); // ✓ Ajustado para 4
     var r1 = NewReg(retreat.Id, "Beatriz Souza", Gender.Female, "bea@mail.com");
-    var r2 = NewReg(retreat.Id, "Diego Rocha",   Gender.Male,   "diego@mail.com");
+    var r2 = NewReg(retreat.Id, "Diego Rocha", Gender.Male, "diego@mail.com");
+    var r3 = NewReg(retreat.Id, "Carla Mendes", Gender.Female, "carla@mail.com"); // ✓ Novo
+    var r4 = NewReg(retreat.Id, "Eduardo Silva", Gender.Male, "edu@mail.com");    // ✓ Novo
 
     var links = new List<FamilyMember> {
         Link(retreat.Id, fam.Id, r1.Id, 0),
         Link(retreat.Id, fam.Id, r2.Id, 1),
+        Link(retreat.Id, fam.Id, r3.Id, 2), // ✓ 3º membro
+        Link(retreat.Id, fam.Id, r4.Id, 3), // ✓ 4º membro
     };
     
     fam.MarkGroupActive(
@@ -438,7 +469,9 @@ public async Task ForceRecreate_true_enfileira_mesmo_com_GroupLink_e_marca_Creat
         retreat,
         families: new List<Family> { fam },
         linksByFamily: new Dictionary<Guid, List<FamilyMember>> { [fam.Id] = links },
-        regsMap: new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2 },
+        regsMap: new Dictionary<Guid, Registration> { 
+            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 
+        },
         out var retRepo, out var familyRepo, out var fmRepo, out var regRepo, out var bus, out var uow
     );
 
