@@ -38,9 +38,10 @@ public class GetFamilyByIdQueryTests
         return r;
     }
 
-    private static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4, bool isLocked = false)
+    private static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4, string colorName = "Azul", bool isLocked = false)
     {
-        var f = new Family(new FamilyName(name), retreatId, capacity);
+        var color = FamilyColor.FromName(colorName);
+        var f = new Family(new FamilyName(name), retreatId, capacity, color);
         if (isLocked) f.Lock();
         return f;
     }
@@ -57,8 +58,8 @@ public class GetFamilyByIdQueryTests
             RegistrationStatus.Confirmed,
             retreatId);
 
-    private static FamilyMember Link(Guid retreatId, Guid familyId, Guid regId, int pos)
-        => new FamilyMember(retreatId, familyId, regId, pos);
+    private static FamilyMember Link(Guid retreatId, Guid familyId, Guid regId, int pos, bool isPadrinho = false, bool isMadrinha = false)
+        => new FamilyMember(retreatId, familyId, regId, pos, isPadrinho, isMadrinha);
 
     private static string RandomCpf()
     {
@@ -89,7 +90,6 @@ public class GetFamilyByIdQueryTests
     [Fact]
     public async Task Return_null_when_family_not_found_or_belongs_to_other_retreat()
     {
-        
         var retreat = NewRetreat(familiesVersion: 4);
         var otherRetreat = NewRetreat();
 
@@ -112,7 +112,7 @@ public class GetFamilyByIdQueryTests
         res1.Version.Should().Be(retreat.FamiliesVersion);
         res1.Family.Should().BeNull();
         
-        var famOther = NewFamily(otherRetreat.Id);
+        var famOther = NewFamily(otherRetreat.Id, colorName: "Verde");
         familyRepo.Setup(r => r.GetByIdAsync(famOther.Id, It.IsAny<CancellationToken>()))
                   .ReturnsAsync(famOther);
 
@@ -126,15 +126,15 @@ public class GetFamilyByIdQueryTests
     public async Task Return_family_with_members_and_alerts_when_includeAlerts_true()
     {
         var retreat = NewRetreat(familiesVersion: 2);
-        var fam     = NewFamily(retreat.Id, "Família XPTO", capacity: 4, isLocked: true);
+        var fam     = NewFamily(retreat.Id, "Família XPTO", capacity: 4, colorName: "Vermelho", isLocked: true);
 
         var r1 = NewReg(retreat.Id, "João Silva",  Gender.Male,   "São Paulo");
         var r2 = NewReg(retreat.Id, "Maria Souza", Gender.Female, "São Paulo"); 
         var r3 = NewReg(retreat.Id, "Pedro Lima",  Gender.Male,   "Recife");
         var r4 = NewReg(retreat.Id, "Ana Lima",    Gender.Female, "Recife");
 
-        var l1 = Link(retreat.Id, fam.Id, r1.Id, 0);
-        var l2 = Link(retreat.Id, fam.Id, r2.Id, 1);
+        var l1 = Link(retreat.Id, fam.Id, r1.Id, 0, isPadrinho: true);  // João é padrinho
+        var l2 = Link(retreat.Id, fam.Id, r2.Id, 1, isMadrinha: true);  // Maria é madrinha
         var l3 = Link(retreat.Id, fam.Id, r3.Id, 2);
         var l4 = Link(retreat.Id, fam.Id, r4.Id, 3);
         var links = new List<FamilyMember> { l1, l2, l3, l4 };
@@ -169,25 +169,53 @@ public class GetFamilyByIdQueryTests
         res.Family!.FamilyId.Should().Be(fam.Id);
         res.Family.IsLocked.Should().BeTrue();
         res.Family.Name.Should().Be("Família XPTO");
+        
+        // Novos campos de cor
+        res.Family.ColorName.Should().Be("Vermelho");
+        res.Family.ColorHex.Should().NotBeNullOrEmpty();
+        
         res.Family.Capacity.Should().Be(4);
         res.Family.TotalMembers.Should().Be(4);
         res.Family.MaleCount.Should().Be(2);
         res.Family.FemaleCount.Should().Be(2);
+        
+        // Novos campos de percentuais
+        res.Family.MalePercentage.Should().Be(50m);
+        res.Family.FemalePercentage.Should().Be(50m);
+        
         res.Family.Remaining.Should().Be(0);
         
         res.Family.Members.Select(m => m.Position).Should().BeInAscendingOrder().And.OnlyHaveUniqueItems();
+        
+        // Validar que membros têm email e phone
+        res.Family.Members.Should().AllSatisfy(m =>
+        {
+            m.Email.Should().NotBeNullOrEmpty();
+            m.Phone.Should().NotBeNullOrEmpty();
+        });
+        
+        // Validar padrinhos/madrinhas
+        var padrinho = res.Family.Members.Single(m => m.RegistrationId == r1.Id);
+        padrinho.IsPadrinho.Should().BeTrue();
+        padrinho.IsMadrinha.Should().BeFalse();
+        
+        var madrinha = res.Family.Members.Single(m => m.RegistrationId == r2.Id);
+        madrinha.IsPadrinho.Should().BeFalse();
+        madrinha.IsMadrinha.Should().BeTrue();
 
-        // alerts presentes (SAME_CITY esperado por SP & SP; e por Recife & Recife)
+        // Alerts presentes (SAME_CITY esperado por SP & SP; e por Recife & Recife)
         res.Family.Alerts.Should().NotBeNull();
         res.Family.Alerts.Any(a => a.Code == "SAME_CITY").Should().BeTrue();
+        
+        // Deve ter alerta de falta de padrinhos/madrinhas (tem só 1 de cada, recomendado 2)
+        res.Family.Alerts.Any(a => a.Code == "MISSING_GODPARENTS").Should().BeTrue();
     }
 
     [Fact]
     public async Task Return_family_without_alerts_when_includeAlerts_false()
     {
-        
         var retreat = NewRetreat(familiesVersion: 6);
-        var fam     = NewFamily(retreat.Id, "Família 7", capacity: 4, isLocked: false);
+        var fam     = NewFamily(retreat.Id, "Família 7", capacity: 4, colorName: "Azul", isLocked: false);
 
         var r1 = NewReg(retreat.Id, "João Silva", Gender.Male, "SP");
         var l1 = Link(retreat.Id, fam.Id, r1.Id, 0);
@@ -215,6 +243,7 @@ public class GetFamilyByIdQueryTests
         res.Version.Should().Be(retreat.FamiliesVersion);
         res.Family.Should().NotBeNull();
         res.Family!.IsLocked.Should().BeFalse();
+        res.Family!.ColorName.Should().Be("Azul");
         res.Family!.Alerts.Should().NotBeNull().And.BeEmpty(); 
     }
 }

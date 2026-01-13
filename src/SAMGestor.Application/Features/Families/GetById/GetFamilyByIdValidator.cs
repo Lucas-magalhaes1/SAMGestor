@@ -6,7 +6,7 @@ public sealed class GetFamilyByIdValidator : AbstractValidator<GetFamilyByIdQuer
 {
     public GetFamilyByIdValidator()
     {
-        RuleFor(x => x.RetreatId).NotEmpty();
-        RuleFor(x => x.FamilyId).NotEmpty();
+        RuleFor(x => x.RetreatId).NotEmpty().WithMessage("RetreatId é obrigatório.");
+        RuleFor(x => x.FamilyId).NotEmpty().WithMessage("FamilyId é obrigatório.");
     }
 }

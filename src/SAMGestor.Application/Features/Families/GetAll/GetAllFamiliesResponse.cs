@@ -9,10 +9,15 @@ public sealed record GetAllFamiliesResponse(
 public sealed record FamilyDto(
     Guid FamilyId,
     string Name,
+    string ColorName,                    
+    string ColorHex,                     
+    bool IsLocked,                     
     int Capacity,
     int TotalMembers,
     int MaleCount,
     int FemaleCount,
+    decimal MalePercentage,             
+    decimal FemalePercentage,          
     int Remaining,
     IReadOnlyList<MemberDto> Members,
     IReadOnlyList<FamilyAlertDto> Alerts
@@ -21,9 +26,13 @@ public sealed record FamilyDto(
 public sealed record MemberDto(
     Guid RegistrationId,
     string Name,
+    string Email,                       
+    string Phone,                        
     string Gender,
     string City,
-    int Position
+    int Position,
+    bool IsPadrinho,                   
+    bool IsMadrinha                      
 );
 
 public sealed record FamilyAlertDto(

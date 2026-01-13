@@ -1,4 +1,3 @@
-// SAMGestor.Application/Features/Families/GetById/GetFamilyByIdResponse.cs
 namespace SAMGestor.Application.Features.Families.GetById;
 
 public sealed record GetFamilyByIdResponse(
@@ -9,14 +8,19 @@ public sealed record GetFamilyByIdResponse(
 public sealed record FamilyDto(
     Guid FamilyId,
     string Name,
+    string ColorName,                    
+    string ColorHex,                    
     int Capacity,
     int TotalMembers,
     int MaleCount,
     int FemaleCount,
+    decimal MalePercentage,              
+    decimal FemalePercentage,            
     int Remaining,
     bool IsLocked,
     
-    string? GroupStatus,              
+    
+    string GroupStatus,              
     string? GroupLink,
     string? GroupExternalId,
     string? GroupChannel,              
@@ -31,10 +35,13 @@ public sealed record FamilyDto(
 public sealed record MemberDto(
     Guid RegistrationId,
     string Name,
+    string Email, 
+    string Phone, 
     string Gender,
     string City,
-    int Position
-);
+    int Position,
+    bool IsPadrinho,
+    bool IsMadrinha);                    
 
 public sealed record FamilyAlertDto(
     string Severity,
