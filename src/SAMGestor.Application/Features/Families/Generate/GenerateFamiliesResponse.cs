@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace SAMGestor.Application.Features.Families.Generate;
 
 public sealed record GenerateFamiliesResponse(
@@ -11,6 +8,8 @@ public sealed record GenerateFamiliesResponse(
 public sealed record GeneratedFamilyDto(
     Guid FamilyId,
     string Name,
+    string ColorName,                        
+    string ColorHex,                         
     int Capacity,
     int TotalMembers,
     int MaleCount,
@@ -23,9 +22,13 @@ public sealed record GeneratedFamilyDto(
 public sealed record GeneratedMemberDto(
     Guid RegistrationId,
     string Name,
+    string Email,                           
+    string Phone,                           
     string Gender,
     string City,
-    int Position
+    int Position,
+    bool IsPadrinho,                        
+    bool IsMadrinha                         
 );
 
 public sealed record FamilyAlertDto(

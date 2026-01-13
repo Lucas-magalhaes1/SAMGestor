@@ -4,15 +4,13 @@ namespace SAMGestor.Application.Features.Families.Generate;
 
 public sealed class GenerateFamiliesValidator : AbstractValidator<GenerateFamiliesCommand>
 {
-    private const int DefaultCapacity = 4;
-
     public GenerateFamiliesValidator()
     {
         RuleFor(x => x.RetreatId)
             .NotEmpty().WithMessage("RetreatId é obrigatório.");
 
-        RuleFor(x => x.Capacity)
-            .Must(c => c is null || c > 0)
-            .WithMessage("Capacity (se informado) deve ser > 0.");
+        RuleFor(x => x.MembersPerFamily)
+            .GreaterThanOrEqualTo(4).WithMessage("Número de membros por família deve ser no mínimo 4.")
+            .Must(x => x % 2 == 0).WithMessage("Número de membros por família deve ser PAR para balanceamento de gênero.");
     }
 }
