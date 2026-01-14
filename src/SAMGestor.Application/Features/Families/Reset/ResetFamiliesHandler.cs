@@ -19,11 +19,10 @@ public sealed class ResetFamiliesHandler(
         var retreat = await retreatRepo.GetByIdAsync(cmd.RetreatId, ct)
                      ?? throw new NotFoundException(nameof(Retreat), cmd.RetreatId);
 
-        // 1) lock global sempre bloqueia
+       
         if (retreat.FamiliesLocked)
             throw new BusinessRuleException("Famílias estão bloqueadas para edição.");
 
-       
         var families = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
         if (families.Count == 0)
         {
@@ -34,7 +33,7 @@ public sealed class ResetFamiliesHandler(
             );
         }
 
-        // Se já tem fluxo de grupo rolando ou já criado, não deixa resetar
+        
         var hasGroups = families.Any(f =>
             f.GroupStatus == GroupStatus.Creating ||
             f.GroupStatus == GroupStatus.Active
@@ -42,27 +41,36 @@ public sealed class ResetFamiliesHandler(
 
         if (hasGroups)
             throw new BusinessRuleException(
-                "Já existem grupos criados ou em criação para este retiro. Não é permitido resetar as famílias."
+                "Já existem grupos criados ou em criação. Não é permitido resetar as famílias."
             );
 
-        // Regras de bloqueio por família
-        var lockedCount   = families.Count(f => f.IsLocked);
+        
+        var lockedCount = families.Count(f => f.IsLocked);
         var totalFamilies = families.Count;
 
         if (lockedCount > 0 && !cmd.ForceLockedFamilies)
-            throw new BusinessRuleException("Existem famílias bloqueadas. Use 'forceLockedFamilies=true' para prosseguir.");
+        {
+            throw new BusinessRuleException(
+                $"Existem {lockedCount} família(s) bloqueada(s). " +
+                "Use 'forceLockedFamilies=true' para prosseguir e deletar todas."
+            );
+        }
 
         if (lockedCount == totalFamilies)
-            throw new BusinessRuleException("Todas as famílias estão bloqueadas. Desbloqueie-as antes de resetar.");
+        {
+            throw new BusinessRuleException(
+                "Todas as famílias estão bloqueadas. Desbloqueie-as antes de resetar."
+            );
+        }
 
-        // Contar membros antes de apagar
-        var allMembers   = await fmRepo.ListByRetreatAsync(cmd.RetreatId, ct);
+       
+        var allMembers = await fmRepo.ListByRetreatAsync(cmd.RetreatId, ct);
         var membersCount = allMembers.Count;
 
-        //  Apaga tudo
+        
         await familyRepo.DeleteAllByRetreatAsync(cmd.RetreatId, ct);
 
-        // Bump de versão
+ 
         retreat.BumpFamiliesVersion();
         await retreatRepo.UpdateAsync(retreat, ct);
 

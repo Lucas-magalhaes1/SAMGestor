@@ -14,90 +14,79 @@ public class ClearSeedDataHandler : IRequestHandler<ClearSeedDataCommand, ClearS
 
     public async Task<ClearSeedDataResult> Handle(ClearSeedDataCommand cmd, CancellationToken ct)
     {
-        // ✅ ORDEM CORRETA COM NOMES EXATOS DO BANCO
+        
+        await _sqlExecutor.ExecuteSqlAsync(
+            @"DELETE FROM core.manual_payment_proofs 
+          WHERE service_registration_id IN (
+              SELECT ""Id"" FROM core.service_registrations 
+              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
+          )",
+            ct
+        );
 
-        // 1️⃣ Deletar service_assignments (FK: service_space_id, service_registration_id - snake_case)
         await _sqlExecutor.ExecuteSqlAsync(
             @"DELETE FROM core.service_assignments 
-              WHERE service_registration_id IN (
-                  SELECT ""Id"" FROM core.service_registrations 
-                  WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
-              )",
+          WHERE service_registration_id IN (
+              SELECT ""Id"" FROM core.service_registrations 
+              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
+          )",
             ct
         );
-
-        // 2️⃣ Deletar service_registrations (FK: retreat_id - snake_case)
+        
         var serviceRegsDeleted = await _sqlExecutor.ExecuteSqlAsync(
             @"DELETE FROM core.service_registrations 
-              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
             ct
         );
-
-        // 3️⃣ Deletar service_spaces (FK: RetreatId - PascalCase! ← ÚNICO)
+        
         var serviceSpacesDeleted = await _sqlExecutor.ExecuteSqlAsync(
             @"DELETE FROM core.service_spaces 
-              WHERE ""RetreatId"" IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
-            ct
-        );
-
-        // 4️⃣ Deletar tent_assignments (FK: registration_id - snake_case)
-        await _sqlExecutor.ExecuteSqlAsync(
-            @"DELETE FROM core.tent_assignments 
-              WHERE registration_id IN (
-                  SELECT ""Id"" FROM core.registrations 
-                  WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
-              )",
-            ct
-        );
-
-        // 5️⃣ Deletar family_members (FK: family_id - snake_case)
-        await _sqlExecutor.ExecuteSqlAsync(
-            @"DELETE FROM core.family_members 
-              WHERE family_id IN (
-                  SELECT ""Id"" FROM core.families 
-                  WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
-              )",
-            ct
-        );
-
-        // 6️⃣ Deletar families (FK: retreat_id - snake_case)
-        var familiesDeleted = await _sqlExecutor.ExecuteSqlAsync(
-            @"DELETE FROM core.families 
-              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
-            ct
-        );
-
-        // 7️⃣ Deletar tents (FK: retreat_id - snake_case)
-        var tentsDeleted = await _sqlExecutor.ExecuteSqlAsync(
-            @"DELETE FROM core.tents 
-              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+          WHERE ""RetreatId"" IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
             ct
         );
         
         await _sqlExecutor.ExecuteSqlAsync(
-            @"DELETE FROM core.manual_payment_proofs 
-      WHERE registration_id IN (
-          SELECT ""Id"" FROM core.registrations 
-          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
-      )",
+            @"DELETE FROM core.tent_assignments 
+          WHERE registration_id IN (
+              SELECT ""Id"" FROM core.registrations 
+              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
+          )",
             ct
         );
-
-        // 8️⃣ Deletar registrations (FK: retreat_id - snake_case)
+        
+        await _sqlExecutor.ExecuteSqlAsync(
+            @"DELETE FROM core.family_members 
+          WHERE family_id IN (
+              SELECT ""Id"" FROM core.families 
+              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')
+          )",
+            ct
+        );
+        
+        var familiesDeleted = await _sqlExecutor.ExecuteSqlAsync(
+            @"DELETE FROM core.families 
+          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+            ct
+        );
+        
+        var tentsDeleted = await _sqlExecutor.ExecuteSqlAsync(
+            @"DELETE FROM core.tents 
+          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+            ct
+        );
+        
         var registrationsDeleted = await _sqlExecutor.ExecuteSqlAsync(
             @"DELETE FROM core.registrations 
-              WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
             ct
         );
         
         var reportsDeleted = await _sqlExecutor.ExecuteSqlAsync(
             @"DELETE FROM core.reports 
-      WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
+          WHERE retreat_id IN (SELECT ""Id"" FROM core.retreats WHERE name LIKE '%[SEED]%')",
             ct
         );
         
-
-        // 9️⃣ Deletar retreats (raiz)
         var retreatsDeleted = await _sqlExecutor.ExecuteSqlAsync(
             @"DELETE FROM core.retreats WHERE name LIKE '%[SEED]%'",
             ct

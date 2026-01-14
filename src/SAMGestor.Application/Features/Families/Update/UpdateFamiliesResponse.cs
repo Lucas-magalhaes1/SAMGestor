@@ -10,11 +10,16 @@ public sealed record UpdateFamiliesResponse(
 public sealed record FamilyDto(
     Guid FamilyId,
     string Name,
+    string ColorName,                       
+    string ColorHex,                       
     int Capacity,
     int TotalMembers,
     int MaleCount,
     int FemaleCount,
+    decimal MalePercentage,                 
+    decimal FemalePercentage,             
     int Remaining,
+    bool IsLocked,                          
     IReadOnlyList<MemberDto> Members,
     IReadOnlyList<FamilyAlertDto> Alerts
 );
@@ -22,21 +27,25 @@ public sealed record FamilyDto(
 public sealed record MemberDto(
     Guid RegistrationId,
     string Name,
+    string Email,                           
+    string Phone,                          
     string Gender,
     string City,
-    int Position
+    int Position,
+    bool IsPadrinho,                       
+    bool IsMadrinha                     
 );
 
 public sealed record FamilyErrorDto(
-    string Code,                 // e.g. "CAPACITY_EXCEEDED", "COMPOSITION_INVALID", "RELATIONSHIP_CONFLICT", "SAME_SURNAME", "DUPLICATE_MEMBER", "VERSION_MISMATCH"
+    string Code,
     string Message,
     Guid? FamilyId,
     IReadOnlyList<Guid> RegistrationIds
 );
 
 public sealed record FamilyAlertDto(
-    string Severity,             // "critical" | "warning"
-    string Code,                 // e.g. "SAME_CITY", "GENDER_DEVIATION"
+    string Severity,
+    string Code,
     string Message,
     IReadOnlyList<Guid> RegistrationIds
 );

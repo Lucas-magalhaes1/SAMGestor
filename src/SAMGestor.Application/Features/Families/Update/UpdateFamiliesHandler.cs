@@ -1,10 +1,11 @@
 using MediatR;
 using SAMGestor.Application.Common.Families;
+using SAMGestor.Application.Interfaces;
 using SAMGestor.Domain.Entities;
 using SAMGestor.Domain.Enums;
-using SAMGestor.Domain.Interfaces;
-using SAMGestor.Application.Interfaces;
 using SAMGestor.Domain.Exceptions;
+using SAMGestor.Domain.Interfaces;
+using SAMGestor.Domain.ValueObjects;
 
 namespace SAMGestor.Application.Features.Families.Update;
 
@@ -13,20 +14,19 @@ public sealed class UpdateFamiliesHandler(
     IFamilyRepository familyRepo,
     IFamilyMemberRepository familyMemberRepo,
     IRegistrationRepository registrationRepo,
-    IRelationshipService relationshipService,
     IUnitOfWork uow
 ) : IRequestHandler<UpdateFamiliesCommand, UpdateFamiliesResponse>
 {
-    private const int FixedCapacity = 4;
-
     public async Task<UpdateFamiliesResponse> Handle(UpdateFamiliesCommand cmd, CancellationToken ct)
     {
         var retreat = await retreatRepo.GetByIdAsync(cmd.RetreatId, ct);
         if (retreat is null)
         {
-            return new UpdateFamiliesResponse(0, Array.Empty<FamilyDto>(),
-                new[] { new FamilyErrorDto("NOT_FOUND", "Retreat não encontrado.", null, Array.Empty<Guid>()) },
-                Array.Empty<FamilyAlertDto>());
+            return new UpdateFamiliesResponse(
+                Version: 0,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: new[] { new FamilyErrorDto("RETREAT_NOT_FOUND", "Retiro não encontrado.", null, Array.Empty<Guid>()) },
+                Warnings: Array.Empty<FamilyAlertDto>());
         }
 
         if (retreat.FamiliesLocked)
@@ -34,59 +34,36 @@ public sealed class UpdateFamiliesHandler(
 
         if (cmd.Version != retreat.FamiliesVersion)
         {
-            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(),
-                new[] { new FamilyErrorDto("VERSION_MISMATCH", "Versão desatualizada. Recarregue as famílias.", null, Array.Empty<Guid>()) },
-                Array.Empty<FamilyAlertDto>());
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: new[] { new FamilyErrorDto("VERSION_MISMATCH", "Versão desatualizada. Recarregue as famílias.", null, Array.Empty<Guid>()) },
+                Warnings: Array.Empty<FamilyAlertDto>());
         }
 
-        // estado atual
         var currentFamilies = await familyRepo.ListByRetreatAsync(cmd.RetreatId, ct);
-        var currentMembers  = await familyMemberRepo.ListByFamilyIdsAsync(currentFamilies.Select(f => f.Id), ct);
+        var familiesMap = currentFamilies.ToDictionary(f => f.Id, f => f);
         var lockedIds = currentFamilies.Where(f => f.IsLocked).Select(f => f.Id).ToHashSet();
 
-        // snapshot recebido
-        var snapByFamily = cmd.Families.ToDictionary(
-            f => f.FamilyId,
-            f => new {
-                Name = f.Name?.Trim(),
-                Regs = f.Members.Select(m => m.RegistrationId).ToHashSet(),
-                Positions = f.Members.OrderBy(m => m.Position).Select(m => (m.RegistrationId, m.Position)).ToList()
-            });
-
-        // valida tentativas de alterar famílias travadas
-        var lockedErrors = new List<FamilyErrorDto>();
-
-        foreach (var lockedId in lockedIds)
+        var unknownFamilies = cmd.Families.Where(f => !familiesMap.ContainsKey(f.FamilyId)).ToList();
+        if (unknownFamilies.Count > 0)
         {
-            var existing = currentFamilies.First(x => x.Id == lockedId);
-            var existingLinks = currentMembers.GetValueOrDefault(lockedId) ?? new List<FamilyMember>();
+            var errs = unknownFamilies.Select(f =>
+                new FamilyErrorDto("UNKNOWN_FAMILY", "FamilyId não pertence a este retiro.", f.FamilyId, Array.Empty<Guid>())
+            ).ToArray();
 
-            var existingRegs = existingLinks.Select(l => l.RegistrationId).ToHashSet();
-            var existingPositions = existingLinks.OrderBy(l => l.Position).Select(l => (l.RegistrationId, l.Position)).ToList();
-
-            if (!snapByFamily.TryGetValue(lockedId, out var snap))
-            {
-                lockedErrors.Add(new FamilyErrorDto(
-                    Code: "FAMILY_LOCKED",
-                    Message: "Família bloqueada não pode ser removida ou alterada.",
-                    FamilyId: lockedId,
-                    RegistrationIds: Array.Empty<Guid>()));
-                continue;
-            }
-
-            var nameChanged = !string.Equals(snap.Name ?? (string)existing.Name, (string)existing.Name, StringComparison.Ordinal);
-            var membersChanged = !existingRegs.SetEquals(snap.Regs);
-            var positionsChanged = !existingPositions.SequenceEqual(snap.Positions);
-
-            if (nameChanged || membersChanged || positionsChanged)
-            {
-                lockedErrors.Add(new FamilyErrorDto(
-                    Code: "FAMILY_LOCKED",
-                    Message: "Família bloqueada não pode ser alterada.",
-                    FamilyId: lockedId,
-                    RegistrationIds: snap.Regs.ToList()));
-            }
+            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errs, Array.Empty<FamilyAlertDto>());
         }
+
+        var lockedErrors = cmd.Families
+            .Where(f => lockedIds.Contains(f.FamilyId))
+            .Select(f => new FamilyErrorDto(
+                "FAMILY_LOCKED",
+                $"Família '{familiesMap[f.FamilyId].Name}' está bloqueada para edição.",
+                f.FamilyId,
+                f.Members.Select(m => m.RegistrationId).ToArray()
+            ))
+            .ToList();
 
         if (lockedErrors.Count > 0)
         {
@@ -96,19 +73,6 @@ public sealed class UpdateFamiliesHandler(
                 Errors: lockedErrors,
                 Warnings: Array.Empty<FamilyAlertDto>());
         }
-        
-        var families = currentFamilies;
-        var familiesMap = families.ToDictionary(f => f.Id, f => f);
-
-        var unknownFamilies = cmd.Families.Where(f => !familiesMap.ContainsKey(f.FamilyId)).ToList();
-        if (unknownFamilies.Count > 0)
-        {
-            var errs = unknownFamilies.Select(f =>
-                new FamilyErrorDto("UNKNOWN_FAMILY", "FamilyId não pertence a este retiro.", f.FamilyId, Array.Empty<Guid>())
-            ).ToList();
-
-            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errs, Array.Empty<FamilyAlertDto>());
-        }
 
         var allRegIds = cmd.Families.SelectMany(f => f.Members.Select(m => m.RegistrationId)).Distinct().ToArray();
         var regsMap = await registrationRepo.GetMapByIdsAsync(allRegIds, ct);
@@ -116,130 +80,269 @@ public sealed class UpdateFamiliesHandler(
         var missingRegs = allRegIds.Where(id => !regsMap.ContainsKey(id)).ToArray();
         if (missingRegs.Length > 0)
         {
-            var errs = new List<FamilyErrorDto> {
-                new FamilyErrorDto("UNKNOWN_REGISTRATION", "Alguns RegistrationIds não existem.", null, missingRegs)
-            };
-            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errs, Array.Empty<FamilyAlertDto>());
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: new[] { new FamilyErrorDto("UNKNOWN_REGISTRATION", "Alguns RegistrationIds não existem.", null, missingRegs) },
+                Warnings: Array.Empty<FamilyAlertDto>());
         }
 
         var wrongRetreat = regsMap.Values.Where(r => r.RetreatId != cmd.RetreatId).Select(r => r.Id).ToArray();
         if (wrongRetreat.Length > 0)
         {
-            var errs = new List<FamilyErrorDto> {
-                new FamilyErrorDto("WRONG_RETREAT", "Alguns participantes pertencem a outro retiro.", null, wrongRetreat)
-            };
-            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errs, Array.Empty<FamilyAlertDto>());
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: new[] { new FamilyErrorDto("WRONG_RETREAT", "Alguns participantes pertencem a outro retiro.", null, wrongRetreat) },
+                Warnings: Array.Empty<FamilyAlertDto>());
         }
 
-        var errors = new List<FamilyErrorDto>();
-        var warnings = new List<FamilyAlertDto>();
+        var colorErrors = new List<FamilyErrorDto>();
+        var colorUsage = new Dictionary<string, Guid>();
+
+        var editedFamilyIds = cmd.Families.Select(f => f.FamilyId).ToHashSet();
+        foreach (var family in currentFamilies.Where(f => !editedFamilyIds.Contains(f.Id)))
+        {
+            colorUsage[family.Color.Name.ToLowerInvariant()] = family.Id;
+        }
 
         foreach (var f in cmd.Families)
         {
-            if (f.Capacity != FixedCapacity)
+            var colorNormalized = f.ColorName.Trim().ToLowerInvariant();
+            
+            try
             {
-                errors.Add(new FamilyErrorDto(
-                    Code: "CAPACITY_INVALID",
-                    Message: $"Capacidade deve ser {FixedCapacity} no MVP.",
-                    FamilyId: f.FamilyId,
-                    RegistrationIds: Array.Empty<Guid>()));
+                FamilyColor.FromName(f.ColorName);
+            }
+            catch (ArgumentException)
+            {
+                colorErrors.Add(new FamilyErrorDto(
+                    "INVALID_COLOR",
+                    $"Cor '{f.ColorName}' não está disponível na lista predefinida.",
+                    f.FamilyId,
+                    Array.Empty<Guid>()));
+                continue;
             }
 
-            if (f.Members.Count != f.Capacity)
+            if (colorUsage.TryGetValue(colorNormalized, out var otherFamilyId) && otherFamilyId != f.FamilyId)
             {
-                errors.Add(new FamilyErrorDto(
-                    Code: "CAPACITY_MISMATCH",
-                    Message: $"Família deve possuir exatamente {f.Capacity} membros.",
-                    FamilyId: f.FamilyId,
-                    RegistrationIds: f.Members.Select(m => m.RegistrationId).ToArray()));
+                colorErrors.Add(new FamilyErrorDto(
+                    "DUPLICATE_COLOR",
+                    $"Cor '{f.ColorName}' já está sendo usada por outra família.",
+                    f.FamilyId,
+                    Array.Empty<Guid>()));
             }
-
-            var regs = f.Members.Select(m => regsMap[m.RegistrationId]).ToList();
-            var maleCount = regs.Count(r => r.Gender == Gender.Male);
-            var femaleCount = regs.Count - maleCount;
-            if (maleCount != 2 || femaleCount != 2)
+            else
             {
-                errors.Add(new FamilyErrorDto(
-                    Code: "COMPOSITION_INVALID",
-                    Message: "Composição obrigatória: 2 homens e 2 mulheres.",
-                    FamilyId: f.FamilyId,
-                    RegistrationIds: regs.Select(r => r.Id).ToArray()));
-            }
-
-            var regsArr = regs.ToArray();
-            for (int i = 0; i < regsArr.Length; i++)
-            for (int j = i + 1; j < regsArr.Length; j++)
-            {
-                var ri = regsArr[i];
-                var rj = regsArr[j];
-
-                if (await relationshipService.AreSpousesAsync(ri.Id, rj.Id, ct)
-                 || await relationshipService.AreDirectRelativesAsync(ri.Id, rj.Id, ct))
-                {
-                    errors.Add(new FamilyErrorDto(
-                        Code: "RELATIONSHIP_CONFLICT",
-                        Message: "Parentes/cônjuges não podem ficar na mesma família.",
-                        FamilyId: f.FamilyId,
-                        RegistrationIds: new[] { ri.Id, rj.Id }));
-                }
-
-                var lastI = ExtractLastName((string)ri.Name);
-                var lastJ = ExtractLastName((string)rj.Name);
-                if (!string.IsNullOrWhiteSpace(lastI)
-                 && NormalizeSurname(lastI) == NormalizeSurname(lastJ))
-                {
-                    errors.Add(new FamilyErrorDto(
-                        Code: "SAME_SURNAME",
-                        Message: $"Sobrenome repetido na mesma família: '{NormalizeSurname(lastI)}'.",
-                        FamilyId: f.FamilyId,
-                        RegistrationIds: new[] { ri.Id, rj.Id }));
-                }
-            }
-
-            var cityGroups = regs
-                .GroupBy(r => (r.City ?? string.Empty).Trim().ToLowerInvariant())
-                .Where(g => !string.IsNullOrWhiteSpace(g.Key) && g.Count() > 1);
-
-            foreach (var g in cityGroups)
-            {
-                warnings.Add(new FamilyAlertDto(
-                    Severity: "warning",
-                    Code: "SAME_CITY",
-                    Message: $"Múltiplos membros da mesma cidade: '{g.Key}'.",
-                    RegistrationIds: g.Select(r => r.Id).ToList()));
+                colorUsage[colorNormalized] = f.FamilyId;
             }
         }
 
-        if (errors.Count > 0)
-            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), errors, warnings);
+        if (colorErrors.Count > 0)
+        {
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: colorErrors,
+                Warnings: Array.Empty<FamilyAlertDto>());
+        }
+
+        var nameErrors = new List<FamilyErrorDto>();
+        var nameUsage = new Dictionary<string, Guid>();
+
+        foreach (var family in currentFamilies.Where(f => !editedFamilyIds.Contains(f.Id)))
+        {
+            nameUsage[((string)family.Name).ToLowerInvariant()] = family.Id;
+        }
+
+        foreach (var f in cmd.Families)
+        {
+            var nameNormalized = f.Name.Trim().ToLowerInvariant();
+
+            if (nameUsage.TryGetValue(nameNormalized, out var otherFamilyId) && otherFamilyId != f.FamilyId)
+            {
+                nameErrors.Add(new FamilyErrorDto(
+                    "DUPLICATE_NAME",
+                    $"Já existe outra família com o nome '{f.Name}'.",
+                    f.FamilyId,
+                    Array.Empty<Guid>()));
+            }
+            else
+            {
+                nameUsage[nameNormalized] = f.FamilyId;
+            }
+        }
+
+        if (nameErrors.Count > 0)
+        {
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: nameErrors,
+                Warnings: Array.Empty<FamilyAlertDto>());
+        }
+        
+        var godparentErrors = new List<FamilyErrorDto>();
+
+        foreach (var f in cmd.Families)
+        {
+            var memberIds = f.Members.Select(m => m.RegistrationId).ToHashSet();
+            var padrinhos = f.PadrinhoIds.Distinct().ToList();
+            var madrinhas = f.MadrinhaIds.Distinct().ToList();
+
+            var invalidPadrinhos = padrinhos.Where(id => !memberIds.Contains(id)).ToList();
+            if (invalidPadrinhos.Count > 0)
+            {
+                godparentErrors.Add(new FamilyErrorDto(
+                    "INVALID_PADRINHO",
+                    "Todos os padrinhos devem ser membros da família.",
+                    f.FamilyId,
+                    invalidPadrinhos));
+            }
+            
+            var invalidMadrinhas = madrinhas.Where(id => !memberIds.Contains(id)).ToList();
+            if (invalidMadrinhas.Count > 0)
+            {
+                godparentErrors.Add(new FamilyErrorDto(
+                    "INVALID_MADRINHA",
+                    "Todas as madrinhas devem ser membros da família.",
+                    f.FamilyId,
+                    invalidMadrinhas));
+            }
+
+            var overlap = padrinhos.Intersect(madrinhas).ToList();
+            if (overlap.Count > 0)
+            {
+                godparentErrors.Add(new FamilyErrorDto(
+                    "GODPARENT_OVERLAP",
+                    "Um membro não pode ser padrinho E madrinha.",
+                    f.FamilyId,
+                    overlap));
+            }
+
+            foreach (var id in padrinhos.Where(memberIds.Contains))
+            {
+                if (regsMap[id].Gender != Gender.Male)
+                {
+                    godparentErrors.Add(new FamilyErrorDto(
+                        "INVALID_PADRINHO_GENDER",
+                        $"Padrinho '{(string)regsMap[id].Name}' deve ser do gênero masculino.",  
+                        f.FamilyId,
+                        new[] { id }));
+                }
+            }
+
+            foreach (var id in madrinhas.Where(memberIds.Contains))
+            {
+                if (regsMap[id].Gender != Gender.Female)
+                {
+                    godparentErrors.Add(new FamilyErrorDto(
+                        "INVALID_MADRINHA_GENDER",
+                        $"Madrinha '{(string)regsMap[id].Name}' deve ser do gênero feminino.",  
+                        f.FamilyId,
+                        new[] { id }));
+                }
+            }
+
+        }
+
+        if (godparentErrors.Count > 0)
+        {
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: godparentErrors,
+                Warnings: Array.Empty<FamilyAlertDto>());
+        }
+        
+        var warnings = new List<FamilyAlertDto>();
+        var allMembersForComparison = await familyMemberRepo.ListByRetreatAsync(cmd.RetreatId, ct);
+        var sizesByFamilyId = allMembersForComparison.GroupBy(m => m.FamilyId).ToDictionary(g => g.Key, g => g.Count());
+
+        foreach (var f in cmd.Families)
+        {
+            var registrations = f.Members
+                .Select(m => regsMap[m.RegistrationId])
+                .ToList();
+
+            var alerts = FamilyAlertsCalculator.CalculateWithGodparents(
+                registrations,
+                f.PadrinhoIds,
+                f.MadrinhaIds,
+                f.Capacity
+            );
+
+            var otherSizes = cmd.Families
+                .Where(other => other.FamilyId != f.FamilyId)
+                .Select(other => other.Members.Count)
+                .Concat(currentFamilies
+                    .Where(cf => !editedFamilyIds.Contains(cf.Id))
+                    .Select(cf => sizesByFamilyId.GetValueOrDefault(cf.Id, 0)))
+                .Where(s => s > 0)
+                .ToList();
+
+            if (otherSizes.Count > 0)
+            {
+                var sizeAlerts = FamilyAlertsCalculator.CheckFamilySizeComparison(
+                    f.Members.Count,
+                    otherSizes,
+                    registrations.Select(r => r.Id).ToList()
+                );
+                alerts.AddRange(sizeAlerts);
+            }
+
+            warnings.AddRange(alerts.Select(a => new FamilyAlertDto(
+                a.Severity,
+                a.Code,
+                a.Message,
+                a.RegistrationIds
+            )));
+        }
 
         if (warnings.Count > 0 && !cmd.IgnoreWarnings)
-            return new UpdateFamiliesResponse(retreat.FamiliesVersion, Array.Empty<FamilyDto>(), Array.Empty<FamilyErrorDto>(), warnings);
-
+        {
+            return new UpdateFamiliesResponse(
+                Version: retreat.FamiliesVersion,
+                Families: Array.Empty<FamilyDto>(),
+                Errors: Array.Empty<FamilyErrorDto>(),
+                Warnings: warnings);
+        }
+        
         foreach (var f in cmd.Families)
         {
-            var family = currentFamilies.First(x => x.Id == f.FamilyId);
-
-            family.Rename(new Domain.ValueObjects.FamilyName(f.Name));
+            var family = familiesMap[f.FamilyId];
+            
+            family.Rename(new FamilyName(f.Name.Trim()));
             family.SetCapacity(f.Capacity);
+            family.ChangeColor(FamilyColor.FromName(f.ColorName));
+
             await familyRepo.UpdateAsync(family, ct);
             
             await familyMemberRepo.RemoveByFamilyIdAsync(f.FamilyId, ct);
             
-            await uow.SaveChangesAsync(ct); 
-            
             var ordered = f.Members.OrderBy(m => m.Position).ToList();
-            var newLinks = new List<FamilyMember>(ordered.Count);
+            var newLinks = new List<FamilyMember>();
+
+            var padrinhoSet = f.PadrinhoIds.ToHashSet();
+            var madrinhaSet = f.MadrinhaIds.ToHashSet();
+
             for (int k = 0; k < ordered.Count; k++)
             {
                 var m = ordered[k];
-                newLinks.Add(new FamilyMember(cmd.RetreatId, f.FamilyId, m.RegistrationId, position: k));
+                newLinks.Add(new FamilyMember(
+                    cmd.RetreatId,
+                    f.FamilyId,
+                    m.RegistrationId,
+                    position: k,
+                    isPadrinho: padrinhoSet.Contains(m.RegistrationId),
+                    isMadrinha: madrinhaSet.Contains(m.RegistrationId)
+                ));
             }
 
             if (newLinks.Count > 0)
                 await familyMemberRepo.AddRangeAsync(newLinks, ct);
         }
-
+        
         retreat.BumpFamiliesVersion();
         await retreatRepo.UpdateAsync(retreat, ct);
         await uow.SaveChangesAsync(ct);
@@ -249,54 +352,92 @@ public sealed class UpdateFamiliesHandler(
         var allFinalIds = membersByFamily.Values.SelectMany(v => v).Select(m => m.RegistrationId).Distinct().ToArray();
         var regsFinalMap = await registrationRepo.GetMapByIdsAsync(allFinalIds, ct);
 
-        var familyDtos = new List<FamilyDto>(familiesFinal.Count);
-        foreach (var f in familiesFinal)
+        var sizesById = membersByFamily.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Count);
+
+        var familyDtos = familiesFinal.Select(f =>
         {
             membersByFamily.TryGetValue(f.Id, out var links);
             links ??= new List<FamilyMember>();
 
-            var memberViews = links
+            var memberDtos = links
                 .OrderBy(l => l.Position)
                 .Select(l =>
                 {
                     var reg = regsFinalMap[l.RegistrationId];
-                    return new FamilyRead.MemberView(reg.Id, (string)reg.Name, reg.Gender, reg.City, l.Position);
+                    return new MemberDto(
+                        l.RegistrationId,
+                        (string)reg.Name,
+                        reg.Email?.Value ?? string.Empty,
+                        reg.Phone ?? string.Empty,
+                        reg.Gender.ToString(),
+                        reg.City ?? string.Empty,
+                        l.Position,
+                        l.IsPadrinho,
+                        l.IsMadrinha
+                    );
                 })
                 .ToList();
 
-            var (total, male, female, remaining) = FamilyRead.Metrics(f.Capacity, memberViews);
-            var alerts = FamilyRead.Alerts(memberViews)
-                .Select(a => new FamilyAlertDto(a.Severity, a.Code, a.Message, a.RegistrationIds))
+            var maleCount = memberDtos.Count(m => m.Gender.Equals("Male", StringComparison.OrdinalIgnoreCase));
+            var femaleCount = memberDtos.Count - maleCount;
+            var totalMembers = memberDtos.Count;
+            var remaining = Math.Max(0, f.Capacity - totalMembers);
+
+            var malePercentage = totalMembers > 0 ? (maleCount * 100.0m / totalMembers) : 0m;
+            var femalePercentage = totalMembers > 0 ? (femaleCount * 100.0m / totalMembers) : 0m;
+            
+            var registrations = links
+                .Select(l => regsFinalMap[l.RegistrationId])
                 .ToList();
 
-            familyDtos.Add(new FamilyDto(
+            var padrinhos = links.Where(l => l.IsPadrinho).Select(l => l.RegistrationId).ToList();
+            var madrinhas = links.Where(l => l.IsMadrinha).Select(l => l.RegistrationId).ToList();
+
+            var finalAlerts = FamilyAlertsCalculator.CalculateWithGodparents(
+                registrations,
+                padrinhos,
+                madrinhas,
+                f.Capacity
+            );
+
+            var otherFinalSizes = familiesFinal
+                .Where(of => of.Id != f.Id)
+                .Select(of => sizesById.GetValueOrDefault(of.Id, 0))
+                .Where(s => s > 0)
+                .ToList();
+
+            if (otherFinalSizes.Count > 0)
+            {
+                var finalSizeAlerts = FamilyAlertsCalculator.CheckFamilySizeComparison(
+                    totalMembers,
+                    otherFinalSizes,
+                    registrations.Select(r => r.Id).ToList()
+                );
+                finalAlerts.AddRange(finalSizeAlerts);
+            }
+
+            return new FamilyDto(
                 f.Id,
                 (string)f.Name,
+                f.Color.Name,
+                f.Color.HexCode,
                 f.Capacity,
-                total,
-                male,
-                female,
+                totalMembers,
+                maleCount,
+                femaleCount,
+                malePercentage,
+                femalePercentage,
                 remaining,
-                memberViews.Select(v => new MemberDto(v.RegistrationId, v.Name, v.Gender.ToString(), v.City, v.Position)).ToList(),
-                alerts
-            ));
-        }
+                f.IsLocked,
+                memberDtos,
+                finalAlerts.Select(a => new FamilyAlertDto(a.Severity, a.Code, a.Message, a.RegistrationIds)).ToList()
+            );
+        }).ToList();
 
-        return new UpdateFamiliesResponse(retreat.FamiliesVersion, familyDtos, Array.Empty<FamilyErrorDto>(), Array.Empty<FamilyAlertDto>());
-    }
-
-    private static string ExtractLastName(string fullName)
-    {
-        if (string.IsNullOrWhiteSpace(fullName)) return string.Empty;
-        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length == 0 ? string.Empty : parts[^1];
-    }
-
-    private static string NormalizeSurname(string surname)
-    {
-        if (string.IsNullOrWhiteSpace(surname)) return string.Empty;
-        var s = surname.Trim().ToLowerInvariant();
-        if (s is "de" or "da" or "do" or "dos" or "das") return string.Empty;
-        return s;
+        return new UpdateFamiliesResponse(
+            Version: retreat.FamiliesVersion,
+            Families: familyDtos,
+            Errors: Array.Empty<FamilyErrorDto>(),
+            Warnings: warnings);
     }
 }

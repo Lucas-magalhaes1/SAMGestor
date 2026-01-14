@@ -1,6 +1,4 @@
 using MediatR;
-using System;
-using System.Collections.Generic;
 
 namespace SAMGestor.Application.Features.Families.Update;
 
@@ -13,9 +11,12 @@ public sealed record UpdateFamiliesCommand(
 
 public sealed record UpdateFamilyDto(
     Guid FamilyId,
-    string Name,
-    int Capacity,
-    IReadOnlyList<UpdateMemberDto> Members
+    string Name,                            
+    string ColorName,                      
+    int Capacity,                          
+    IReadOnlyList<UpdateMemberDto> Members,
+    IReadOnlyList<Guid> PadrinhoIds,      
+    IReadOnlyList<Guid> MadrinhaIds      
 );
 
 public sealed record UpdateMemberDto(
