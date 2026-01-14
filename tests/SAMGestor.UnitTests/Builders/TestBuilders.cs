@@ -21,7 +21,7 @@ public static class TestBuilders
             "11999999999", new DateOnly(1990,1,1), g, "SP", st, retreatId);
 
     public static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4)
-        => new Family(new FamilyName(name), retreatId, capacity);
+        => new Family(new FamilyName(name), retreatId, capacity, FamilyColor.FromName("Azul"));
 
     public static FamilyMember Link(Guid retreatId, Guid familyId, Guid regId, int pos)
         => new FamilyMember(retreatId, familyId, regId, pos);
