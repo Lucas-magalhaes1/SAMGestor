@@ -34,9 +34,10 @@ public sealed class ResetFamiliesHandlerTests
             new Percentage(50)
         );
 
-    private static Family NewFamily(Guid retreatId, string name = "Família X", int capacity = 4, bool locked = false)
+    private static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4, bool locked = false)
     {
-        var fam = new Family(new FamilyName(name), retreatId, capacity);
+        var color = FamilyColor.FromName("Azul"); 
+        var fam = new Family(new FamilyName(name), retreatId, capacity, color);
         if (locked) fam.Lock();
         return fam;
     }
@@ -197,7 +198,7 @@ public sealed class ResetFamiliesHandlerTests
 
         await FluentActions.Invoking(() => handler.Handle(cmd, default))
             .Should().ThrowAsync<BusinessRuleException>()
-            .WithMessage("*bloqueadas*"); 
+            .WithMessage("*bloqueada*"); 
     }
 
     [Fact]

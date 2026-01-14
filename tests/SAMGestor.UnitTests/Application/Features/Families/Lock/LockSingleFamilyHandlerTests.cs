@@ -30,8 +30,13 @@ public sealed class LockSingleFamilyHandlerUnitTests
             new Percentage(50),
             new Percentage(50));
 
-    private static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4)
-        => new Family(new FamilyName(name), retreatId, capacity);
+    private static Family NewFamily(Guid retreatId, string name = "Família 1", int capacity = 4, bool locked = false)
+    {
+        var color = FamilyColor.FromName("Azul"); 
+        var fam = new Family(new FamilyName(name), retreatId, capacity, color);
+        if (locked) fam.Lock();
+        return fam;
+    }
 
     [Fact]
     public async Task Lock_true_trava_familia_e_bumpa_versao()

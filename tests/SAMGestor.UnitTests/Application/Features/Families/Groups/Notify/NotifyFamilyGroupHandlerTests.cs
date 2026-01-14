@@ -30,7 +30,7 @@ public class NotifyFamilyGroupHandlerTests
 
     private static Family Fam(Guid retreatId, string name, int capacity = 4, bool locked = false)
     {
-        var f = new Family(new FamilyName(name), retreatId, capacity);
+        var f = new Family(new FamilyName(name), retreatId, capacity, FamilyColor.FromName("Azul"));
         if (locked) f.Lock();
         return f;
     }
@@ -211,17 +211,22 @@ public class NotifyFamilyGroupHandlerTests
     public async Task ForceRecreate_false_com_GroupLink_presente_retorna_skipped_sem_publicar()
     {
         var retreat = OpenRetreat(locked: true);
-        var family  = Fam(retreat.Id, "Fam A", capacity: 2);
+        var family  = Fam(retreat.Id, "Fam A", capacity: 4); // ✓ Ajustado para 4
 
-       
-        var r1 = NewReg(retreat.Id, "Ana Silva",  Gender.Female, "a@mail.com");
-        var r2 = NewReg(retreat.Id, "Diego Rocha", Gender.Male,   "d@mail.com");
+        var r1 = NewReg(retreat.Id, "Ana Silva",    Gender.Female, "a@mail.com");
+        var r2 = NewReg(retreat.Id, "Diego Rocha",  Gender.Male,   "d@mail.com");
+        var r3 = NewReg(retreat.Id, "Carla Mendes", Gender.Female, "c@mail.com"); // ✓ Novo
+        var r4 = NewReg(retreat.Id, "Eduardo Reis", Gender.Male,   "e@mail.com"); // ✓ Novo
 
         var links = new List<FamilyMember> {
             Link(retreat.Id, family.Id, r1.Id, 0),
             Link(retreat.Id, family.Id, r2.Id, 1),
+            Link(retreat.Id, family.Id, r3.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, family.Id, r4.Id, 3), // ✓ 4º membro
         };
-        var regs = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2 };
+        var regs = new Dictionary<Guid, Registration> { 
+            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 
+        };
         
         family.SetGroup("https://chat/abc", "ext-1", "whatsapp", DateTimeOffset.UtcNow);
         var initialVersion = family.GroupVersion;
@@ -243,16 +248,22 @@ public class NotifyFamilyGroupHandlerTests
     public async Task Sucesso_quando_retreat_locked_familia_completa_publica_evento_marca_creating_e_incrementa_versao()
     {
         var retreat = OpenRetreat(locked: true);
-        var family  = Fam(retreat.Id, "Fam B", capacity: 2);
+        var family  = Fam(retreat.Id, "Fam B", capacity: 4); // ✓ Ajustado para 4
 
         var r1 = NewReg(retreat.Id, "Beatriz Souza", Gender.Female, "b@mail.com");
         var r2 = NewReg(retreat.Id, "Carlos Pires",  Gender.Male,   "c@mail.com");
+        var r3 = NewReg(retreat.Id, "Diana Costa",   Gender.Female, "d@mail.com"); // ✓ Novo
+        var r4 = NewReg(retreat.Id, "Fabio Alves",   Gender.Male,   "f@mail.com"); // ✓ Novo
 
         var links = new List<FamilyMember> {
+            Link(retreat.Id, family.Id, r2.Id, 0), // ✓ Mantendo ordem original (r2 primeiro)
             Link(retreat.Id, family.Id, r1.Id, 1),
-            Link(retreat.Id, family.Id, r2.Id, 0),
+            Link(retreat.Id, family.Id, r3.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, family.Id, r4.Id, 3), // ✓ 4º membro
         };
-        var regs = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2 };
+        var regs = new Dictionary<Guid, Registration> { 
+            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 
+        };
 
         var initialVersion = family.GroupVersion;
 
@@ -274,7 +285,7 @@ public class NotifyFamilyGroupHandlerTests
         captured!.RetreatId.Should().Be(retreat.Id);
         captured.FamilyId.Should().Be(family.Id);
         captured.ForceRecreate.Should().BeFalse();
-        captured.Members.Select(m => m.RegistrationId).Should().ContainInOrder(r2.Id, r1.Id);
+        captured.Members.Select(m => m.RegistrationId).Should().ContainInOrder(r2.Id, r1.Id, r3.Id, r4.Id); // ✓ Ordem atualizada
         
         family.GroupStatus.Should().Be(GroupStatus.Creating);
         family.GroupVersion.Should().Be(initialVersion + 1);
@@ -291,16 +302,22 @@ public class NotifyFamilyGroupHandlerTests
     public async Task Sucesso_quando_apenas_lock_da_familia_mesmo_sem_lock_global()
     {
         var retreat = OpenRetreat(locked: false); 
-        var family  = Fam(retreat.Id, "Fam C", capacity: 2, locked: true); 
+        var family  = Fam(retreat.Id, "Fam C", capacity: 4, locked: true); // ✓ Ajustado para 4
 
-        var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
-        var r2 = NewReg(retreat.Id, "João Lima", Gender.Male,   "j@mail.com");
+        var r1 = NewReg(retreat.Id, "Ana Silva",     Gender.Female, "a@mail.com");
+        var r2 = NewReg(retreat.Id, "João Lima",     Gender.Male,   "j@mail.com");
+        var r3 = NewReg(retreat.Id, "Bianca Santos", Gender.Female, "b@mail.com"); // ✓ Novo
+        var r4 = NewReg(retreat.Id, "Lucas Rocha",   Gender.Male,   "l@mail.com"); // ✓ Novo
 
         var links = new List<FamilyMember> {
             Link(retreat.Id, family.Id, r1.Id, 0),
             Link(retreat.Id, family.Id, r2.Id, 1),
+            Link(retreat.Id, family.Id, r3.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, family.Id, r4.Id, 3), // ✓ 4º membro
         };
-        var regs = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2 };
+        var regs = new Dictionary<Guid, Registration> { 
+            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 
+        };
 
         var sut = BuildHandler(retreat, family, links, regs, out var retRepo, out var famRepo, out var fmRepo, out var regRepo, out var bus, out var uow);
 
@@ -314,16 +331,22 @@ public class NotifyFamilyGroupHandlerTests
     public async Task ForceRecreate_true_publica_evento_mesmo_com_GroupLink()
     {
         var retreat = OpenRetreat(locked: true);
-        var family  = Fam(retreat.Id, "Fam D", capacity: 2);
+        var family  = Fam(retreat.Id, "Fam D", capacity: 4); // ✓ Ajustado para 4
 
-        var r1 = NewReg(retreat.Id, "Ana Silva",   Gender.Female, "a@mail.com");
-        var r2 = NewReg(retreat.Id, "Pedro Souza", Gender.Male,   "p@mail.com");
+        var r1 = NewReg(retreat.Id, "Ana Silva",    Gender.Female, "a@mail.com");
+        var r2 = NewReg(retreat.Id, "Pedro Souza",  Gender.Male,   "p@mail.com");
+        var r3 = NewReg(retreat.Id, "Clara Nunes",  Gender.Female, "c@mail.com"); // ✓ Novo
+        var r4 = NewReg(retreat.Id, "Rafael Dias",  Gender.Male,   "r@mail.com"); // ✓ Novo
 
         var links = new List<FamilyMember> {
             Link(retreat.Id, family.Id, r1.Id, 0),
             Link(retreat.Id, family.Id, r2.Id, 1),
+            Link(retreat.Id, family.Id, r3.Id, 2), // ✓ 3º membro
+            Link(retreat.Id, family.Id, r4.Id, 3), // ✓ 4º membro
         };
-        var regs = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2 };
+        var regs = new Dictionary<Guid, Registration> { 
+            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 
+        };
         
         family.SetGroup("https://chat/exists", "ext-7", "whatsapp", DateTimeOffset.UtcNow);
         var prevVersion = family.GroupVersion;

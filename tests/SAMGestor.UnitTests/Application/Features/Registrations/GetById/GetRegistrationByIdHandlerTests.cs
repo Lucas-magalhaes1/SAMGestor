@@ -132,7 +132,8 @@ public class GetRegistrationByIdHandlerTests
         var fam = new Family(
             new FamilyName("Souza Family"),
             retreatId,
-            capacity: 5
+            capacity: 5,
+            FamilyColor.FromName("Azul")
         );
 
         var link = new FamilyMember(

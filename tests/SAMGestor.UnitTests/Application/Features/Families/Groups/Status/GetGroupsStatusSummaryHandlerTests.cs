@@ -24,7 +24,7 @@ public class GetGroupsStatusSummaryHandlerTests
 
     private static Family Fam(Guid retreatId, string name, GroupStatus status)
     {
-        var f = new Family(new FamilyName(name), retreatId, 4);
+        var f = new Family(new FamilyName(name), retreatId, 4, FamilyColor.FromName("Azul"));
         switch (status)
         {
             case GroupStatus.Creating: f.MarkGroupCreating(); break;

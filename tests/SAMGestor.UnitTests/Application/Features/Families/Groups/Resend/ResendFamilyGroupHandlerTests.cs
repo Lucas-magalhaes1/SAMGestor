@@ -25,7 +25,7 @@ public class ResendFamilyGroupHandlerTests
             new Percentage(50), new Percentage(50));
 
     private static Family Fam(Guid retreatId, string name, int capacity = 4)
-        => new Family(new FamilyName(name), retreatId, capacity);
+        => new Family(new FamilyName(name), retreatId, capacity, FamilyColor.FromName("Azul"));
 
     private static Registration NewReg(Guid retreatId, string name, Gender g,
         string? email = null, string phone = "11999999999")
@@ -193,21 +193,23 @@ public class ResendFamilyGroupHandlerTests
     public async Task Sucesso_publica_evento_notify_com_membros_ordenados_e_groupLink_da_familia()
     {
         var retreat = OpenRetreat();
-        var family  = Fam(retreat.Id, "Fam OK", capacity: 3);
+        var family  = Fam(retreat.Id, "Fam OK", capacity: 4);
         family.SetGroup("https://chat/ok", "ext-1", "whatsapp", DateTimeOffset.UtcNow);
 
         var r1 = NewReg(retreat.Id, "Ana Silva",  Gender.Female, "a@mail.com", "1111111111");
         var r2 = NewReg(retreat.Id, "Bruno Lima", Gender.Male,   "b@mail.com",         "2222222222"); // email nulo permitido
         var r3 = NewReg(retreat.Id, "Carla Pires",Gender.Female, "c@mail.com", "3333333333");
-
+        var r4 = NewReg(retreat.Id, "Diego Rocha",Gender.Male,   "d@mail.com", "4444444444");
+        
         var links = new List<FamilyMember> {
             Link(retreat.Id, family.Id, r2.Id, 2),
             Link(retreat.Id, family.Id, r1.Id, 0),
             Link(retreat.Id, family.Id, r3.Id, 1),
+            Link(retreat.Id, family.Id, r4.Id, 3),
         };
 
         var regsMap = new Dictionary<Guid, Registration> {
-            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3
+            [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4
         };
 
         var sut = BuildHandler(
@@ -236,7 +238,7 @@ public class ResendFamilyGroupHandlerTests
         captured.GroupLink.Should().Be("https://chat/ok");
 
         captured.Members.Select(m => m.RegistrationId).Should()
-            .ContainInOrder(r1.Id, r3.Id, r2.Id); 
+            .ContainInOrder(r1.Id, r3.Id, r2.Id, r4.Id); 
 
         captured.Members[0].Name.Should().Be((string)r1.Name);
         captured.Members[1].Email.Should().Be("c@mail.com");

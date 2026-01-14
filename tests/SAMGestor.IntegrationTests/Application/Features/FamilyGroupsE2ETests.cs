@@ -220,14 +220,14 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         await ch.BasicPublishAsync(exchange, routing, false, props, payload);
     }
 
-    private async Task WaitUntilFamiliesAppearAsync(Guid retreatId, int expectedCount, int capacity, bool replaceExisting, bool fillExistingFirst = false, int timeoutMs = 12_000)
+    private async Task WaitUntilFamiliesAppearAsync(Guid retreatId, int expectedCount, int membersPerFamily, bool replaceExisting, bool fillExistingFirst = false, int timeoutMs = 12_000)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
             var gen = await _client.PostAsJsonAsync(
                 $"/api/retreats/{retreatId}/families/generate",
-                new { capacity, replaceExisting, fillExistingFirst }
+                new { membersPerFamily, replaceExisting, fillExistingFirst }
             );
             gen.StatusCode.Should().Be(HttpStatusCode.OK, await gen.Content.ReadAsStringAsync());
 
@@ -280,7 +280,7 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         var r4 = await CreateRegistrationAsync(NewRegistrationBody(retreatId, "Beatriz Lima", "28625587887", "f2@f.com", GenderFemale));
 
         await PublishPaymentConfirmedAsync(new[] { r1, r2, r3, r4 });
-        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, capacity: 4, replaceExisting: true);
+        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, membersPerFamily: 4, replaceExisting: true);
 
         
         var list = await _client.GetAsync($"/api/retreats/{retreatId}/families");
@@ -326,7 +326,7 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         };
 
         await PublishPaymentConfirmedAsync(ids);
-        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, capacity: 4, replaceExisting: true);
+        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, membersPerFamily:4, replaceExisting: true);
 
         var list = await _client.GetAsync($"/api/retreats/{retreatId}/families");
         var famId = (await list.Content.ReadFromJsonAsync<GetAllFamiliesResponse>(Json))!.Families.First().FamilyId;
@@ -369,7 +369,7 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         };
 
         await PublishPaymentConfirmedAsync(ids);
-        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, capacity: 4, replaceExisting: true);
+        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, membersPerFamily: 4, replaceExisting: true);
 
         var list = await _client.GetAsync($"/api/retreats/{retreatId}/families");
         var famId = (await list.Content.ReadFromJsonAsync<GetAllFamiliesResponse>(Json))!.Families.First().FamilyId;
@@ -411,7 +411,7 @@ public class FamilyGroupsE2ETests(RabbitOutboxWebAppFactory factory)
         };
 
         await PublishPaymentConfirmedAsync(ids);
-        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, capacity: 4, replaceExisting: true);
+        await WaitUntilFamiliesAppearAsync(retreatId, expectedCount: 1, membersPerFamily: 4, replaceExisting: true);
 
         var list = await _client.GetAsync($"/api/retreats/{retreatId}/families");
         var famId = (await list.Content.ReadFromJsonAsync<GetAllFamiliesResponse>(Json))!.Families.First().FamilyId;

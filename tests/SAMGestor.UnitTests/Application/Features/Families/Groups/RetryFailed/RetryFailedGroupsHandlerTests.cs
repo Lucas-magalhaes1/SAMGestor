@@ -26,7 +26,7 @@ public class RetryFailedGroupsHandlerTests
 
     private static Family Fam(Guid retreatId, string name, int capacity = 4, GroupStatus status = GroupStatus.None)
     {
-        var f = new Family(new FamilyName(name), retreatId, capacity);
+        var f = new Family(new FamilyName(name), retreatId, capacity, FamilyColor.FromName("Azul"));
         switch (status)
         {
             case GroupStatus.Creating: f.MarkGroupCreating(); break;
@@ -131,7 +131,7 @@ public class RetryFailedGroupsHandlerTests
     public async Task Pula_quando_incompleta_skipped_incrementa_e_salva_uma_vez()
     {
         var retreat = OpenRetreat();
-        var failed = Fam(retreat.Id, "Fail 1", capacity: 3, status: GroupStatus.Failed);
+        var failed = Fam(retreat.Id, "Fail 1", capacity: 4, status: GroupStatus.Failed);
 
         var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
         var r2 = NewReg(retreat.Id, "Bruno Souza", Gender.Male, "b@mail.com");
@@ -167,7 +167,7 @@ public class RetryFailedGroupsHandlerTests
     public async Task Pula_quando_sem_entrada_em_linksByFamily_equivale_a_zero_membros()
     {
         var retreat = OpenRetreat();
-        var failed = Fam(retreat.Id, "Fail 2", capacity: 2, status: GroupStatus.Failed);
+        var failed = Fam(retreat.Id, "Fail 2", capacity: 4, status: GroupStatus.Failed);
 
         var sut = BuildHandler(
             retreat,
@@ -189,88 +189,113 @@ public class RetryFailedGroupsHandlerTests
     }
 
     [Fact]
-    public async Task Sucesso_enfileira_todas_failed_completas_marca_creating_e_salva()
-    {
-        var retreat = OpenRetreat();
-        var f1 = Fam(retreat.Id, "Fail A", capacity: 2, status: GroupStatus.Failed);
-        var f2 = Fam(retreat.Id, "Fail B", capacity: 2, status: GroupStatus.Failed);
-        var other = Fam(retreat.Id, "Ok", capacity: 2, status: GroupStatus.Active);
+public async Task Sucesso_enfileira_todas_failed_completas_marca_creating_e_salva()
+{
+    var retreat = OpenRetreat();
+    var f1 = Fam(retreat.Id, "Fail A", capacity: 4, status: GroupStatus.Failed);
+    var f2 = Fam(retreat.Id, "Fail B", capacity: 4, status: GroupStatus.Failed);
+    var other = Fam(retreat.Id, "Ok", capacity: 4, status: GroupStatus.Active);
 
-        var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
-        var r2 = NewReg(retreat.Id, "Bea Souza", Gender.Female, "b@mail.com");
-        var r3 = NewReg(retreat.Id, "Caio Lima", Gender.Male, "c@mail.com");
-        var r4 = NewReg(retreat.Id, "Davi Rocha", Gender.Male, "d@mail.com");
+    var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com");
+    var r2 = NewReg(retreat.Id, "Bea Souza", Gender.Female, "b@mail.com");
+    var r3 = NewReg(retreat.Id, "Caio Lima", Gender.Male, "c@mail.com");
+    var r4 = NewReg(retreat.Id, "Davi Rocha", Gender.Male, "d@mail.com");
+    var r5 = NewReg(retreat.Id, "Eva Santos", Gender.Female, "e@mail.com");   // ✓ Novo
+    var r6 = NewReg(retreat.Id, "Felipe Costa", Gender.Male, "f@mail.com");   // ✓ Novo
+    var r7 = NewReg(retreat.Id, "Gina Alves", Gender.Female, "g@mail.com");   // ✓ Novo
+    var r8 = NewReg(retreat.Id, "Hugo Nunes", Gender.Male, "h@mail.com");     // ✓ Novo
 
-        var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
-            [f1.Id] = new() { Link(retreat.Id, f1.Id, r1.Id, 1), Link(retreat.Id, f1.Id, r2.Id, 0) },
-            [f2.Id] = new() { Link(retreat.Id, f2.Id, r3.Id, 0), Link(retreat.Id, f2.Id, r4.Id, 1) },
-            [other.Id] = new() { Link(retreat.Id, other.Id, r1.Id, 0), Link(retreat.Id, other.Id, r3.Id, 1) }
-        };
+    var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
+        [f1.Id] = new() { 
+            Link(retreat.Id, f1.Id, r2.Id, 0),  // posição 0
+            Link(retreat.Id, f1.Id, r1.Id, 1),  // posição 1
+            Link(retreat.Id, f1.Id, r5.Id, 2),  // ✓ 3º membro
+            Link(retreat.Id, f1.Id, r6.Id, 3)   // ✓ 4º membro
+        },
+        [f2.Id] = new() { 
+            Link(retreat.Id, f2.Id, r3.Id, 0),  // posição 0
+            Link(retreat.Id, f2.Id, r4.Id, 1),  // posição 1
+            Link(retreat.Id, f2.Id, r7.Id, 2),  // ✓ 3º membro
+            Link(retreat.Id, f2.Id, r8.Id, 3)   // ✓ 4º membro
+        },
+        [other.Id] = new() { 
+            Link(retreat.Id, other.Id, r1.Id, 0),  // posição 0
+            Link(retreat.Id, other.Id, r3.Id, 1),  // posição 1
+            Link(retreat.Id, other.Id, r2.Id, 2),  // ✓ 3º membro (reuso)
+            Link(retreat.Id, other.Id, r4.Id, 3)   // ✓ 4º membro (reuso)
+        }
+    };
 
-        var regsMap = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 };
+    var regsMap = new Dictionary<Guid, Registration> { 
+        [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4,
+        [r5.Id]=r5, [r6.Id]=r6, [r7.Id]=r7, [r8.Id]=r8  // ✓ Novos registros
+    };
 
-        var captured = new List<FamilyGroupCreateRequestedV1>();
+    var captured = new List<FamilyGroupCreateRequestedV1>();
 
-        var sut = BuildHandler(
-            retreat,
-            new List<Family> { f1, f2, other },
-            linksByFamily,
-            regsMap,
-            out var retRepo, out var famRepo, out var fmRepo, out var regRepo, out var bus, out var uow
-        );
+    var sut = BuildHandler(
+        retreat,
+        new List<Family> { f1, f2, other },
+        linksByFamily,
+        regsMap,
+        out var retRepo, out var famRepo, out var fmRepo, out var regRepo, out var bus, out var uow
+    );
 
-        bus.Setup(b => b.EnqueueAsync(
-                EventTypes.FamilyGroupCreateRequestedV1,
-                "sam.core",
-                It.IsAny<object>(),
-                null,
-                It.IsAny<CancellationToken>()))
-           .Callback<string, string, object, string?, CancellationToken>((t, s, data, tr, ct) =>
-           {
-               captured.Add((FamilyGroupCreateRequestedV1)data);
-           })
-           .Returns(Task.CompletedTask);
+    bus.Setup(b => b.EnqueueAsync(
+            EventTypes.FamilyGroupCreateRequestedV1,
+            "sam.core",
+            It.IsAny<object>(),
+            null,
+            It.IsAny<CancellationToken>()))
+       .Callback<string, string, object, string?, CancellationToken>((t, s, data, tr, ct) =>
+       {
+           captured.Add((FamilyGroupCreateRequestedV1)data);
+       })
+       .Returns(Task.CompletedTask);
 
-        var v1 = f1.GroupVersion;
-        var v2 = f2.GroupVersion;
+    var v1 = f1.GroupVersion;
+    var v2 = f2.GroupVersion;
 
-        var res = await sut.Handle(new RetryFailedGroupsCommand(retreat.Id), default);
+    var res = await sut.Handle(new RetryFailedGroupsCommand(retreat.Id), default);
 
-        res.TotalFailed.Should().Be(2);
-        res.Queued.Should().Be(2);
-        res.Skipped.Should().Be(0);
+    res.TotalFailed.Should().Be(2);
+    res.Queued.Should().Be(2);
+    res.Skipped.Should().Be(0);
 
-        captured.Should().HaveCount(2);
-        captured.All(e => e.ForceRecreate).Should().BeTrue();
-        captured.Select(e => e.FamilyId).Should().BeEquivalentTo(new[] { f1.Id, f2.Id });
+    captured.Should().HaveCount(2);
+    captured.All(e => e.ForceRecreate).Should().BeTrue();
+    captured.Select(e => e.FamilyId).Should().BeEquivalentTo(new[] { f1.Id, f2.Id });
 
-        f1.GroupStatus.Should().Be(GroupStatus.Creating);
-        f2.GroupStatus.Should().Be(GroupStatus.Creating);
-        f1.GroupVersion.Should().Be(v1 + 1);
-        f2.GroupVersion.Should().Be(v2 + 1);
+    f1.GroupStatus.Should().Be(GroupStatus.Creating);
+    f2.GroupStatus.Should().Be(GroupStatus.Creating);
+    f1.GroupVersion.Should().Be(v1 + 1);
+    f2.GroupVersion.Should().Be(v2 + 1);
 
-        famRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
+    famRepo.Verify(f => f.UpdateAsync(It.IsAny<Family>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+}
+
 
     [Fact]
     public async Task Evento_monta_membros_ordenados_por_position_e_email_nulo_eh_aceito()
     {
         var retreat = OpenRetreat();
-        var f = Fam(retreat.Id, "Fail M", capacity: 3, status: GroupStatus.Failed);
+        var f = Fam(retreat.Id, "Fail M", capacity: 4, status: GroupStatus.Failed);
 
         var r1 = NewReg(retreat.Id, "Ana Silva", Gender.Female, "a@mail.com", "111");
         var r2 = NewReg(retreat.Id, "Bruno Lima", Gender.Male, "b@mail.com", "222");
         var r3 = NewReg(retreat.Id, "Carla Pires", Gender.Female, "c@mail.com", "333");
+        var r4 = NewReg(retreat.Id, "Diego Rocha", Gender.Male, "d@mail.com", "444");
 
         var linksByFamily = new Dictionary<Guid, List<FamilyMember>> {
             [f.Id] = new() {
                 Link(retreat.Id, f.Id, r2.Id, 2),
                 Link(retreat.Id, f.Id, r1.Id, 0),
-                Link(retreat.Id, f.Id, r3.Id, 1)
+                Link(retreat.Id, f.Id, r3.Id, 1),
+                Link(retreat.Id, f.Id, r4.Id, 3)
             }
         };
-        var regsMap = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3 };
+        var regsMap = new Dictionary<Guid, Registration> { [r1.Id]=r1, [r2.Id]=r2, [r3.Id]=r3, [r4.Id]=r4 };
 
         var sut = BuildHandler(
             retreat,

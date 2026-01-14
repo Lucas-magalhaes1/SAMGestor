@@ -24,7 +24,7 @@ public class ListFamiliesByGroupStatusHandlerTests
 
     private static Family Fam(Guid retreatId, string name, GroupStatus status = GroupStatus.None)
     {
-        var f = new Family(new FamilyName(name), retreatId, capacity: 4);
+        var f = new Family(new FamilyName(name), retreatId, capacity: 4, FamilyColor.FromName("Azul"));
         switch (status)
         {
             case GroupStatus.Creating:
