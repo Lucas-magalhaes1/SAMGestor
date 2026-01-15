@@ -2,10 +2,6 @@ using SAMGestor.Domain.Commom;
 
 namespace SAMGestor.Domain.Entities;
 
-/// <summary>
-/// Refresh token com rotação e revogação.
-/// Armazenamos o HASH do token 
-/// </summary>
 public class RefreshToken : Entity<Guid>
 {
     public Guid UserId { get; private set; }
@@ -14,6 +10,7 @@ public class RefreshToken : Entity<Guid>
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset? RevokedAt { get; private set; }
+    public DateTimeOffset? UsedAt { get; private set; } // ✅ NOVO
     public Guid? ReplacedByTokenId { get; private set; }
     
     public string? UserAgent { get; private set; }
@@ -38,10 +35,15 @@ public class RefreshToken : Entity<Guid>
     public bool IsActive(DateTimeOffset now) => RevokedAt == null && ExpiresAt > now;
 
     public void Revoke(DateTimeOffset now) => RevokedAt = now;
-
-    public void ReplaceWith(Guid newTokenId, DateTimeOffset now)
+    
+    public void MarkAsUsed(Guid newTokenId, DateTimeOffset now)
+    {
+        UsedAt = now;
+        ReplacedByTokenId = newTokenId;
+    }
+    
+    public void RevokeAfterGracePeriod(DateTimeOffset now)
     {
         Revoke(now);
-        ReplacedByTokenId = newTokenId;
     }
 }

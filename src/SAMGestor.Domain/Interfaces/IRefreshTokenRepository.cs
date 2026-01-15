@@ -8,4 +8,6 @@ public interface IRefreshTokenRepository
     Task<RefreshToken?> GetByHashAsync(Guid userId, string tokenHash, CancellationToken ct = default);
     Task UpdateAsync(RefreshToken token, CancellationToken ct = default);
     Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(Guid userId, DateTimeOffset now, CancellationToken ct = default);
+    Task<RefreshToken?> GetByHashWithLockAsync(Guid userId, string tokenHash, CancellationToken ct = default);
+    Task<RefreshToken?> GetByIdAsync(Guid tokenId, CancellationToken ct = default);
 }
