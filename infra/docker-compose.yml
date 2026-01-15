@@ -81,6 +81,7 @@ services:
       Jwt__Audience: ${JWT_AUDIENCE}
       Jwt__RefreshTokenDays: ${JWT_REFRESH_DAYS}
       Jwt__AccessTokenMinutes: ${JWT_ACCESS_MINUTES}
+      Jwt__RefreshTokenReusePeriodSeconds: ${JWT_REFRESH_REUSE_PERIOD_SECONDS}
     ports:
       - "5000:8080"
     depends_on:
