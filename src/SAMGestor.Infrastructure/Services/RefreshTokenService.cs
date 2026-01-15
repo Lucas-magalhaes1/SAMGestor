@@ -1,5 +1,8 @@
+
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SAMGestor.Application.Common.Auth;
 using SAMGestor.Application.Interfaces.Auth;
@@ -12,16 +15,22 @@ public sealed class RefreshTokenService : IRefreshTokenService
 {
     private readonly IOpaqueTokenGenerator _opaque;
     private readonly IRefreshTokenRepository _repo;
+    private readonly IDistributedCache _cache;
     private readonly JwtOptions _opt;
+    private readonly ILogger<RefreshTokenService> _logger;
 
     public RefreshTokenService(
         IOpaqueTokenGenerator opaque, 
         IRefreshTokenRepository repo,
-        IOptions<JwtOptions> options)
+        IDistributedCache cache,
+        IOptions<JwtOptions> options,
+        ILogger<RefreshTokenService> logger)
     {
         _opaque = opaque;
         _repo = repo;
+        _cache = cache;
         _opt = options.Value;
+        _logger = logger;
     }
 
     public async Task<(string RawToken, RefreshToken Entity)> GenerateAsync(
@@ -41,8 +50,31 @@ public sealed class RefreshTokenService : IRefreshTokenService
             userAgent: userAgent,
             ip: ipAddress
         );
+        
+        var cacheKey = GetCacheKey(entity.Id);
+        var cacheExpiry = TimeSpan.FromSeconds(_opt.RefreshTokenReusePeriodSeconds + 60);
+        
+        try
+        {
+            await _cache.SetStringAsync(
+                cacheKey, 
+                raw, 
+                new DistributedCacheEntryOptions 
+                { 
+                    AbsoluteExpirationRelativeToNow = cacheExpiry 
+                });
 
-        await Task.CompletedTask;
+            _logger.LogDebug(
+                "Raw refresh token cached for {Expiry}s with key {CacheKey}",
+                cacheExpiry.TotalSeconds, cacheKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, 
+                "Failed to cache raw refresh token for token {TokenId}. Grace period may not work.",
+                entity.Id);
+        }
+
         return (raw, entity);
     }
 
@@ -71,4 +103,32 @@ public sealed class RefreshTokenService : IRefreshTokenService
 
         return token;
     }
+    
+    public async Task<string?> GetRawTokenByIdAsync(Guid tokenId, CancellationToken ct = default)
+    {
+        var cacheKey = GetCacheKey(tokenId);
+        
+        try
+        {
+            var rawToken = await _cache.GetStringAsync(cacheKey, ct);
+            
+            if (rawToken != null)
+            {
+                _logger.LogDebug("Raw token found in cache for {TokenId}", tokenId);
+            }
+            else
+            {
+                _logger.LogDebug("Raw token NOT found in cache for {TokenId}", tokenId);
+            }
+
+            return rawToken;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to retrieve raw token from cache for {TokenId}", tokenId);
+            return null;
+        }
+    }
+
+    private static string GetCacheKey(Guid tokenId) => $"refresh_token_raw:{tokenId}";
 }

@@ -60,7 +60,9 @@ public static class ServiceCollectionExtensions
                 o => o.MigrationsHistoryTable("__EFMigrationsHistory", schema)
             )
         );
-
+        
+        services.AddDistributedMemoryCache();
+        
         services.AddScoped<IRelationshipService, HeuristicRelationshipService>();
         services.AddScoped<IRetreatRepository, RetreatRepository>();
         services.AddScoped<IRegistrationRepository, RegistrationRepository>();

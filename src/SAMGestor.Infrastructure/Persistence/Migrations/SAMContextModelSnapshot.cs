@@ -486,6 +486,10 @@ namespace SAMGestor.Infrastructure.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("token_hash");
 
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
                     b.Property<string>("UserAgent")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -497,8 +501,14 @@ namespace SAMGestor.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UsedAt")
+                        .HasDatabaseName("ix_refresh_tokens_used_at");
+
                     b.HasIndex("UserId", "TokenHash")
                         .IsUnique();
+
+                    b.HasIndex("UserId", "RevokedAt", "ExpiresAt")
+                        .HasDatabaseName("ix_refresh_tokens_user_active");
 
                     b.ToTable("refresh_tokens", "core");
                 });

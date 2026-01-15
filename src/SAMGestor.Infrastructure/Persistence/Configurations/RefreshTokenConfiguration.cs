@@ -16,10 +16,16 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Property(x => x.ExpiresAt).HasColumnName("expires_at").IsRequired();
         builder.Property(x => x.CreatedAt).HasColumnName("created_at").IsRequired();
         builder.Property(x => x.RevokedAt).HasColumnName("revoked_at");
+        builder.Property(x => x.UsedAt).HasColumnName("used_at");
         builder.Property(x => x.ReplacedByTokenId).HasColumnName("replaced_by_token_id");
         builder.Property(x => x.UserAgent).HasColumnName("user_agent").HasMaxLength(256);
         builder.Property(x => x.IpAddress).HasColumnName("ip_address").HasMaxLength(64);
-
+        
         builder.HasIndex(x => new { x.UserId, x.TokenHash }).IsUnique();
+        
+        builder.HasIndex(x => x.UsedAt).HasDatabaseName("ix_refresh_tokens_used_at");
+        
+        builder.HasIndex(x => new { x.UserId, x.RevokedAt, x.ExpiresAt })
+            .HasDatabaseName("ix_refresh_tokens_user_active");
     }
 }
