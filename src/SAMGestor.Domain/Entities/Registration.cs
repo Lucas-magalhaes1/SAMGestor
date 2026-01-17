@@ -264,5 +264,23 @@ public class Registration : Entity<Guid>
     
         Status = RegistrationStatus.PaymentConfirmed;
     }
+    
+    public void UpdateBasicInfo(
+        FullName name,
+        CPF cpf,
+        EmailAddress email,
+        string phone,
+        DateOnly birthDate,
+        Gender gender,
+        string city)
+    {
+        Name = name;
+        Cpf = cpf;
+        Email = email;
+        Phone = phone;
+        BirthDate = birthDate;
+        Gender = gender;
+        City = city;
+    }
 
 }

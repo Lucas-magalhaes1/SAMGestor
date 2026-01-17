@@ -54,11 +54,13 @@ public interface IRegistrationRepository
         Guid retreatId,
         Guid[] tentIds,
         CancellationToken ct = default);
-
+    
     Task<List<Registration>> ListPaidUnassignedAsync(Guid retreatId, Gender? gender = null, string? search = null,
         CancellationToken ct = default);
-
+    
     Task<List<Registration>> ListAppliedByGenderAsync(Guid retreatId, CancellationToken ct = default);
     
     Task AddRangeAsync(IEnumerable<Registration> registrations, CancellationToken ct = default);
+    
+    Task UpdateAsync(Registration registration, CancellationToken ct = default);
 }

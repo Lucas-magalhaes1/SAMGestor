@@ -15,4 +15,5 @@ public interface IServiceRegistrationRepository
     Task<ServiceRegistration?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task ClearPreferenceBySpaceIdAsync(Guid spaceId, CancellationToken ct = default);
     Task<ServiceRegistration?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default);
+    Task UpdateAsync(ServiceRegistration serviceRegistration, CancellationToken ct = default);
 }
