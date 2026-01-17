@@ -184,6 +184,10 @@ namespace SAMGestor.Infrastructure.Repositories.Retreat
             await _ctx.Registrations.AddRangeAsync(registrations, ct);
         }
 
-
+        public async Task UpdateAsync(Registration registration, CancellationToken ct = default)
+        {
+            _ctx.Registrations.Update(registration);
+            await Task.CompletedTask;
+        }
     }
 }

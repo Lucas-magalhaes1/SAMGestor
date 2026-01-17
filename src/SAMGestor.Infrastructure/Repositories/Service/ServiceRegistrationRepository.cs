@@ -81,4 +81,10 @@ public sealed class ServiceRegistrationRepository(SAMContext db) : IServiceRegis
     public Task<ServiceRegistration?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
         => db.ServiceRegistrations
             .FirstOrDefaultAsync(r => r.Id == id, ct);
+
+    public Task UpdateAsync(ServiceRegistration serviceRegistration, CancellationToken ct = default)
+    {
+        db.ServiceRegistrations.Update(serviceRegistration);
+        return Task.CompletedTask;
+    }
 }
